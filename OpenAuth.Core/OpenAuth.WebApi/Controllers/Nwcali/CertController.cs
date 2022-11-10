@@ -716,14 +716,14 @@ namespace OpenAuth.WebApi.Controllers
             {
                 Directory.CreateDirectory(pathZip);
             }
-            for (int i = 0; i < filePaths.Count; i++)
+            foreach (var item in bases)
             {
-                if (string.IsNullOrEmpty(filePaths[i]))
+                if (string.IsNullOrEmpty(item.PdfPath))
                 {
                     continue;
                 }
-                string name = filePaths[i].Split('/').Last() ;
-                string path = filePaths[i];
+                string name = item.TesterSn +"-"+ item.PdfPath.Split('/').Last();
+                string path = item.PdfPath;
                 HttpClient client = new HttpClient();
                 client.BaseAddress = new Uri(path);
                 //根据文件信息中的文件地址获取远程服务器，返回文件流
@@ -737,6 +737,27 @@ namespace OpenAuth.WebApi.Controllers
                     fils.FileStream.CopyTo(fs);
                 }
             }
+            //for (int i = 0; i < filePaths.Count; i++)
+            //{
+            //    if (string.IsNullOrEmpty(filePaths[i]))
+            //    {
+            //        continue;
+            //    }
+            //    string name = filePaths[i].Split('/').Last() ;
+            //    string path = filePaths[i];
+            //    HttpClient client = new HttpClient();
+            //    client.BaseAddress = new Uri(path);
+            //    //根据文件信息中的文件地址获取远程服务器，返回文件流
+            //    var stream = await client.GetStreamAsync(path);
+
+            //    var fils = File(stream, "application/vnd.android.package-archive", Path.GetFileName(path));
+            //    //创建文件流(文件路径，文件操作.创建)
+            //    using (FileStream fs = new FileStream(pathZip + "/" + name, FileMode.Create))
+            //    {
+            //        //复制文件流
+            //        fils.FileStream.CopyTo(fs);
+            //    }
+            //}
             //对多个文件流所在的目录进行压缩
             string pathRes = Directory.GetCurrentDirectory() + "/wwwroot/" + "CertifiCate" + timespan+ ".zip";
             ZipFile.CreateFromDirectory(pathZip, pathRes);
@@ -781,7 +802,7 @@ namespace OpenAuth.WebApi.Controllers
                     System.Net.HttpWebResponse response = (System.Net.HttpWebResponse)request.GetResponse();
                     Stream responseStream = response.GetResponseStream();
                     //var filestream = new FileStream(baseInfo.CNASPdfPath, FileMode.Open);
-                    return File(responseStream, "application/pdf");
+                    return File(responseStream, "application/pdf", baseInfo.TesterSn + "-" + baseInfo.PdfPath.Split('/').Last());
                 }
                 var model = await _certinfoApp.BuildModel(baseInfo);
                 foreach (var item in model.MainStandardsUsed)
@@ -800,6 +821,7 @@ namespace OpenAuth.WebApi.Controllers
                 var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Footer.html");
                 var datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate.cshtml", pdf =>
                 {
+                    //pdf.Name =  baseInfo.TesterSn + "-" + baseInfo.
                     pdf.IsWriteHtml = true;
                     pdf.PaperKind = PaperKind.A4;
                     pdf.Orientation = Orientation.Portrait;

@@ -834,7 +834,8 @@ namespace OpenAuth.App
                                       CertificateNumber = b?.CertificateNumber,
                                       Time = b?.Time,
                                       ExpirationDate = b?.ExpirationDate,
-                                      Operator = b?.Operator
+                                      Operator = b?.Operator,
+                                      PdfPath = b?.PdfPath
                                   };
 
                 devicelist1 = devicelist1.OrderByDescending(c => c.Time).GroupBy(c => c.TesterSn).Select(c => c.First()).ToList();
@@ -885,7 +886,8 @@ namespace OpenAuth.App
                         CertificateNumber = c.CertificateNumber,
                         Time = c.Time,
                         ExpirationDate = c.ExpirationDate,
-                        Operator = c.Operator
+                        Operator = c.Operator,
+                        PdfPath =c.PdfPath
                     };
                 })
                 .OrderByDescending(c => c.Time)
@@ -922,6 +924,7 @@ namespace OpenAuth.App
                          Model = c.TesterModel,
                          Operator = c.Operator,
                          Sn = c.TesterSn,
+                        PdfPath =c.PdfPath
                      };
                  });
 

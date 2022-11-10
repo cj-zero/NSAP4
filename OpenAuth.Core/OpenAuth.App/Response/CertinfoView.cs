@@ -60,5 +60,8 @@ namespace OpenAuth.App.Response
         public string RejectContent { get; set; }
         public int? IsFinish { get; set; }
         public string Issuer { get; set; }
+        public string PdfPath { get; set; }
+
+        
     }
 }
