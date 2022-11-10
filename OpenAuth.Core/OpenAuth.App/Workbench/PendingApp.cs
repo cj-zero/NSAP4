@@ -352,7 +352,10 @@ namespace OpenAuth.App.Workbench
                 IntervalTime = f?.IntervalTime.ToString(),
                 Remark = f.Remark
             }).OrderBy(f => f.CreateTime).ToList();
-            outsourcDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(outsourcDetails.OutsourcOperationHistory, outsourcObj.FlowInstanceId);
+            if (outsourcObj.FlowInstanceId != null)
+            {
+                outsourcDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(outsourcDetails.OutsourcOperationHistory, outsourcObj.FlowInstanceId);
+            }
             return outsourcDetails;
         }
         /// <summary>
