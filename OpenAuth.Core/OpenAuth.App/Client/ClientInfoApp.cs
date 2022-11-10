@@ -294,7 +294,7 @@ namespace OpenAuth.App.Client
                 {
                     if (!string.IsNullOrWhiteSpace(ProductType))
                     {
-                        filterString.Append($" and T.cardcode in (select m.CardCode,n.Type from client_limsinfomap m left join client_limsinfo n on n.Id = m.LimsInfoId left join erp4.user u on n.UserId = u.Id where n.Type = '{ProductType}' and u.`Name` like '%{LimsName}%') ");
+                        filterString.Append($" and T.cardcode in (select m.CardCode  from client_limsinfomap m left join client_limsinfo n on n.Id = m.LimsInfoId left join erp4.user u on n.UserId = u.Id where n.Type = '{ProductType}' and u.`Name` like '%{LimsName}%') ");
                     }
                     else
                     {
@@ -399,7 +399,7 @@ namespace OpenAuth.App.Client
             }
 
             //黑名单客户也不在客户列表上显示
-            filterString.Append($" and T.CardCode not in ( select Customer_No from erp4_serve.special_customer where type = 0) ");
+            filterString.Append($" and T.CardCode not in ( select Customer_No  as  CardCode  from erp4_serve.special_customer where type = 0) ");
             if (!rIsViewFull)
             {
                 #region 查看本部门
