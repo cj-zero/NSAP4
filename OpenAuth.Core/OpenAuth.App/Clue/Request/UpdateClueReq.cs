@@ -91,4 +91,10 @@ namespace OpenAuth.App.Clue.Request
         /// </summary>
         public string Email { get; set; }
     }
+
+    public class CluePatternReq
+    {
+       public string pattern { get; set; }
+    }
+
 }
