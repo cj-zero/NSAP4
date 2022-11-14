@@ -439,43 +439,45 @@ namespace OpenAuth.App.ClientRelation
 
                 //update parentNo
                 var afterParentNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == jobRelation.CreatorId && (a.ParentNo == null ||(a.ParentNo!=null && !a.ParentNo.Contains(uptRelation.ClientNo)) )).ToList();
-
-                foreach (var enode in afterParentNodes)
+                if (afterParentNodes.Count!=0)
                 {
-                    var phisClient = new ClientRelHistory
+                    foreach (var enode in afterParentNodes)
                     {
-                        CID = enode.Id,
-                        ClientNo = enode.ClientNo,
-                        ClientName = enode.ClientName,
-                        ParentNo = enode.ParentNo,
-                        SubNo = enode.SubNo,
-                        Flag = enode.Flag,
-                        ScriptFlag = enode.ScriptFlag,
-                        IsDelete = enode.IsDelete,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = enode.UpdateDate,
-                        Creator = enode.Creator,
-                        Creatorid = enode.Creatorid,
-                        Updater = enode.Updater,
-                        Updaterid = enode.Updaterid,
-                        Operator = enode.Operator,
-                        Operatorid = enode.Operatorid,
-                        OperateType = 7,
-                        JobId = job.JobId
-                    };
-                    addHistoryData.Add(phisClient);
-                    JArray jsonPnode = new JArray();
-                    if (!string.IsNullOrEmpty(enode.ParentNo))
-                    {
-                        jsonPnode = JsonConvert.DeserializeObject<JArray>(enode.ParentNo);
+                        var phisClient = new ClientRelHistory
+                        {
+                            CID = enode.Id,
+                            ClientNo = enode.ClientNo,
+                            ClientName = enode.ClientName,
+                            ParentNo = enode.ParentNo,
+                            SubNo = enode.SubNo,
+                            Flag = enode.Flag,
+                            ScriptFlag = enode.ScriptFlag,
+                            IsDelete = enode.IsDelete,
+                            CreateDate = DateTime.Now,
+                            UpdateDate = enode.UpdateDate,
+                            Creator = enode.Creator,
+                            Creatorid = enode.Creatorid,
+                            Updater = enode.Updater,
+                            Updaterid = enode.Updaterid,
+                            Operator = enode.Operator,
+                            Operatorid = enode.Operatorid,
+                            OperateType = 7,
+                            JobId = job.JobId
+                        };
+                        addHistoryData.Add(phisClient);
+                        JArray jsonPnode = new JArray();
+                        if (!string.IsNullOrEmpty(enode.ParentNo))
+                        {
+                            jsonPnode = JsonConvert.DeserializeObject<JArray>(enode.ParentNo);
+                        }
+                        else
+                        {
+                            jsonPnode = JsonConvert.DeserializeObject<JArray>("[]");
+                        }
+                        jsonPnode.Add(uptRelation.ClientNo);
+                        enode.ParentNo = JsonConvert.SerializeObject(jsonPnode);
+                        updateData.Add(enode);
                     }
-                    else
-                    {
-                        jsonPnode = JsonConvert.DeserializeObject<JArray>("[]");
-                    }
-                    jsonPnode.Add(uptRelation.ClientNo);
-                    enode.ParentNo = JsonConvert.SerializeObject(jsonPnode);
-                    updateData.Add(enode);
                 }
 
                 uptRelation.ParentNo = "";
