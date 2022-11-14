@@ -433,7 +433,8 @@ namespace OpenAuth.App
                     Address2 = contactItem.Address,
                     CreateTime = DateTime.Now,
                     CreateUser = loginUser.Name,
-                    IsDefault = contactItem.IsDefault
+                    IsDefault = contactItem.IsDefault,
+                    Status = contactItem.IsActive ? 1 : 0
                 });
             }
 
@@ -659,8 +660,9 @@ namespace OpenAuth.App
                             Address2 = contactItem.Address,
                             CreateTime = DateTime.Now,
                             CreateUser = loginUser.Name,
-                            IsDefault = contactItem.IsDefault
-                        });
+                            IsDefault = contactItem.IsDefault,
+                            Status = contactItem.IsActive ? 1 : 0
+                        }); ;
                     }
 
                     foreach (var ditem in emodel)

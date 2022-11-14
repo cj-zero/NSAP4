@@ -86,7 +86,13 @@ namespace OpenAuth.Repository.Domain.Serve
         /// 是否默认
         /// </summary>
         [Description("是否默认")]
-        public bool IsDefault { get; set; } 
+        public bool IsDefault { get; set; }
+
+        /// <summary>
+        /// 是否默认
+        /// </summary>
+        [Description("是否启用（0：禁用，1：启用）")]
+        public int Status { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {

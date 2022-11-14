@@ -96,6 +96,10 @@ namespace OpenAuth.App.Clue.Request
         /// 是否默认
         /// </summary>
         public bool IsDefault { get; set; }
+        /// <summary>
+        /// 是否有效
+        /// </summary>
+        public bool IsActive { get; set; }
     }
 
 }
