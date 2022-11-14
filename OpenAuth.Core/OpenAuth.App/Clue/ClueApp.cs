@@ -422,23 +422,28 @@ namespace OpenAuth.App
             UnitWork.Save();
             #region multiple contact person info
             List<ClueContacts> clueContacts = new List<ClueContacts>();
-            foreach (var contactItem in addClueReq.ContPerList)
+            if (addClueReq.ContPerList != null)
             {
-                clueContacts.Add(new Repository.Domain.Serve.ClueContacts {
-                    ClueId = data.Id,
-                    Name = contactItem.Name,
-                    Tel1 = contactItem.Tel1,
-                    Email = contactItem.Email,
-                    Position = contactItem.Position,
-                    Address2 = contactItem.Address,
-                    CreateTime = DateTime.Now,
-                    CreateUser = loginUser.Name,
-                    IsDefault = contactItem.IsDefault,
-                    Status = contactItem.IsActive ? 1 : 0
-                });
+                foreach (var contactItem in addClueReq.ContPerList)
+                {
+                    clueContacts.Add(new Repository.Domain.Serve.ClueContacts
+                    {
+                        ClueId = data.Id,
+                        Name = contactItem.Name,
+                        Tel1 = contactItem.Tel1,
+                        Email = contactItem.Email,
+                        Position = contactItem.Position,
+                        Address2 = contactItem.Address,
+                        CreateTime = DateTime.Now,
+                        CreateUser = loginUser.Name,
+                        IsDefault = contactItem.IsDefault,
+                        Status = contactItem.IsActive ? 1 : 0
+                    });
+                }
+                UnitWork.BatchAdd<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(clueContacts.ToArray());
             }
 
-            UnitWork.BatchAdd<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(clueContacts.ToArray());
+            
             UnitWork.Save();
             #endregion
             var log = new AddClueLogReq();
@@ -474,7 +479,7 @@ namespace OpenAuth.App
                 result.Essential.StaffSize = clue.StaffSize;
                 result.Essential.WebSite = clue.WebSite;
                 result.Essential.Remark = clue.Remark;
-                var cluecontacts = UnitWork.Find<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == clueId).ToList();
+                var cluecontacts = UnitWork.Find<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == clueId && !q.IsDelete).ToList();
                 if (cluecontacts != null)
                 {
                     foreach (var item in cluecontacts)
@@ -628,7 +633,7 @@ namespace OpenAuth.App
                 var emodel = UnitWork.Find<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == updateClueReq.Id).ToList();
                 if (emodel != null)
                 {
-
+                    #region
                     //emodel.ClueId = updateClueReq.Id;
                     //if (emodel.Name != updateClueReq.Name) { mes += updateClueReq.Name + ":原客户名称'" + emodel.Name + "';"; }
                     //emodel.Name = updateClueReq.Name;
@@ -647,6 +652,7 @@ namespace OpenAuth.App
                     //emodel.UpdateTime = DateTime.Now;
                     //emodel.UpdateUser = loginUser.Name;
                     //emodel.IsDefault = true;
+                    #endregion
                     List<ClueContacts> clueContacts = new List<ClueContacts>();
                     foreach (var contactItem in updateClueReq.ContPerList)
                     {
@@ -687,10 +693,10 @@ namespace OpenAuth.App
                         log.Details = mes;
                         await AddClueLogAsync(log);
                     }
-                    UnitWork.Update(emodel);
+                   //UnitWork.Update(emodel);
 
                 }
-                UnitWork.Update(entity);
+                UnitWork.Update<Repository.Domain.Serve.Clue>(entity);
                 UnitWork.Save();
 
             }
