@@ -117,10 +117,10 @@ namespace OpenAuth.App
             //    var scon = UnitWork.Find<ClueFollowUp>(q => !q.IsDelete && q.ClueId == item.Id).MapToList<ClueFollowUp>().OrderByDescending(q => q.FollowUpTime).Take(1);
             //    clueFollowUp.AddRange(scon);
             //}
-            var clueContacts = UnitWork.Find<ClueContacts>(q => !q.IsDelete && q.IsDefault).MapToList<ClueContacts>();
+            var clueContacts = UnitWork.Find<ClueContacts>(q => !q.IsDelete && q.IsDefault).ToList();
             var queryAllCustomers = from a in clue
                                     join b in clueContacts on a.Id equals b.ClueId
-
+                                    where b.IsDefault == true
                                     where !string.IsNullOrEmpty(clueListReq.Contacts) ? b.Name.Contains(clueListReq.Contacts) : true
                                     where !string.IsNullOrEmpty(clueListReq.Address) ? b.Address2.Contains(clueListReq.Address) : true
                                     where !string.IsNullOrEmpty(clueListReq.slpName) ? b.CreateUser.Contains(clueListReq.slpName) : true
