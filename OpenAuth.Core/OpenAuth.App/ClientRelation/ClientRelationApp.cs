@@ -486,7 +486,11 @@ namespace OpenAuth.App.ClientRelation
                 uptRelation.Operator = jobRelation.Creator;
                 uptRelation.UpdateDate = DateTime.Now;
                 uptRelation.CreateDate = DateTime.Now;
-                uptRelation.ClientName = originRelation.ClientName;
+                if (originRelation!=null)
+                {
+                    uptRelation.ClientName = originRelation.ClientName;
+                }
+                
                 uptRelation.JobId = jobRelation.Jobid;
                 updateData.Add(uptRelation);
             }
@@ -564,6 +568,41 @@ namespace OpenAuth.App.ClientRelation
                         jsonPnode.Add(legitJob.sbo_itf_return);
                         pnode.ParentNo = JsonConvert.SerializeObject(jsonPnode);
                         updateData.Add(pnode);
+                    }
+                }
+                //if SubNo not exists for which it is not created in 4.0,then deal with it 
+                if (!string.IsNullOrEmpty(jobRelation.Terminals))
+                {
+                    var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(jobRelation.Terminals);
+                    //if SubNo not exists for which it is not created in 4.0,then deal with it 
+                    var exiSubList = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => originRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0).Select(a => a.ClientNo).ToList();
+                    foreach (var addItem in subList)
+                    {
+                        if (!exiSubList.Contains(addItem.customerNo))
+                        {
+                            JArray jsonAddPnode = JsonConvert.DeserializeObject<JArray>("[]");
+                            jsonAddPnode.Add(originRelation.ClientNo);
+                            addData.Add(new Repository.Domain.ClientRelation
+                            {
+                                ClientNo = addItem.customerNo,
+                                ClientName = addItem.customerName,
+                                ParentNo = JsonConvert.SerializeObject(jsonAddPnode),
+                                SubNo = "",
+                                Flag = 0,
+                                ScriptFlag = 0,
+                                IsDelete = 0,
+                                IsActive = 1,
+                                CreateDate = DateTime.Now,
+                                Creator = originRelation.Creator,
+                                Creatorid = originRelation.Creatorid,
+                                UpdateDate = DateTime.Now,
+                                Updaterid = originRelation.Updaterid,
+                                Updater = originRelation.Updater,
+                                Operatorid = originRelation.Operatorid,
+                                Operator = originRelation.Operator,
+                                JobId = originRelation.JobId
+                            });
+                        }
                     }
                 }
 
