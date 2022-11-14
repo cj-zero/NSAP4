@@ -964,7 +964,7 @@ namespace OpenAuth.App.Material
                         CustomerInformation,
                         CommissionOrder,
                         BlameBelongInfo,
-                        FlowPathResp
+                        BlameBelongFlowPathResp = FlowPathResp
                     };
                 }
                 else
@@ -978,7 +978,7 @@ namespace OpenAuth.App.Material
                         ServiceOrders,
                         CustomerInformation,
                         BlameBelongInfo,
-                        FlowPathResp
+                        BlameBelongFlowPathResp = FlowPathResp
                     };
                 }
             }
@@ -992,7 +992,7 @@ namespace OpenAuth.App.Material
                     ServiceOrders,
                     CustomerInformation,
                     BlameBelongInfo,
-                    FlowPathResp
+                    BlameBelongFlowPathResp = FlowPathResp
                 };
             }
             return result;
