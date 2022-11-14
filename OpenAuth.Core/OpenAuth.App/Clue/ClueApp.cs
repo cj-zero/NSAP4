@@ -492,7 +492,8 @@ namespace OpenAuth.App
                             Address = item.Address2,
                             Email = item.Email,
                             Position = item.Position,
-                            IsDefault = item.IsDefault
+                            IsDefault = item.IsDefault,
+                            IsActive = item.Status == 1 ? true : false
                         };
                         result.Essential.ContPerList.Add(itemContPerson);
                     }
