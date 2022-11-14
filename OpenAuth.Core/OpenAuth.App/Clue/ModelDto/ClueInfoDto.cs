@@ -81,7 +81,7 @@ namespace OpenAuth.App.Clue.ModelDto
         ///备注
         /// </summary>
         public string Remark { get; set; }
-        public List<ContPerson> ContPerList { get; set; }
+        public List<ContPerson> ContPerList { get; set; } = new List<ContPerson>();
     }
     /// <summary>
     /// 操作记录
