@@ -1344,8 +1344,9 @@ namespace OpenAuth.App.ClientRelation
             {
                 queryId = Convert.ToInt32(clientNo);
             }
-            result = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == queryId && a.IsDelete == 0);
-            return result;
+            //result = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == queryId && a.IsDelete == 0);
+            var finalRes = UnitWork.Find<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == queryId && a.IsDelete == 0).ToList().OrderByDescending(a=>a.CreateDate).FirstOrDefault();
+            return finalRes;
         }
 
 
