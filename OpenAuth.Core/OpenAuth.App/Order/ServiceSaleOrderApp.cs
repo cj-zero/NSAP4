@@ -516,7 +516,9 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             var finalquery = "select " + filefName.ToString() + " from " + tableName.ToString() + " where " + filterQuery + "  order by " + sortSt + " OFFSET " + ((query.page -1 )* query.limit).ToString() + " ROWS  FETCH NEXT " + query.limit.ToString() + " ROWS ONLY  ";
             var cardList = UnitWork.ExcuteSql<CardCodeDto>(ContextType.SapDbContextType, finalquery.ToString(), CommandType.Text, null);
             tableData.Data = cardList;
-            tableData.Count = cardList.Count;
+            var countquery = "select count(1) count  from " + tableName.ToString() + " where " + filterQuery  ;
+            var countCardList = UnitWork.ExcuteSql<CardCountDto>(ContextType.SapDbContextType, countquery.ToString(), CommandType.Text, null);
+            tableData.Count = countCardList.FirstOrDefault().count;
 
             //DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
             //tableData.Data = dt.Tolist<CardCodeDto>();

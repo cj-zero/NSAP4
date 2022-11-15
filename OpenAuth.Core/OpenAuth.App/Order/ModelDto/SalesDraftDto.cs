@@ -447,6 +447,11 @@ namespace OpenAuth.App.Order
         /// </summary>
         public object SlpCode { get; set; }
     }
+
+    public class CardCountDto
+    {
+        public int count { get; set; }
+    }
     /// <summary>
     /// 业务经理对象
     /// </summary>
