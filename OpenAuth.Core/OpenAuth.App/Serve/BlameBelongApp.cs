@@ -390,7 +390,7 @@ namespace OpenAuth.App.Serve
             }
             else if (type == 2)
             {
-                var serviceOrderId = await UnitWork.Find<ServiceOrder>(c => (c.U_SAP_ID == id || c.Id == id) && c.Status == 2 && c.VestInOrg == 1).Select(c => c.Id).FirstOrDefaultAsync();
+                var serviceOrderId = await UnitWork.Find<ServiceOrder>(c => c.U_SAP_ID == id  && c.Status == 2 && c.VestInOrg == 1).Select(c => c.Id).FirstOrDefaultAsync();
                 if (!(serviceOrderId > 0))
                 {
                     result.Code = 500;
