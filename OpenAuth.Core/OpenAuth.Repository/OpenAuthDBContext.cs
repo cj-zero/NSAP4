@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Material;
 using OpenAuth.Repository.Domain.Workbench;
 
 namespace OpenAuth.Repository
@@ -77,6 +78,10 @@ namespace OpenAuth.Repository
         public virtual DbSet<ClientRelation> ClientRelations { get; set; }
         public virtual DbSet<ClientRelHistory> ClientRelHistories { get; set; }
         public virtual DbSet<JobClientRelation>  JobClientRelations { get; set; }
+        #endregion
+
+        #region 工程部相关维护表
+        public virtual DbSet<ManageAccountBind>  ManageAccountBinds  { get; set; }
         #endregion
 
         //非数据库表格
