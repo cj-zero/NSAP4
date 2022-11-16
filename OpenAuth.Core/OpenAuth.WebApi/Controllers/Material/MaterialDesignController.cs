@@ -304,7 +304,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             string sql2 = "select * from manage_screening where DocEntry = '" + docentry + "' and ItemCode = '" + itemcode + "' ";
             DataTable dts2 = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql2.ToString(), CommandType.Text, null);
-            if (dts2 != null || dts2.Rows.Count != 0)
+            if (dts2 != null && dts2.Rows.Count > 0)
             {
                 advanceData.SubmitTime = dts2.Rows[0]["SubmitTime"].ToString();
             }
