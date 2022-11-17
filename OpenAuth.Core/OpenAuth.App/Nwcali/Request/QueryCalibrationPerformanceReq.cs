@@ -6,9 +6,9 @@ using System.Text;
 namespace OpenAuth.App.Nwcali.Request
 {
     /// <summary>
-    /// 校准明细报表
+    /// 校准绩效明细表
     /// </summary>
-    public class QueryCalibrationReportReq:PageReq
+    public class QueryCalibrationPerformanceReq:PageReq
     {
         /// <summary>
         /// 校准开始时间
@@ -18,17 +18,10 @@ namespace OpenAuth.App.Nwcali.Request
         /// 校准开始时间
         /// </summary>
         public DateTime? EndTime { get; set; }
+
         /// <summary>
-        /// 部门id
+        /// 校准人
         /// </summary>
-        public string OrgId { get; set; }
-        /// <summary>
-        /// 操作人
-        /// </summary>
-        public string Operator { get; set; }
-        /// <summary>
-        /// 销售单号
-        /// </summary>
-        public int SalesOrder { get; set; }
+        public string UserName { get; set; }
     }
 }
