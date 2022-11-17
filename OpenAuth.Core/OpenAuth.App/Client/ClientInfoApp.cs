@@ -240,7 +240,7 @@ namespace OpenAuth.App.Client
             string U_CardTypeStr, string U_ClientSource, string U_CompSector, string U_TradeType, string U_StaffScale,
             DateTime? CreateStartTime, DateTime? CreateEndTime, DateTime? DistributionStartTime, DateTime? DistributionEndTime,
             decimal? dNotesBalStart, decimal? dNotesBalEnd, decimal? ordersBalStart, decimal? ordersBalEnd,
-            decimal? balanceStart, decimal? balanceEnd, decimal? balanceTotalStart, decimal? balanceTotalEnd, string CardName, out int rowCount)
+            decimal? balanceStart, decimal? balanceEnd, decimal? balanceTotalStart, decimal? balanceTotalEnd, string CardName, string ProductType, string LimsName, out int rowCount)
         {
             bool IsSaler = false, IsPurchase = false, IsTech = false, IsClerk = false;//业务员，采购员，技术员，文员
             string rSalCode = GetUserInfoById(sboid.ToString(), userId.ToString(), "1");
@@ -283,6 +283,20 @@ namespace OpenAuth.App.Client
             if (!string.IsNullOrWhiteSpace(CntctPrsn))
             {
                 filterString.Append($" and T.cardcode in ( select cardcode from nsap_bone.crm_ocpr where name like '%{CntctPrsn}%') ");
+            }
+            if (!string.IsNullOrWhiteSpace(ProductType) || !string.IsNullOrWhiteSpace(LimsName))
+            {
+                if (!string.IsNullOrWhiteSpace(LimsName))
+                {
+                    if (!string.IsNullOrWhiteSpace(ProductType))
+                    {
+                        filterString.Append($" and T.cardcode in (select m.CardCode,n.Type from client_limsinfomap m left join client_limsinfo n on n.Id = m.LimsInfoId left join erp4.user u on n.UserId = u.Id where n.Type = '{ProductType}' and u.`Name` like '%{LimsName}%') ");
+                    }
+                    else
+                    {
+                        filterString.Append($" and T.cardcode in (select m.CardCode from client_limsinfomap m left join client_limsinfo n on  n.Id = m.LimsInfoId left join erp4.user u on n.UserId = u.Id where u.`Name` like  '%{LimsName}%') ");
+                    }
+                }
             }
             if (!string.IsNullOrWhiteSpace(address))
             {
