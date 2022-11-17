@@ -117,10 +117,10 @@ namespace OpenAuth.App
             //    var scon = UnitWork.Find<ClueFollowUp>(q => !q.IsDelete && q.ClueId == item.Id).MapToList<ClueFollowUp>().OrderByDescending(q => q.FollowUpTime).Take(1);
             //    clueFollowUp.AddRange(scon);
             //}
-            var clueContacts = UnitWork.Find<ClueContacts>(q => !q.IsDelete && q.IsDefault).MapToList<ClueContacts>();
+            var clueContacts = UnitWork.Find<ClueContacts>(q => !q.IsDelete && q.IsDefault).ToList();
             var queryAllCustomers = from a in clue
                                     join b in clueContacts on a.Id equals b.ClueId
-
+                                    where b.IsDefault == true
                                     where !string.IsNullOrEmpty(clueListReq.Contacts) ? b.Name.Contains(clueListReq.Contacts) : true
                                     where !string.IsNullOrEmpty(clueListReq.Address) ? b.Address2.Contains(clueListReq.Address) : true
                                     where !string.IsNullOrEmpty(clueListReq.slpName) ? b.CreateUser.Contains(clueListReq.slpName) : true
@@ -143,7 +143,8 @@ namespace OpenAuth.App
                                         Address1 = b.Address1,
                                         Address2 = b.Address2,
                                         Email = b.Email,
-                                        SlpName = a.CreateUser
+                                        SlpName = a.CreateUser,
+                                        CardCode = a.CardCode
                                     };
             rowcount = queryAllCustomers.Count();
             var datas = queryAllCustomers.Skip((clueListReq.page - 1) * clueListReq.limit).Take(clueListReq.limit).ToList();
@@ -229,6 +230,22 @@ namespace OpenAuth.App
             });
             await UnitWork.SaveAsync();
 
+            return result;
+        }
+
+
+        public async Task<List<CluePattern>> GetCluePattern(string pattern)
+        {
+            var result = new List<CluePattern>();
+            var loginContext = _auth.GetCurrentUser();
+            //get slpcode and name 
+            string slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginContext.User.User_Id).Select(q => q.sale_id).FirstOrDefault().Value.ToString();
+            string userId = loginContext.User.Id;
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("select * from clueclientutility u where (LOCATE(u.UserTag , \"{0}\")  > 0 ||  LOCATE(u.UserTag , \"{1}\")  > 0) AND LOCATE(\"{2}\" ,u.name)  > 0 ", slpCode, userId, pattern);
+            var patternList = UnitWork.ExcuteSql<CluePattern>(ContextType.Nsap4ServeDbContextType, strSql.ToString(), CommandType.Text, null);
+
+            result.AddRange(patternList);
             return result;
         }
 
@@ -399,27 +416,37 @@ namespace OpenAuth.App
                 Status = 0,
                 CreateTime = DateTime.Now,
                 CreateUser = loginUser.Name,
+                CreateUserId = loginUser.Id,
                 SerialNumber = !string.IsNullOrEmpty(await GetCardCode()) ? await GetCardCode() : "X00001",
             };
             var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.Clue, int>(clue);
             UnitWork.Save();
-            OpenAuth.Repository.Domain.Serve.ClueContacts cluecontacts = new Repository.Domain.Serve.ClueContacts
+            #region multiple contact person info
+            List<ClueContacts> clueContacts = new List<ClueContacts>();
+            if (addClueReq.ContPerList != null)
             {
-                ClueId = data.Id,
-                Name = addClueReq.Name,
-                Tel1 = addClueReq.Tel1,
-                Role = addClueReq.Role,
-                Email = addClueReq.Email,
-                Position = addClueReq.Position,
-                Address1 = addClueReq.Address1,
-                Address2 = addClueReq.Address2,
-                CreateTime = DateTime.Now,
-                CreateUser = loginUser.Name,
-                IsDefault = true
-            };
-            UnitWork.Add<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(cluecontacts);
-            UnitWork.Save();
+                foreach (var contactItem in addClueReq.ContPerList)
+                {
+                    clueContacts.Add(new Repository.Domain.Serve.ClueContacts
+                    {
+                        ClueId = data.Id,
+                        Name = contactItem.Name,
+                        Tel1 = contactItem.Tel1,
+                        Email = contactItem.Email,
+                        Position = contactItem.Position,
+                        Address2 = contactItem.Address,
+                        CreateTime = DateTime.Now,
+                        CreateUser = loginUser.Name,
+                        IsDefault = contactItem.IsDefault,
+                        Status = contactItem.IsActive ? 1 : 0
+                    });
+                }
+                UnitWork.BatchAdd<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(clueContacts.ToArray());
+            }
 
+            
+            UnitWork.Save();
+            #endregion
             var log = new AddClueLogReq();
             log.ClueId = data.Id;
             log.LogType = 0;
@@ -453,16 +480,31 @@ namespace OpenAuth.App
                 result.Essential.StaffSize = clue.StaffSize;
                 result.Essential.WebSite = clue.WebSite;
                 result.Essential.Remark = clue.Remark;
-                var cluecontacts = UnitWork.FindSingle<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == clueId && q.IsDefault);
+                var cluecontacts = UnitWork.Find<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == clueId && !q.IsDelete).ToList();
                 if (cluecontacts != null)
                 {
-                    result.Essential.Name = cluecontacts.Name;
-                    result.Essential.Tel1 = cluecontacts.Tel1;
-                    result.Essential.Address1 = cluecontacts.Address1;
-                    result.Essential.Address2 = cluecontacts.Address2;
-                    result.Essential.Role = cluecontacts.Role;
-                    result.Essential.Position = cluecontacts.Position;
-                    result.Essential.Email = cluecontacts.Email;
+                    foreach (var item in cluecontacts)
+                    {
+                        var itemContPerson = new ContPerson
+                        {
+                            Name = item.Name,
+                            Tel1 = item.Tel1,
+                            Tel2 = item.Tel2,
+                            Address = item.Address2,
+                            Email = item.Email,
+                            Position = item.Position,
+                            IsDefault = item.IsDefault,
+                            IsActive = item.Status == 1 ? true : false
+                        };
+                        result.Essential.ContPerList.Add(itemContPerson);
+                    }
+                    //result.Essential.Name = cluecontacts.Name;
+                    //result.Essential.Tel1 = cluecontacts.Tel1;
+                    //result.Essential.Address1 = cluecontacts.Address1;
+                    //result.Essential.Address2 = cluecontacts.Address2;
+                    //result.Essential.Role = cluecontacts.Role;
+                    //result.Essential.Position = cluecontacts.Position;
+                    //result.Essential.Email = cluecontacts.Email;
                 }
                 var clueLogList = UnitWork.Find<Repository.Domain.Serve.ClueLog>(q => q.ClueId == clueId).OrderByDescending(q => q.CreateTime).MapToList<ClueLog>();
                 if (clueLogList.Count > 0 && clueLogList != null)
@@ -590,27 +632,57 @@ namespace OpenAuth.App
                 entity.IsCertification = updateClueReq.IsCertification;
                 entity.UpdateTime = DateTime.Now;
                 entity.UpdateUser = loginUser.Name;
-                var emodel = UnitWork.FindSingle<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == updateClueReq.Id && q.IsDefault);
+                var emodel = UnitWork.Find<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == updateClueReq.Id).ToList();
                 if (emodel != null)
                 {
-                    emodel.ClueId = updateClueReq.Id;
-                    if (emodel.Name != updateClueReq.Name) { mes += updateClueReq.Name + ":原客户名称'" + emodel.Name + "';"; }
-                    emodel.Name = updateClueReq.Name;
-                    if (emodel.Tel1 != updateClueReq.Tel1) { mes += updateClueReq.Tel1 + ":原联系电话一'" + emodel.Tel1 + "';"; }
-                    emodel.Tel1 = updateClueReq.Tel1;
-                    if (emodel.Role != updateClueReq.Role) { mes += updateClueReq.Role + ":原角色'" + emodel.Role + "'，（0：决策者、1：普通人）;"; }
-                    emodel.Role = updateClueReq.Role;
-                    if (emodel.Position != updateClueReq.Position) { mes += updateClueReq.Position + ":原职位'" + emodel.Position + "';"; }
-                    emodel.Position = updateClueReq.Position;
-                    if (emodel.Address1 != updateClueReq.Address1) { mes += updateClueReq.Address1 + ":原省市'" + emodel.Address1 + "';"; }
-                    emodel.Address1 = updateClueReq.Address1;
-                    if (emodel.Address2 != updateClueReq.Address2) { mes += updateClueReq.Address2 + ":原详细地址'" + emodel.Address2 + "';"; }
-                    emodel.Address2 = updateClueReq.Address2;
-                    if (emodel.Email != updateClueReq.Email) { mes += updateClueReq.Email + ":原邮箱'" + emodel.Email + "';"; }
-                    emodel.Email = updateClueReq.Email;
-                    emodel.UpdateTime = DateTime.Now;
-                    emodel.UpdateUser = loginUser.Name;
-                    emodel.IsDefault = true;
+                    #region
+                    //emodel.ClueId = updateClueReq.Id;
+                    //if (emodel.Name != updateClueReq.Name) { mes += updateClueReq.Name + ":原客户名称'" + emodel.Name + "';"; }
+                    //emodel.Name = updateClueReq.Name;
+                    //if (emodel.Tel1 != updateClueReq.Tel1) { mes += updateClueReq.Tel1 + ":原联系电话一'" + emodel.Tel1 + "';"; }
+                    //emodel.Tel1 = updateClueReq.Tel1;
+                    //if (emodel.Role != updateClueReq.Role) { mes += updateClueReq.Role + ":原角色'" + emodel.Role + "'，（0：决策者、1：普通人）;"; }
+                    //emodel.Role = updateClueReq.Role;
+                    //if (emodel.Position != updateClueReq.Position) { mes += updateClueReq.Position + ":原职位'" + emodel.Position + "';"; }
+                    //emodel.Position = updateClueReq.Position;
+                    //if (emodel.Address1 != updateClueReq.Address1) { mes += updateClueReq.Address1 + ":原省市'" + emodel.Address1 + "';"; }
+                    //emodel.Address1 = updateClueReq.Address1;
+                    //if (emodel.Address2 != updateClueReq.Address2) { mes += updateClueReq.Address2 + ":原详细地址'" + emodel.Address2 + "';"; }
+                    //emodel.Address2 = updateClueReq.Address2;
+                    //if (emodel.Email != updateClueReq.Email) { mes += updateClueReq.Email + ":原邮箱'" + emodel.Email + "';"; }
+                    //emodel.Email = updateClueReq.Email;
+                    //emodel.UpdateTime = DateTime.Now;
+                    //emodel.UpdateUser = loginUser.Name;
+                    //emodel.IsDefault = true;
+                    #endregion
+                    List<ClueContacts> clueContacts = new List<ClueContacts>();
+                    foreach (var contactItem in updateClueReq.ContPerList)
+                    {
+                        clueContacts.Add(new Repository.Domain.Serve.ClueContacts
+                        {
+                            ClueId = updateClueReq.Id,
+                            Name = contactItem.Name,
+                            Tel1 = contactItem.Tel1,
+                            Email = contactItem.Email,
+                            Position = contactItem.Position,
+                            Address2 = contactItem.Address,
+                            CreateTime = DateTime.Now,
+                            CreateUser = loginUser.Name,
+                            IsDefault = contactItem.IsDefault,
+                            Status = contactItem.IsActive ? 1 : 0
+                        }); ;
+                    }
+
+                    foreach (var ditem in emodel)
+                    {
+                        ditem.IsDelete = true;
+                    }
+
+                    UnitWork.BatchUpdate<OpenAuth.Repository.Domain.Serve.ClueContacts>(emodel.ToArray());
+                    UnitWork.BatchAdd<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(clueContacts.ToArray());
+                    UnitWork.Save();
+
+
                     result = true;
                     if (result)
                     {
@@ -623,10 +695,10 @@ namespace OpenAuth.App
                         log.Details = mes;
                         await AddClueLogAsync(log);
                     }
-                    UnitWork.Update(emodel);
+                   //UnitWork.Update(emodel);
 
                 }
-                UnitWork.Update(entity);
+                UnitWork.Update<Repository.Domain.Serve.Clue>(entity);
                 UnitWork.Save();
 
             }

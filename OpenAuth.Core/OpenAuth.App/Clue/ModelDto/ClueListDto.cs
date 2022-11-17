@@ -11,6 +11,8 @@ namespace OpenAuth.App.Clue.ModelDto
         ///线索编号
         /// </summary>
         public string SerialNumber { get; set; }
+
+        public string CardCode { get; set; }
         /// <summary>
         /// 客户名称
         /// </summary>

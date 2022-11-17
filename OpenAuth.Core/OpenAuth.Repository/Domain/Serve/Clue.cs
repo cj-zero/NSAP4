@@ -111,6 +111,11 @@ namespace OpenAuth.Repository.Domain.Serve
         [Description("是否删除")]
         public bool IsDelete { get; set; } = false;
 
+        /// <summary>
+        /// 创建人编号
+        /// </summary>
+        public string CreateUserId { get; set; }
+
         public override void GenerateDefaultKeyVal()
         {
 

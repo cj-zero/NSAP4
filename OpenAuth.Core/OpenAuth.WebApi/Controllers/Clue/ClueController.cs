@@ -122,6 +122,22 @@ namespace OpenAuth.WebApi.Controllers.Clue
             }
             catch (Exception ex)
             {
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        [HttpPost]
+        [Route("GetCluePattern")]
+        public async Task<Response> GetCluePattern(CluePatternReq patternReq)
+        {
+            var result = new Response<List<CluePattern>>();
+            try
+            {
+                result.Result = await _clueApp.GetCluePattern(patternReq.pattern);
+            }
+            catch (Exception ex)
+            {
 
                 result.Message = ex.Message;
             }
