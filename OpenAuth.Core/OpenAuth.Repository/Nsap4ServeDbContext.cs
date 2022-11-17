@@ -156,6 +156,9 @@ namespace OpenAuth.Repository
         #region 工程部项目筛选
         public virtual DbSet<ManageScreening> ManageScreening { get; set; }
         public virtual DbSet<ManageScreeningHistory> ManageScreeningHistory { get; set; }
+        public virtual DbSet<TaskView> TaskView { get; set; }
+
+        
         #endregion
         #region 线索
         public virtual DbSet<Clue> Clue { get; set; }

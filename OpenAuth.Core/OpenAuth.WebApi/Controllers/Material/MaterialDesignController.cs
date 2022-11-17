@@ -304,7 +304,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             string sql2 = "select * from manage_screening where DocEntry = '" + docentry + "' and ItemCode = '" + itemcode + "' ";
             DataTable dts2 = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql2.ToString(), CommandType.Text, null);
-            if (dts2 != null || dts2.Rows.Count != 0)
+            if (dts2 != null && dts2.Rows.Count > 0)
             {
                 advanceData.SubmitTime = dts2.Rows[0]["SubmitTime"].ToString();
             }
@@ -368,5 +368,64 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+
+
+        #region 工程部考勤
+        /// <summary>
+        /// 统计分析页面
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        [HttpPost]
+        public TableData TaskView(TaskViewReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            var result = new TableData();
+            try
+            {
+                TableData dts = _app.TaskView(request, SboID);
+                result.Data = dts;
+                result.Count = dts.Count;// rowCount;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// 提交至月度统计
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("SubmitMonth")]
+        public async Task<Infrastructure.Response> SubmitMonth(submitMonth req)
+        {
+            var response = new Infrastructure.Response();
+            try
+            {
+                response = await _app.SubmitMonth(req);
+            }
+            catch (Exception ex)
+            {
+                response.Message = ex.Message;
+            }
+            return response;
+        }
+
+        #endregion
     }
 }

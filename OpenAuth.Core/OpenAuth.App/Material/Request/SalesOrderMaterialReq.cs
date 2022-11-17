@@ -71,4 +71,22 @@ namespace OpenAuth.App.Material.Request
 
         public string SubmitNo { get; set; }
     }
+
+    public class TaskViewReq : PageReq
+    {
+        public string Owner { get; set; }
+        public string Number { get; set; }
+        public string objnbs { get; set; }
+        public string StageName { get; set; }
+        public string fld005506 { get; set; }
+        public string fld006314 { get; set; }
+        public string complete { get; set; }
+        public string Month { get; set; }
+    }
+
+    public class submitMonth 
+    {
+        public List<string> Number { get; set; }
+        public string Month { get; set; }
+    }
 }
