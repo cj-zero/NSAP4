@@ -2301,6 +2301,8 @@ namespace OpenAuth.App
                     hdSpend = item["hdSpend"].ToString(),
                     autoAvgSpend = item["autoAvgSpend"].ToString(),
                     hdAvgSpend = item["hdAvgSpend"].ToString(),
+                    autoChl = item["chlOk"].ToString(),
+                    hdChl = item["chlNg"].ToString(),
                 });
             }
             result.Data = list;
@@ -2315,7 +2317,7 @@ namespace OpenAuth.App
         public async Task<byte[]> ExportCalibrationPerformanceReport(QueryCalibrationPerformanceReq req)
         {
             TableData result = new TableData();
-            List<object> list = new List<object>();
+            List<CalibrationPerformanceResp> list = new List<CalibrationPerformanceResp>();
             string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-report2";
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
@@ -2354,6 +2356,8 @@ namespace OpenAuth.App
                     hdSpend = item["hdSpend"].ToString(),
                     autoAvgSpend = item["autoAvgSpend"].ToString(),
                     hdAvgSpend = item["hdAvgSpend"].ToString(),
+                    autoChl = item["chlOk"].ToString(),
+                    hdChl = item["chlNg"].ToString(),
                 });
             }
             IExporter exporter = new ExcelExporter();
@@ -2555,7 +2559,7 @@ namespace OpenAuth.App
                 querySql += $" where t1.manufSN in ({propertyStr})";
                 saleInfoList = await UnitWork.Query<ShipmentCalibration_sql>(querySql).ToListAsync();
             }
-            var lowGuids = taskObj["data"]["records"].Select(c => c["lowGuid"].ToString()).ToList();
+            var lowGuids = taskObj["data"].Select(c => c["lowGuid"].ToString()).ToList();
             var nwcalibase = await (from a in UnitWork.Find<PcPlc>(null)
                                     join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id
                                     where lowGuids.Contains(a.Guid)
