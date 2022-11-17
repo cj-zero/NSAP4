@@ -795,7 +795,7 @@ namespace OpenAuth.App
                         UnitWork.Add(new NsapUserMap { UserID = item.Id, NsapUserId = (int?)u.user_id });
                         UnitWork.Save();
                     }
-                    if (item.EntryTime == null)
+                    if (item.EntryTime != u.try_date)
                     {
                         UnitWork.Update<User>(c => c.Account == item.Account, c => new User
                         {
