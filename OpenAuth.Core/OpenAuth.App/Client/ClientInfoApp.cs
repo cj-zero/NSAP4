@@ -290,7 +290,7 @@ namespace OpenAuth.App.Client
                 {
                     if (!string.IsNullOrWhiteSpace(ProductType))
                     {
-                        filterString.Append($" and T.cardcode in (select m.CardCode,n.Type from client_limsinfomap m left join client_limsinfo n on n.Id = m.LimsInfoId left join erp4.user u on n.UserId = u.Id where n.Type = '{ProductType}' and u.`Name` like '%{LimsName}%') ");
+                        filterString.Append($" and T.cardcode in (select m.CardCode from client_limsinfomap m left join client_limsinfo n on n.Id = m.LimsInfoId left join erp4.user u on n.UserId = u.Id where n.Type = '{ProductType}' and u.`Name` like '%{LimsName}%') ");
                     }
                     else
                     {
