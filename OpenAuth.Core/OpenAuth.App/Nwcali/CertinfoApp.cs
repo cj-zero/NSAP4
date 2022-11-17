@@ -2423,26 +2423,34 @@ namespace OpenAuth.App
                                   where taskIds.Contains(a.TaskId)
                                   select new { b.GeneratorCode, a.TaskId }).ToListAsync();
             //获取销售信息
+            List<ShipmentCalibration_sql> saleInfoList = new List<ShipmentCalibration_sql>();
             var serialNoList = taskObj["data"]["records"].Where(c => c["serialNo"] != null).Select(c => c["serialNo"].ToString()).ToList();
-            string querySql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
+            if (serialNoList.Count>0)
+            {
+                string querySql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
                     inner join (SELECT DocEntry,MIN(BaseEntry) as BaseEntry from DLN1 where BaseType=17  group by DocEntry )  t2 on t1.deliveryNo = t2.DocEntry 
                     inner join ORDR t3 on t2.BaseEntry = t3.DocEntry
                     inner join OSLP t4 on t3.SlpCode =t4.SlpCode ";
-            for (int i = 0; i < serialNoList.Count; i++)
-            {
-                serialNoList[i] = "'" + serialNoList[i] + "'";
+                for (int i = 0; i < serialNoList.Count; i++)
+                {
+                    serialNoList[i] = "'" + serialNoList[i] + "'";
+                }
+                var propertyStr = string.Join(',', serialNoList);
+                querySql += $" where t1.manufSN in ({propertyStr})";
+                saleInfoList = await UnitWork.Query<ShipmentCalibration_sql>(querySql).ToListAsync();
             }
-            var propertyStr = string.Join(',', serialNoList);
-            querySql += $" where t1.manufSN in ({propertyStr})";
-            var saleInfoList = await UnitWork.Query<ShipmentCalibration_sql>(querySql).ToListAsync();
             //校准信息
-            var nwcalibase = UnitWork.Find<NwcaliBaseInfo>(c => erpUserIds.Contains(c.OperatorId) && serialNoList.Contains(c.TesterSn)).Select(c => new { c.Issuer,c.TesterSn,c.OperatorId,c.TesterModel}).ToList();
+            var lowGuids = taskObj["data"]["records"].Select(c => c["lowGuid"].ToString()).ToList();
 
+            var nwcalibase = await (from a in UnitWork.Find<PcPlc>(null)
+                                    join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id
+                                    where lowGuids.Contains(a.Guid)
+                                    select new { b.Issuer,b.IssuerId, a.Guid, b.TesterModel }).Distinct().ToListAsync();
             foreach (var item in taskObj["data"]["records"])
             {
                 var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
                 var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
-                var nwcalibaseinfo = item["serialNo"] != null ? null: nwcalibase.Where(c => c.TesterSn == item["serialNo"].ToString() && c.OperatorId == item["userId"].ToString()).FirstOrDefault();
+                var nwcalibaseinfo = item["serialNo"] != null ? null: nwcalibase.Where(c => c.Guid == item["lowGuid"].ToString()).FirstOrDefault();
                 var saleInfo = item["serialNo"] != null ? null: saleInfoList.Where(c => c.TesterSn == item["serialNo"].ToString()).FirstOrDefault();
                 list.Add(new
                 {
@@ -2531,26 +2539,32 @@ namespace OpenAuth.App
                                   where taskIds.Contains(a.TaskId)
                                   select new { b.GeneratorCode, a.TaskId }).ToListAsync();
             //获取销售信息
+            List<ShipmentCalibration_sql> saleInfoList = new List<ShipmentCalibration_sql>();
             var serialNoList = taskObj["data"].Where(c => c["serialNo"] != null).Select(c => c["serialNo"].ToString()).Distinct().ToList();
-            string querySql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
+            if (serialNoList.Count > 0)
+            {
+                string querySql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
                     inner join (SELECT DocEntry,MIN(BaseEntry) as BaseEntry from DLN1 where BaseType=17  group by DocEntry )  t2 on t1.deliveryNo = t2.DocEntry 
                     inner join ORDR t3 on t2.BaseEntry = t3.DocEntry
                     inner join OSLP t4 on t3.SlpCode =t4.SlpCode ";
-            for (int i = 0; i < serialNoList.Count; i++)
-            {
-                serialNoList[i] = "'" + serialNoList[i] + "'";
+                for (int i = 0; i < serialNoList.Count; i++)
+                {
+                    serialNoList[i] = "'" + serialNoList[i] + "'";
+                }
+                var propertyStr = string.Join(',', serialNoList);
+                querySql += $" where t1.manufSN in ({propertyStr})";
+                saleInfoList = await UnitWork.Query<ShipmentCalibration_sql>(querySql).ToListAsync();
             }
-            var propertyStr = string.Join(',', serialNoList);
-            querySql += $" where t1.manufSN in ({propertyStr})";
-            var saleInfoList = await UnitWork.Query<ShipmentCalibration_sql>(querySql).ToListAsync();
-            //校准信息
-            var nwcalibase = UnitWork.Find<NwcaliBaseInfo>(c => erpUserIds.Contains(c.OperatorId) && serialNoList.Contains(c.TesterSn)).Select(c => new { c.Issuer, c.TesterSn, c.OperatorId, c.TesterModel }).ToList();
-
+            var lowGuids = taskObj["data"]["records"].Select(c => c["lowGuid"].ToString()).ToList();
+            var nwcalibase = await (from a in UnitWork.Find<PcPlc>(null)
+                                    join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id
+                                    where lowGuids.Contains(a.Guid)
+                                    select new { b.Issuer, b.IssuerId, a.Guid, b.TesterModel }).Distinct().ToListAsync();
             foreach (var item in taskObj["data"])
             {
                 var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
                 var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
-                var nwcalibaseinfo = item["serialNo"] != null ? null : nwcalibase.Where(c => c.TesterSn == item["serialNo"].ToString() && c.OperatorId == item["userId"].ToString()).FirstOrDefault();
+                var nwcalibaseinfo = item["serialNo"] != null ? null : nwcalibase.Where(c => c.Guid == item["lowGuid"].ToString()).FirstOrDefault();
                 var saleInfo = item["serialNo"] != null ? null : saleInfoList.Where(c => c.TesterSn == item["serialNo"].ToString()).FirstOrDefault();
                 list.Add(new ExportCalibrationReportResp
                 {
