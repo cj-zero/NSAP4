@@ -2410,19 +2410,20 @@ namespace OpenAuth.App
                 result.Message = $"{url},获取人员校准报表接口异常!";
                 return result;
             }
-            var erpUserIds = taskObj["data"].Select(c =>c["userId"].ToString()).Distinct().ToList();
+            result.Count = Convert.ToInt32(taskObj["data"]["total"]);
+            var erpUserIds = taskObj["data"]["records"].Select(c =>c["userId"].ToString()).ToList().Distinct();
             var userList = await (from b in UnitWork.Find<User>(null)
                                   join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
                                   join d in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on c.SecondId equals d.Id
                                   where erpUserIds.Contains(b.Id) && c.Key == Define.USERORG
                                   select new { userName = b.Name, orgName = d.Name,b.Id}).ToListAsync();
-            var taskIds = taskObj["data"].Select(c => c["taskId"].ToString()).Distinct().ToList();
+            var taskIds = taskObj["data"]["records"].Select(c => c["taskId"].ToString()).ToList().Distinct();
             var codelist = await (from a in UnitWork.Find<DeviceCheckTask>(null)
                                   join b in UnitWork.Find<DeviceTestLog>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
                                   where taskIds.Contains(a.TaskId)
                                   select new { b.GeneratorCode, a.TaskId }).ToListAsync();
             //获取销售信息
-            var serialNoList = taskObj["data"].Where(c => c["serialNo"] != null).Select(c => c["serialNo"].ToString()).Distinct().ToList();
+            var serialNoList = taskObj["data"]["records"].Where(c => c["serialNo"] != null).Select(c => c["serialNo"].ToString()).ToList();
             string querySql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
                     inner join (SELECT DocEntry,MIN(BaseEntry) as BaseEntry from DLN1 where BaseType=17  group by DocEntry )  t2 on t1.deliveryNo = t2.DocEntry 
                     inner join ORDR t3 on t2.BaseEntry = t3.DocEntry
@@ -2437,7 +2438,7 @@ namespace OpenAuth.App
             //校准信息
             var nwcalibase = UnitWork.Find<NwcaliBaseInfo>(c => erpUserIds.Contains(c.OperatorId) && serialNoList.Contains(c.TesterSn)).Select(c => new { c.Issuer,c.TesterSn,c.OperatorId,c.TesterModel}).ToList();
 
-            foreach (var item in taskObj["data"])
+            foreach (var item in taskObj["data"]["records"])
             {
                 var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
                 var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
