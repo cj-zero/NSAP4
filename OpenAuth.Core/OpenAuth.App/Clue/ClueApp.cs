@@ -143,7 +143,8 @@ namespace OpenAuth.App
                                         Address1 = b.Address1,
                                         Address2 = b.Address2,
                                         Email = b.Email,
-                                        SlpName = a.CreateUser
+                                        SlpName = a.CreateUser,
+                                        CardCode = a.CardCode
                                     };
             rowcount = queryAllCustomers.Count();
             var datas = queryAllCustomers.Skip((clueListReq.page - 1) * clueListReq.limit).Take(clueListReq.limit).ToList();
