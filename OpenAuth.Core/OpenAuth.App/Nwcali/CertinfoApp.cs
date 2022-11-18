@@ -2301,8 +2301,8 @@ namespace OpenAuth.App
                     hdSpend = item["hdSpend"].ToString(),
                     autoAvgSpend = item["autoAvgSpend"].ToString(),
                     hdAvgSpend = item["hdAvgSpend"].ToString(),
-                    autoChl = item["auto_chl"].ToString(),
-                    hdChl = item["hd_chl"].ToString(),
+                    autoChl = item["autoChl"].ToString(),
+                    hdChl = item["hdChl"].ToString(),
                 });
             }
             result.Data = list;
@@ -2356,8 +2356,8 @@ namespace OpenAuth.App
                     hdSpend = item["hdSpend"].ToString(),
                     autoAvgSpend = item["autoAvgSpend"].ToString(),
                     hdAvgSpend = item["hdAvgSpend"].ToString(),
-                    autoChl = item["auto_chl"].ToString(),
-                    hdChl = item["hd_chl"].ToString(),
+                    autoChl = item["autoChl"].ToString(),
+                    hdChl = item["hdChl"].ToString(),
                 });
             }
             IExporter exporter = new ExcelExporter();
