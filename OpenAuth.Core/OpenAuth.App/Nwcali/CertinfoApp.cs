@@ -2140,7 +2140,6 @@ namespace OpenAuth.App
             string urls = "http://service.neware.cloud/common/DevGuidBySn";
             HttpHelper helper = new HttpHelper(urls);
             List<WmsLowGuidResp> wmsLowGuids = new List<WmsLowGuidResp>();
-            //sn 获取guid
             if (!string.IsNullOrWhiteSpace(req.Sn))
             {
                 var b01List = new List<string>();
@@ -2148,7 +2147,7 @@ namespace OpenAuth.App
                 var wmsAccessToken = _stepVersionApp.WmsAccessToken();
                 if (string.IsNullOrWhiteSpace(wmsAccessToken))
                 {
-                    throw new Exception($"WMS token 获取失败!");
+                    throw new Exception($"WMS token 获取失败  {urls}!");
                 }
                 var datastr = helper.PostAuthentication(b01List.ToArray(), urls, wmsAccessToken);
                 JObject dataObj = JObject.Parse(datastr);
@@ -2197,9 +2196,8 @@ namespace OpenAuth.App
             JObject taskObj = JObject.Parse(taskData);
             if (taskObj == null || taskObj["status"].ToString() != "200")
             {
-                throw new Exception($"数据分析烤机列表接口异常!");
+                throw new Exception($"数据分析烤机列表接口异常check/report!");
             }
-            //guid 获取sn TO DO
             var wmsAccessToken2 = _stepVersionApp.WmsAccessToken();
             if (string.IsNullOrWhiteSpace(wmsAccessToken2))
             {
@@ -2216,7 +2214,7 @@ namespace OpenAuth.App
             }
             catch (Exception ex)
             {
-                throw new Exception($"wms guid获取sn失败! message={ex.Message}");
+                throw new Exception($"wms guid获取sn失败!{url2} message={ex.Message}");
             }
 
             foreach (var item in taskList)
@@ -2253,6 +2251,121 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 校准绩效明细表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> CalibrationPerformanceReport(QueryCalibrationPerformanceReq req)
+        {
+            TableData result = new TableData();
+            List<object> list = new List<object>();
+            string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-report2";
+            HttpHelper helper = new HttpHelper(url);
+            var taskData = helper.Post(new
+            {
+                beginTime = req.StartTime,
+                endTime = req.EndTime,
+                pageSize = req.limit,
+                page = req.page
+            }, url, "", "");
+            JObject taskObj = JObject.Parse(taskData);
+            if (taskObj == null || taskObj["code"].ToString() != "1001")
+            {
+                result.Code = 500;
+                result.Message = $"{url} 校准绩效明细表接口异常!";
+                return result;
+            }
+            result.Count = Convert.ToInt32(taskObj["data"]["total"]);
+            var erpUserIds = taskObj["data"]["records"].Select(c => c["userId"].ToString()).ToList().Distinct();
+            var userList = await (from b in UnitWork.Find<User>(null)
+                                  join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
+                                  join d in UnitWork.Find<Repository.Domain.Org>(null) on c.SecondId equals d.Id
+                                  where erpUserIds.Contains(b.Id) && c.Key == Define.USERORG
+                                  select new { userName = b.Name, orgName = d.Name, b.Id }).ToListAsync();
+            foreach (var item in taskObj["data"]["records"])
+            {
+                var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
+                list.Add(new
+                {
+                    userId = item["userId"].ToString(),
+                    userName = userInfo == null ? "" : userInfo.userName,
+                    orgName = userInfo == null ? "" : userInfo.orgName,
+                    devCount = item["devCount"].ToString(),
+                    taskOk = item["taskOk"].ToString(),
+                    taskNg = item["taskNg"].ToString(),
+                    taskAuto = item["taskAuto"].ToString(),
+                    taskHd = item["taskHd"].ToString(),
+                    devAuto = item["devAuto"].ToString(),
+                    devHd = item["devHd"].ToString(),
+                    autoSpend = item["autoSpend"].ToString(),
+                    hdSpend = item["hdSpend"].ToString(),
+                    autoAvgSpend = item["autoAvgSpend"].ToString(),
+                    hdAvgSpend = item["hdAvgSpend"].ToString(),
+                    autoChl = item["auto_chl"].ToString(),
+                    hdChl = item["hd_chl"].ToString(),
+                });
+            }
+            result.Data = list;
+            return result;
+        }
+
+        /// <summary>
+        /// 导出校准绩效明细表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<byte[]> ExportCalibrationPerformanceReport(QueryCalibrationPerformanceReq req)
+        {
+            TableData result = new TableData();
+            List<CalibrationPerformanceResp> list = new List<CalibrationPerformanceResp>();
+            string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-report2";
+            HttpHelper helper = new HttpHelper(url);
+            var taskData = helper.Post(new
+            {
+                beginTime = req.StartTime,
+                endTime = req.EndTime,
+                pageSize = 500,
+                page =1
+            }, url, "", "");
+            JObject taskObj = JObject.Parse(taskData);
+            if (taskObj == null || taskObj["code"].ToString() != "1001")
+            {
+                throw new Exception($"{url} 校准绩效明细表接口异常!");
+            }
+            var erpUserIds = taskObj["data"]["records"].Select(c => c["userId"].ToString()).ToList().Distinct();
+            var userList = await (from b in UnitWork.Find<User>(null)
+                                  join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
+                                  join d in UnitWork.Find<Repository.Domain.Org>(null) on c.SecondId equals d.Id
+                                  where erpUserIds.Contains(b.Id) && c.Key == Define.USERORG
+                                  select new { userName = b.Name, orgName = d.Name, b.Id }).ToListAsync();
+            foreach (var item in taskObj["data"]["records"])
+            {
+                var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
+                list.Add(new CalibrationPerformanceResp
+                {
+                    userName = userInfo == null ? "" : userInfo.userName,
+                    orgName = userInfo == null ? "" : userInfo.orgName,
+                    devCount = item["devCount"].ToString(),
+                    taskOk = item["taskOk"].ToString(),
+                    taskNg = item["taskNg"].ToString(),
+                    taskAuto = item["taskAuto"].ToString(),
+                    taskHd = item["taskHd"].ToString(),
+                    devAuto = item["devAuto"].ToString(),
+                    devHd = item["devHd"].ToString(),
+                    autoSpend = item["autoSpend"].ToString(),
+                    hdSpend = item["hdSpend"].ToString(),
+                    autoAvgSpend = item["autoAvgSpend"].ToString(),
+                    hdAvgSpend = item["hdAvgSpend"].ToString(),
+                    autoChl = item["auto_chl"].ToString(),
+                    hdChl = item["hd_chl"].ToString(),
+                });
+            }
+            IExporter exporter = new ExcelExporter();
+            var bytes = await exporter.ExportAsByteArray(list);
+            return bytes;
+        }
+
+        /// <summary>
         /// 校准明细报表
         /// </summary>
         /// <param name="req"></param>
@@ -2262,6 +2375,7 @@ namespace OpenAuth.App
             TableData result = new TableData();
             List<object> list = new List<object>();
             List<string> userIds = new List<string>();
+            List<string> sns = new List<string>();
             if (!string.IsNullOrWhiteSpace(req.OrgId))
             {
                 var query = await UnitWork.Find<Relevance>(null).Where(c => c.Key == Define.USERORG && c.SecondId == req.OrgId).Select(c => c.FirstId).ToListAsync();
@@ -2272,37 +2386,76 @@ namespace OpenAuth.App
                 var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator)).Select(c => c.Id).ToListAsync();
                 userIds.AddRange(query);
             }
+            if (req.SalesOrder>0)
+            {
+                string strSql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
+                    inner join (SELECT DocEntry,MIN(BaseEntry) as BaseEntry from DLN1 where BaseType=17  group by DocEntry )  t2 on t1.deliveryNo = t2.DocEntry 
+                    inner join ORDR t3 on t2.BaseEntry = t3.DocEntry
+                    inner join OSLP t4 on t3.SlpCode =t4.SlpCode where t3.DocEntry="+ req.SalesOrder;
+                var shipmentCalibration = await UnitWork.Query<ShipmentCalibration_sql>(strSql).ToListAsync();
+                sns = shipmentCalibration.Select(c => c.TesterSn).ToList();
+            }
             var ids = userIds.Distinct();
-            string url = "http://121.37.222.129:50001/api/Calibration/c-report";
+            string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-report-page";
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
+                sns=sns,
                 passportIDs = ids,
                 beginTime = req.StartTime,
-                endTime = req.EndTime
+                endTime = req.EndTime,
+                pageSize=req.limit,
+                page=req.page,
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
             if (taskObj == null || taskObj["code"].ToString() != "1001")
             {
                 result.Code = 500;
-                result.Message = $"获取人员校准报表接口异常!";
+                result.Message = $"{url},获取人员校准报表接口异常!";
                 return result;
             }
-            var erpUserIds = taskObj["data"].Select(c =>c["userId"].ToString()).Distinct().ToList();
+            result.Count = Convert.ToInt32(taskObj["data"]["total"]);
+            var erpUserIds = taskObj["data"]["records"].Select(c =>c["userId"].ToString()).ToList().Distinct();
             var userList = await (from b in UnitWork.Find<User>(null)
                                   join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
                                   join d in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on c.SecondId equals d.Id
                                   where erpUserIds.Contains(b.Id) && c.Key == Define.USERORG
                                   select new { userName = b.Name, orgName = d.Name,b.Id}).ToListAsync();
-            var taskIds = taskObj["data"].Select(c => c["taskId"].ToString()).Distinct().ToList();
+            var taskIds = taskObj["data"]["records"].Select(c => c["taskId"].ToString()).ToList().Distinct();
             var codelist = await (from a in UnitWork.Find<DeviceCheckTask>(null)
                                   join b in UnitWork.Find<DeviceTestLog>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
                                   where taskIds.Contains(a.TaskId)
                                   select new { b.GeneratorCode, a.TaskId }).ToListAsync();
-            foreach (var item in taskObj["data"])
+            //获取销售信息
+            List<ShipmentCalibration_sql> saleInfoList = new List<ShipmentCalibration_sql>();
+            var serialNoList = taskObj["data"]["records"].Where(c => c["serialNo"] != null).Select(c => c["serialNo"].ToString()).ToList();
+            if (serialNoList.Count>0)
+            {
+                string querySql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
+                    inner join (SELECT DocEntry,MIN(BaseEntry) as BaseEntry from DLN1 where BaseType=17  group by DocEntry )  t2 on t1.deliveryNo = t2.DocEntry 
+                    inner join ORDR t3 on t2.BaseEntry = t3.DocEntry
+                    inner join OSLP t4 on t3.SlpCode =t4.SlpCode ";
+                for (int i = 0; i < serialNoList.Count; i++)
+                {
+                    serialNoList[i] = "'" + serialNoList[i] + "'";
+                }
+                var propertyStr = string.Join(',', serialNoList);
+                querySql += $" where t1.manufSN in ({propertyStr})";
+                saleInfoList = await UnitWork.Query<ShipmentCalibration_sql>(querySql).ToListAsync();
+            }
+            //校准信息
+            var lowGuids = taskObj["data"]["records"].Select(c => c["lowGuid"].ToString()).ToList();
+
+            var nwcalibase = await (from a in UnitWork.Find<PcPlc>(null)
+                                    join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id
+                                    where lowGuids.Contains(a.Guid)
+                                    select new { b.Issuer,b.IssuerId, a.Guid, b.TesterModel }).Distinct().ToListAsync();
+            foreach (var item in taskObj["data"]["records"])
             {
                 var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
                 var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
+                var nwcalibaseinfo = item["serialNo"] != null ? null: nwcalibase.Where(c => c.Guid == item["lowGuid"].ToString()).FirstOrDefault();
+                var saleInfo = item["serialNo"] != null ? null: saleInfoList.Where(c => c.TesterSn == item["serialNo"].ToString()).FirstOrDefault();
                 list.Add(new
                 {
                     userId = item["userId"].ToString(),
@@ -2319,7 +2472,14 @@ namespace OpenAuth.App
                     duration = item["duration"].ToString(),
                     userName = userInfo == null ? "" : userInfo.userName,
                     orgName = userInfo == null ? "" : userInfo.orgName,
-                    generatorCode = codeInfo == null ? "" : codeInfo.GeneratorCode
+                    generatorCode = codeInfo == null ? "" : codeInfo.GeneratorCode,
+                    taskType= item["taskType"].ToString(),
+                    serialNo= item["serialNo"]==null?"": item["serialNo"].ToString(),
+                    salesOrder = saleInfo==null?"": saleInfo.SalesOrder.ToString(),
+                    Salesman = saleInfo == null ? "" : saleInfo.Salesman,
+                    DeliveryNumber = saleInfo == null ? "" : saleInfo.DeliveryNumber.ToString(),
+                    Issuer= nwcalibaseinfo==null?"": nwcalibaseinfo.Issuer,
+                    TesterModel= nwcalibaseinfo == null ? "" : nwcalibaseinfo.TesterModel
                 });
             }
             result.Data = list;
@@ -2336,6 +2496,7 @@ namespace OpenAuth.App
         {
             List<ExportCalibrationReportResp> list = new List<ExportCalibrationReportResp>();
             List<string> userIds = new List<string>();
+            List<string> sns = new List<string>();
             if (!string.IsNullOrWhiteSpace(req.OrgId))
             {
                 var query = await UnitWork.Find<Relevance>(null).Where(c => c.Key == Define.USERORG && c.SecondId == req.OrgId).Select(c => c.FirstId).ToListAsync();
@@ -2346,11 +2507,21 @@ namespace OpenAuth.App
                 var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator)).Select(c => c.Id).ToListAsync();
                 userIds.AddRange(query);
             }
+            if (req.SalesOrder > 0)
+            {
+                string strSql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
+                    inner join (SELECT DocEntry,MIN(BaseEntry) as BaseEntry from DLN1 where BaseType=17  group by DocEntry )  t2 on t1.deliveryNo = t2.DocEntry 
+                    inner join ORDR t3 on t2.BaseEntry = t3.DocEntry
+                    inner join OSLP t4 on t3.SlpCode =t4.SlpCode where t3.DocEntry=" + req.SalesOrder;
+                var shipmentCalibration = await UnitWork.Query<ShipmentCalibration_sql>(strSql).ToListAsync();
+                sns = shipmentCalibration.Select(c => c.TesterSn).ToList();
+            }
             var ids = userIds.Distinct();
-            string url = "http://121.37.222.129:50001/api/Calibration/c-report";
+            string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-report";
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
+                sns=sns,
                 passportIDs = ids,
                 beginTime = req.StartTime,
                 endTime = req.EndTime
@@ -2371,10 +2542,34 @@ namespace OpenAuth.App
                                   join b in UnitWork.Find<DeviceTestLog>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
                                   where taskIds.Contains(a.TaskId)
                                   select new { b.GeneratorCode, a.TaskId }).ToListAsync();
+            //获取销售信息
+            List<ShipmentCalibration_sql> saleInfoList = new List<ShipmentCalibration_sql>();
+            var serialNoList = taskObj["data"].Where(c => c["serialNo"] != null).Select(c => c["serialNo"].ToString()).Distinct().ToList();
+            if (serialNoList.Count > 0)
+            {
+                string querySql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
+                    inner join (SELECT DocEntry,MIN(BaseEntry) as BaseEntry from DLN1 where BaseType=17  group by DocEntry )  t2 on t1.deliveryNo = t2.DocEntry 
+                    inner join ORDR t3 on t2.BaseEntry = t3.DocEntry
+                    inner join OSLP t4 on t3.SlpCode =t4.SlpCode ";
+                for (int i = 0; i < serialNoList.Count; i++)
+                {
+                    serialNoList[i] = "'" + serialNoList[i] + "'";
+                }
+                var propertyStr = string.Join(',', serialNoList);
+                querySql += $" where t1.manufSN in ({propertyStr})";
+                saleInfoList = await UnitWork.Query<ShipmentCalibration_sql>(querySql).ToListAsync();
+            }
+            var lowGuids = taskObj["data"].Select(c => c["lowGuid"].ToString()).ToList();
+            var nwcalibase = await (from a in UnitWork.Find<PcPlc>(null)
+                                    join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id
+                                    where lowGuids.Contains(a.Guid)
+                                    select new { b.Issuer, b.IssuerId, a.Guid, b.TesterModel }).Distinct().ToListAsync();
             foreach (var item in taskObj["data"])
             {
                 var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
                 var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
+                var nwcalibaseinfo = item["serialNo"] != null ? null : nwcalibase.Where(c => c.Guid == item["lowGuid"].ToString()).FirstOrDefault();
+                var saleInfo = item["serialNo"] != null ? null : saleInfoList.Where(c => c.TesterSn == item["serialNo"].ToString()).FirstOrDefault();
                 list.Add(new ExportCalibrationReportResp
                 {
                     taskSubId = item["taskSubId"].ToString(),
@@ -2387,7 +2582,15 @@ namespace OpenAuth.App
                     duration = item["duration"].ToString(),
                     userName = userInfo == null ? "" : userInfo.userName,
                     orgName = userInfo == null ? "" : userInfo.orgName,
-                    generatorCode = codeInfo == null ? "" : codeInfo.GeneratorCode
+                    generatorCode = codeInfo == null ? "" : codeInfo.GeneratorCode,
+                    taskType = item["taskType"].ToString()=="0"?"默认":(item["taskType"].ToString() == "1"? "自动校准" : "手动校准"),
+                    TesterModel = nwcalibaseinfo == null ? "" : nwcalibaseinfo.TesterModel,
+                    serialNo = item["serialNo"] == null ? "" : item["serialNo"].ToString(),
+                    assetInfo = item["assetInfo"].ToString(),
+                    Issuer = nwcalibaseinfo == null ? "" : nwcalibaseinfo.Issuer,
+                    salesOrder = saleInfo == null ? "" : saleInfo.SalesOrder.ToString(),
+                    DeliveryNumber = saleInfo == null ? "" : saleInfo.DeliveryNumber.ToString(),
+                    Salesman = saleInfo == null ? "" : saleInfo.Salesman
                 });
             }
             IExporter exporter = new ExcelExporter();
