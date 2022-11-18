@@ -162,5 +162,15 @@ namespace OpenAuth.App.Request
         /// 售前需求申请流程附件
         /// </summary>
         public List<BeforeSaleFiles> BeforeSaleFiles { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int? ServiceOrderId { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int? U_SAP_ID { get; set; }
     }
 }
