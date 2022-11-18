@@ -812,32 +812,59 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
         }
 
 
-        public List<DataTable> DataView(DateTime? date)
+        public List<DataTable> DataView(string date)
         {
             List<DataTable> list = new List<DataTable>();
-           string strSql = string.Format(@" SELECT
+            DateTime start = Convert.ToDateTime(date + "-01");
+            DateTime end = start.AddMonths(1);
+            //数据概览
+            string strSql = string.Format(@" SELECT
                             convert(varchar(100),A.DT,23) '日期',
                             ISNULL(T.NUM,'0') '分配数',
                             ISNULL(T1.NUM,'0') '完成数'
                             FROM 
-                            (select DATEADD(D,NUMBER,'2022-10-01') DT
-                             FROM master..spt_values
-                             WHERE type='P'
-                             AND DATEADD(D,NUMBER,'2022-10-01')<='2022-10-31'
-                            ) A
-                            LEFT JOIN
-                            (SELECT AssignTime AS date,count(Number) AS num 
+                            (select DATEADD(D,NUMBER,'" + start + "') DT FROM master..spt_values WHERE type='P' AND DATEADD(D,NUMBER, '" + start + "') < '" + end + "') A LEFT JOIN");
+            strSql += string.Format(@"(SELECT AssignTime AS date,count(Number) AS num 
                             from  TaskView5
-                            where  AssignTime >= '2022-10-01' AND AssignTime <= '2022-10-31' 
-                            group by AssignTime
-                            ) T ON T.date = A.DT
-                            LEFT JOIN
-                            (SELECT CompleteTime date,count(Number) AS num 
+                            where  AssignTime >= '" + start + "' AND AssignTime < '" + end + "' group by AssignTime ) T ON T.date = A.DT LEFT JOIN");
+            strSql += string.Format(@"  (SELECT CompleteTime date,count(Number) AS num 
                             from  TaskView5
-                            where complete  =1 and  CompleteTime >= '2022-10-01' AND CompleteTime <= '2022-10-31' 
-                            group by CompleteTime
-                            ) T1 ON T1.date = A.DT");
-            list[0] = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null);
+                            where complete  =1 and  CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "' group by CompleteTime) T1 ON T1.date = A.DT");
+            list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+            //难度
+            strSql = string.Format(@" select  name,
+                            count(1) as value
+                            from (select fld006314 name from TaskView5 where StartDate >= '" + start + "' AND StartDate < '" + end + "') t group by name");
+            list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+            //是否延期
+            strSql = string.Format(@"
+                            select  name,
+                            count(1) as value
+                            from (select (case when DueDays>=0 then N'按时完成' else N'延期完成' end ) name from TaskView5 where CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "') t group by name");
+            list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+            //进度
+            strSql = string.Format(@"
+                            select  name,
+                            count(1) as value
+                            from (select Status name from TaskView5 where CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "') t group by name");
+            list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+
+
+            //评分明细表
+            var timeList = date.Split('.');
+            string timeStr = timeList[0] + "年" + timeList[1] + "月";
+            var NumberList = UnitWork.Find<TaskView>(q => q.Month == timeStr).Select(q => q.Number).ToList();
+            string str = String.Join(",", NumberList.Select(x => $"'{x}'"));
+            strSql = string.Format(@"select
+                                     name
+                                     ,count(case when t.fld006314 = N'一般' then 1 else null end)*0.5 as dinandu
+                                      ,count(case when t.fld006314 = N'中等' then 1 else null end) as zhongnandu
+                                      ,count(case when t.fld006314 = N'较高' then 1 else null end)*2 as gaonandu
+                                      ,count(case when t.fld006314 = N'超高' then 1 else null end)*3 as chaogaonandu
+                                      ,count(case when t.DueDays >= 0 then 1 else null end) as anshi
+                                      ,count(case when t.DueDays < 0 then 1 else null end) as yanqi
+                                     from(select AssignedTo name, fld006314, DueDays  from TaskView5 where Number in (" + str + ")) t group by name");
+            list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
 
             return list;
         }
