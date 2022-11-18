@@ -100,8 +100,12 @@
         /// </summary>
         public string EnterpriseIds { get; set; }
         /// <summary>
-        /// 
+        /// 边缘计算数据分析业务接口地址
         /// </summary>
         public string AnalyticsUrl { get; set; }
+        /// <summary>
+        /// 边缘计算数据分析报表接口地址
+        /// </summary>
+        public string AnalyticsReportUrl { get; set; }
     }
 }

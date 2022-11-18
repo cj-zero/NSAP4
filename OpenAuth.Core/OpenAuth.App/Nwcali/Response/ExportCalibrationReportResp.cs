@@ -44,5 +44,29 @@ namespace OpenAuth.App.Nwcali.Response
 
         [ExporterHeader(DisplayName = "校准结果")]
         public string conclusion { get; set; }
+
+        [ExporterHeader(DisplayName = "校准动作")]
+        public string taskType { get; set; }
+
+        [ExporterHeader(DisplayName = "设备型号")]
+        public string TesterModel { get; set; }
+
+        [ExporterHeader(DisplayName = "序列号")]
+        public string serialNo { get; set; }
+
+        [ExporterHeader(DisplayName = "校准器")]
+        public string assetInfo { get; set; }
+
+        [ExporterHeader(DisplayName = "出证人")]
+        public string Issuer { get; set; }
+
+        [ExporterHeader(DisplayName = "销售单号")]
+        public string salesOrder { get; set; }
+
+        [ExporterHeader(DisplayName = "销售交货单号")]
+        public string DeliveryNumber { get; set; }
+
+        [ExporterHeader(DisplayName = "销售员")]
+        public string Salesman { get; set; }
     }
 }
