@@ -42,10 +42,16 @@ namespace OpenAuth.App.Nwcali.Response
         [ExporterHeader(DisplayName = "手动校准耗时(秒)")]
         public string hdSpend { get; set; }
 
-        [ExporterHeader(DisplayName = "自动校准平均耗时(秒/台)")]
+        [ExporterHeader(DisplayName = "自动校准平均耗时(秒/通道)")]
         public string autoAvgSpend { get; set; }
 
-        [ExporterHeader(DisplayName = "手动校准平均耗时(秒/台)")]
+        [ExporterHeader(DisplayName = "手动校准平均耗时(秒/通道)")]
         public string hdAvgSpend { get; set; }
+
+        [ExporterHeader(DisplayName = "自动校准通道数")]
+        public string autoChl { get; set; }
+
+        [ExporterHeader(DisplayName = "手动校准通道数")]
+        public string hdChl { get; set; }
     }
 }
