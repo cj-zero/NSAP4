@@ -2415,6 +2415,11 @@ namespace OpenAuth.App
                 return result;
             }
             result.Count = Convert.ToInt32(taskObj["data"]["total"]);
+            if (result.Count<=0)
+            {
+                result.Data = list;
+                return result;
+            }
             var erpUserIds = taskObj["data"]["records"].Select(c =>c["userId"].ToString()).ToList().Distinct();
             var userList = await (from b in UnitWork.Find<User>(null)
                                   join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
@@ -2428,7 +2433,7 @@ namespace OpenAuth.App
                                   select new { b.GeneratorCode, a.TaskId }).ToListAsync();
             //获取销售信息
             List<ShipmentCalibration_sql> saleInfoList = new List<ShipmentCalibration_sql>();
-            var serialNoList = taskObj["data"]["records"].Where(c => c["serialNo"] != null).Select(c => c["serialNo"].ToString()).ToList();
+            var serialNoList = taskObj["data"]["records"].Where(c => c["serialNo"] != null).Select(c => c["serialNo"].ToString()).Distinct().ToList();
             if (serialNoList.Count>0)
             {
                 string querySql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
@@ -2454,8 +2459,8 @@ namespace OpenAuth.App
             {
                 var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
                 var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
-                var nwcalibaseinfo = item["serialNo"] != null ? null: nwcalibase.Where(c => c.Guid == item["lowGuid"].ToString()).FirstOrDefault();
-                var saleInfo = item["serialNo"] != null ? null: saleInfoList.Where(c => c.TesterSn == item["serialNo"].ToString()).FirstOrDefault();
+                var nwcalibaseinfo = item["serialNo"] == null ? null: nwcalibase.Where(c => c.Guid == item["lowGuid"].ToString()).FirstOrDefault();
+                var saleInfo = item["serialNo"] == null ? null: saleInfoList.Where(c => c.TesterSn == item["serialNo"].ToString()).FirstOrDefault();
                 list.Add(new
                 {
                     userId = item["userId"].ToString(),
@@ -2531,6 +2536,10 @@ namespace OpenAuth.App
             {
                 throw new Exception($"获取人员校准报表接口异常!");
             }
+            if (taskObj["data"].Count()<=0)
+            {
+                throw new Exception($"暂无数据!");
+            }
             var erpUserIds = taskObj["data"].Select(c => c["userId"].ToString()).Distinct().ToList();
             var userList = await (from b in UnitWork.Find<User>(null)
                                   join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
@@ -2568,8 +2577,8 @@ namespace OpenAuth.App
             {
                 var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
                 var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
-                var nwcalibaseinfo = item["serialNo"] != null ? null : nwcalibase.Where(c => c.Guid == item["lowGuid"].ToString()).FirstOrDefault();
-                var saleInfo = item["serialNo"] != null ? null : saleInfoList.Where(c => c.TesterSn == item["serialNo"].ToString()).FirstOrDefault();
+                var nwcalibaseinfo = item["serialNo"] == null ? null : nwcalibase.Where(c => c.Guid == item["lowGuid"].ToString()).FirstOrDefault();
+                var saleInfo = item["serialNo"] == null ? null : saleInfoList.Where(c => c.TesterSn == item["serialNo"].ToString()).FirstOrDefault();
                 list.Add(new ExportCalibrationReportResp
                 {
                     taskSubId = item["taskSubId"].ToString(),
