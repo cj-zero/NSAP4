@@ -1,7 +1,11 @@
 ﻿using Infrastructure;
+using Infrastructure.Export;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using NPOI.HPSF;
 using OpenAuth.App.ClientRelation;
+using OpenAuth.App.Clue.ModelDto;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
 using OpenAuth.Repository;
@@ -12,9 +16,13 @@ using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Reactive.Joins;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace OpenAuth.App.Material
 {
@@ -172,6 +180,98 @@ namespace OpenAuth.App.Material
             return result;
         }
 
+
+        /// <summary>
+        /// 考勤柱状图数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<DutyChartResponse> DutyChartUtility(DutyChartRequest req)
+        {
+            DutyChartResponse dcr = new DutyChartResponse();
+            // get due time personals
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("select Owner,OwnerId,count(Number) as Total ,sum(case when Complete = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  duedate  >= '2022-10-01' AND duedate  <= '2022-10-31' group by Owner ");
+            var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(),CommandType.Text);
+            StringBuilder strFSql = new StringBuilder();
+            strFSql.AppendFormat("select Owner,OwnerId,count(Number) as Total ,sum(case when Complete = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  CompleteTime  >= '2022-10-01' AND CompleteTime  <= '2022-10-31' group by Owner ");
+            var personalFList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
+            // get personals with their level for which the qualified line and excel line needed
+            var personalNames = personalAssignList.Select(u => u.Owner).ToList();
+            var personalFNames = personalFList.Select(u => u.Owner).ToList();
+            StringBuilder strSqlbind = new StringBuilder();
+            StringBuilder strSqlFbind = new StringBuilder();
+            strSqlbind.AppendFormat("select * from manageaccountbind u  where LOCATE(u.MName , \"{0}\")  > 0  and u.DutyFlag = 1 and  Level is not null ", JsonConvert.SerializeObject(personalNames).Replace(@"""", ""));
+            strSqlFbind.AppendFormat("select * from manageaccountbind u  where LOCATE(u.MName , \"{0}\")  > 0  and u.DutyFlag = 1 and  Level is not null ", JsonConvert.SerializeObject(personalFNames).Replace(@"""", ""));
+            var erp4BindList = UnitWork.ExcuteSql<ManageAccountBind>(ContextType.DefaultContextType, strSqlbind.ToString(), CommandType.Text, null).ToList();
+            var erp4BindFList = UnitWork.ExcuteSql<ManageAccountBind>(ContextType.DefaultContextType, strSqlFbind.ToString(), CommandType.Text, null).ToList();
+            var legitPersonalNameList = erp4BindList.Select(u => u.MName).ToList();
+            var legitPersonalNameFList = erp4BindFList.Select(u => u.MName).ToList();
+            var legitPersonals = personalAssignList.Where(u => legitPersonalNameList.Contains(u.Owner)).ToList();
+            var legitFPersonals = personalFList.Where(u => legitPersonalNameFList.Contains(u.Owner)).ToList();
+            //concat data and order as the will
+            dcr.XData = legitPersonals.Select(a => a.Owner).ToList();
+            SerieData serieRuleQualified = new SerieData();
+            serieRuleQualified.Name = "合格件数";
+            SerieData serieRuleExcel = new SerieData();
+            serieRuleExcel.Name = "满分件数";
+            SerieData serieDataTotal = new SerieData();
+            serieDataTotal.Name = "指派任务数";
+            SerieData serieDataComplete = new SerieData();
+            serieDataComplete.Name = "已完成数";
+            foreach (var xitem in dcr.XData)
+            {
+                var bindLevel = erp4BindList.Where(a => a.MName == xitem).FirstOrDefault();
+                if (bindLevel!=null)
+                {
+                    if (bindLevel.Level == "1")
+                    {
+                        serieRuleQualified.SerieVal.Add(20);
+                        serieRuleExcel.SerieVal.Add(30);
+                    }
+                    if (bindLevel.Level == "2")
+                    {
+                        serieRuleQualified.SerieVal.Add(15);
+                        serieRuleExcel.SerieVal.Add(25);
+                    }
+                    if (bindLevel.Level == "3")
+                    {
+                        serieRuleQualified.SerieVal.Add(10);
+                        serieRuleExcel.SerieVal.Add(15);
+                    }
+                }
+                serieDataTotal.SerieVal.Add(legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault().Total);
+                serieDataTotal.SerieVal.Add(legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault().CompleteCount);
+            }
+            dcr.YData.Add(serieRuleQualified);
+            dcr.YData.Add(serieRuleExcel);
+            dcr.YData.Add(serieDataTotal);
+            dcr.YData.Add(serieDataComplete);
+            return dcr;
+        }
+
+        /// <summary>
+        /// 评分表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<RateTableResponse> RateTableUtility(DutyChartRequest req)
+        {
+            RateTableResponse rtr = new RateTableResponse();
+
+            return rtr;
+        }
+
+        /// <summary>
+        /// 导出评分表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<byte[]> ExportRateTableUtility(List<RateTableExport> req)
+        {
+            return await ExportAllHandler.ExporterExcel(req);
+            //return File(ExportAllHandler.ExporterExcel(req), "application/octet-stream", "test.xlsx");
+        }
     }
 
 }

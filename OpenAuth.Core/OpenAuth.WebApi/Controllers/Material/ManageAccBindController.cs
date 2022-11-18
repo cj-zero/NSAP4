@@ -6,6 +6,7 @@ using OpenAuth.App.Material;
 using System.Threading.Tasks;
 using System;
 using OpenAuth.Repository.Domain.View;
+using System.Collections.Generic;
 
 namespace OpenAuth.WebApi.Controllers.Material
 {
@@ -15,7 +16,7 @@ namespace OpenAuth.WebApi.Controllers.Material
     [Route("api/Material/[controller]/[action]")]
     [ApiController]
     [ApiExplorerSettings(GroupName = "Material")]
-    public class ManageAccBindController : ControllerBase
+    public class ManageAccBindController :  Controller
     {
         private readonly ManageAccBindApp _app;
         /// <summary>
@@ -94,6 +95,42 @@ namespace OpenAuth.WebApi.Controllers.Material
 
             return result;
         }
+
+        /// <summary>
+        /// 考勤柱状图数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<DutyChartResponse>> DutyChartUtility([FromBody] DutyChartRequest req)
+        {
+            var result = new Response<DutyChartResponse>();
+            try
+            {
+                result.Result = await _app.DutyChartUtility(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 导出评分表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<IActionResult> ExportRateTableUtility([FromBody] RateTableReq req)
+        {
+            var data = await _app.ExportRateTableUtility(req.texports);
+
+            return File(data, "application/vnd.ms-excel");
+        }
+
 
 
     }
