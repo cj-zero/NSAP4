@@ -395,6 +395,19 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null);
         }
+
+        /// <summary>
+        /// 统计分析页面
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        [HttpGet]
+        public List<DataTable> DataView(string date)
+        {
+            return _app.DataView(date);
+
+        }
         #endregion
     }
 }
