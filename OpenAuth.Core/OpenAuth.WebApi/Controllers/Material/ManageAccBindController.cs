@@ -7,6 +7,11 @@ using System.Threading.Tasks;
 using System;
 using OpenAuth.Repository.Domain.View;
 using System.Collections.Generic;
+using Magicodes.ExporterAndImporter.Core;
+using Magicodes.ExporterAndImporter.Excel;
+using System.IO;
+using Newtonsoft.Json.Linq;
+using Magicodes.ExporterAndImporter.Core.Models;
 
 namespace OpenAuth.WebApi.Controllers.Material
 {
@@ -128,9 +133,24 @@ namespace OpenAuth.WebApi.Controllers.Material
         {
             var data = await _app.ExportRateTableUtility(req.texports);
 
-            return File(data, "application/vnd.ms-excel");
+            return File(data, "application/octet-stream","Rate.xlsx");
         }
 
+        /// <summary>
+        /// 导出评分明细表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<IActionResult> ExportRateDetailTableUtility([FromBody] DetailExportData req)
+        {
+            IExportFileByTemplate exporter = new ExcelExporter();
+            var fileName = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "DutyDetail.xlsx");
+            //var exportData = new DetailExportData();
+            //exportData.detports.Add(new DetailExport {  Name="jack"});
+            var data =  await exporter.ExportBytesByTemplate(req, fileName);
+            return File(data, "application/octet-stream", "RateDetail.xlsx");
+        }
 
 
     }

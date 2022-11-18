@@ -1,5 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.Export;
+using Magicodes.ExporterAndImporter.Core;
+using Magicodes.ExporterAndImporter.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -23,6 +25,7 @@ using System.Reactive.Joins;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+
 
 namespace OpenAuth.App.Material
 {
@@ -272,6 +275,8 @@ namespace OpenAuth.App.Material
             return await ExportAllHandler.ExporterExcel(req);
             //return File(ExportAllHandler.ExporterExcel(req), "application/octet-stream", "test.xlsx");
         }
+
+
     }
 
 }
