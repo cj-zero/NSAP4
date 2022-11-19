@@ -135,6 +135,10 @@ namespace OpenAuth.App.PayTerm
                                                 }
                                             }
                                         }
+                                        else
+                                        {
+                                            filterStr.Append("false");
+                                        }
 
                                         break;
                                     case "Flag":

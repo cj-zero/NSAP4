@@ -1744,7 +1744,8 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 PayBefShip = !string.IsNullOrEmpty(order.PayBefShip) ? order.PayBefShip : "0.0",//发货前付
                 GoodsToPro = !string.IsNullOrEmpty(order.GoodsToPro) ? order.GoodsToPro : "0.0",//货到付百分比
                 DocCur = order.DocCur,
-                U_ERPFrom = "5",//来源4.0系统
+                U_ERPFrom = !string.IsNullOrEmpty(order.U_ERPFrom) ? order.U_ERPFrom : "5",//来源4.0系统
+                U_EshopNo = !string.IsNullOrEmpty(order.U_EshopNo) ? order.U_EshopNo : "",
                 DocDate = order.DocDate.ToString(),
                 DocDueDate = order.DocDueDate.ToString(),
                 DocRate = order.DocRate.ToString(),
