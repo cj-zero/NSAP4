@@ -23,7 +23,7 @@ namespace OpenAuth.App.Serve.Request
         public DateTime? EndDate { get; set; }
 
         /// <summary>
-        /// 单据类型 0=全部 1=代理 2=报销 3=结算 4=工资 5=责任
+        /// 单据类型 0=全部 1=提成 2=报销 3=结算/代理 4=工资 5=责任
         /// </summary>
         public int? OrderType { get; set; }
 

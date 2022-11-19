@@ -11,6 +11,7 @@ using Infrastructure.Export;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NStandard;
 using OpenAuth.App.Interface;
@@ -3212,9 +3213,11 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
             List<HistoryDetailForUserResp> list = new List<HistoryDetailForUserResp>();
+
+            decimal commissionMoney = 0, reimburseMoney = 0, outsourcMoney = 0, wagesMoney= 0,blameBelongMoney = 0;
             if (req.OrderType == 0 || req.OrderType == 1)
             {
-                #region 提成/代理
+                #region 提成
                 var CommissionInfos = from a in UnitWork.Find<CommissionOrder>(r => req.CreateUserId == r.CreateUserId && r.ApprovalStatus >= 3)
                                .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
                                .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
@@ -3233,6 +3236,7 @@ namespace OpenAuth.App
                                           //  c.ActivityName
                                       };
                 #endregion
+                commissionMoney = CommissionInfos.Sum(a => (decimal)a.TotalMoney);
                 list.AddRange(CommissionInfos);
             }
             if (req.OrderType == 0   || req.OrderType == 2)
@@ -3255,13 +3259,15 @@ namespace OpenAuth.App
                                          StatusName = a.RemburseStatus == 9 ? "已支付" : "待支付"
                                      };
                 #endregion
+                reimburseMoney = ReimburseInfos.Sum(a => (decimal)a.TotalMoney);
+
                 list.AddRange(ReimburseInfos);
             }
          
 
             if (req.OrderType == 0 || req.OrderType == 3)
             {
-                #region 结算
+                #region 结算/代理
                 var OutsourcInfos = (from a in UnitWork.Find<Outsourc>(r => req.CreateUserId == r.CreateUserId)
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
@@ -3301,6 +3307,7 @@ namespace OpenAuth.App
                 }
                 #endregion
                 list.AddRange(OutsourcInfos);
+                outsourcMoney = OutsourcInfos.Sum(a => (decimal)a.TotalMoney);
             }
 
             if (req.OrderType == 0 || req.OrderType == 4)
@@ -3316,7 +3323,11 @@ namespace OpenAuth.App
                     Wages = Wages.Where(a => a.PayTime <= req.EndDate).ToList();
                 }
                 list.AddRange(Wages);
+                wagesMoney = Wages.Sum(a => (decimal)a.TotalMoney);
             }
+            var totalMoney = list.Sum(a => a.TotalMoney);
+
+
 
            result.Count =list.Count(); 
             list = list.OrderByDescending(a => a.PayTime).Skip((req.page - 1) * req.limit)
@@ -3333,7 +3344,22 @@ namespace OpenAuth.App
                     item.CustomerName = first.CustomerName;
                 }
             }
-            result.Data = list;
+
+            var detail = new
+            {
+                commissionMoney = commissionMoney,
+                reimburseMoney = reimburseMoney,
+                outsourcMoney = outsourcMoney,
+                wagesMoney = wagesMoney,
+                blameBelongMoney = blameBelongMoney,
+                totalMoney = totalMoney,
+            };
+            //decimal commissionMonery, reimburseMonery, outsourcMonery, wagesMonery;
+            //decimal blameBelongMonery = 0;
+            result.Data = new { 
+                data =list,
+                detail =detail,
+            };
             return result;
         }
         public List<HistoryDetailForUserResp> GetWages(string CreateUserId)
@@ -3350,15 +3376,16 @@ namespace OpenAuth.App
             var nsapUser = UnitWork.Find<NsapUserMap>(a => CreateUserId == a.UserID).FirstOrDefault();
             var nsapUserId = (uint)nsapUser?.NsapUserId;
 
-            var detail = UnitWork.Find<base_user_detail>(a => nsapUserId == a.user_id).FirstOrDefault();
-
+            var detail = UnitWork.Find<base_user_detail>(a => nsapUserId == a.user_id).Select(a => a.full_salary).FirstOrDefault();
+            var monery = DeSerialize(detail)?.conversion_wages.ToDecimal();
 
             for (DateTime i = date; i < DateTime.Now; i= i.AddMonths(1))
             {
                 HistoryDetailForUserResp info = new HistoryDetailForUserResp();
                 info.Type = 4;
                 info.PayTime = i;
-                info.TotalMoney = DeSerialize(detail?.full_salary)?.conversion_wages.ToDecimal();//工资
+                info.TotalMoney = monery??0;//工资
+
                 list.Add(info);
             }
             return list;
