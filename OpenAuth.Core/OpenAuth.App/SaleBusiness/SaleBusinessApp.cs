@@ -443,6 +443,20 @@ namespace OpenAuth.App.SaleBusiness
             customerBusiness.Url = "";
             return customerBusiness;
         }
+
+        /// <summary>
+        /// 获取冻结客户和将要冻结的客户数量
+        /// </summary>
+        /// <returns>返回客户数量</returns>
+        public async Task<TableData> GetFreezeCustomer()
+        {
+            var result = new TableData();
+            int willFreeze = (await UnitWork.Find<PayWillFreezeCustomer>(null).ToListAsync()).Count();
+            int freeze = (await UnitWork.Find<PayFreezeCustomer>(null).ToListAsync()).Count();
+            result.Data = new { WillFreezeCount = willFreeze, FreezeCount = freeze };
+            result.Message = "获取成功";
+            return result;
+        }
         #endregion
 
         #region 销售状态提醒

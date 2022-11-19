@@ -189,6 +189,13 @@ namespace OpenAuth.Repository
         public virtual DbSet<PayTermSet> paytermset { get; set; }
         public virtual DbSet<PayPhase> payphase { get; set; }
         public virtual DbSet<PayTermSave> paytermsave { get; set; }
+        public virtual DbSet<PayUserRate> payuserate { get; set; }
+        public virtual DbSet<PayLimitRule> paylimitrule { get; set; }
+        public virtual DbSet<PayLimitRuleDetail> paylimitruledetail { get; set; }
+        public virtual DbSet<PayAutoFreeze> payautofreeze { get; set; }
+        public virtual DbSet<PayVIPCustomer> payvipcustomer { get; set; }
+        public virtual DbSet<PayFreezeCustomer> payFreezeCustomer { get; set; }
+        public virtual DbSet<PayWillFreezeCustomer> paywillfreezecustomer { get; set; }
         #endregion
 
         #region 消息推送记录
