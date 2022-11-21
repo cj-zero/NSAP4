@@ -82,6 +82,7 @@ namespace OpenAuth.Repository
 
         #region 工程部相关维护表
         public virtual DbSet<ManageAccountBind>  ManageAccountBinds  { get; set; }
+        public virtual DbSet<RateDetail> RateDetails { get; set; }
         #endregion
 
         //非数据库表格
