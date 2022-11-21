@@ -3249,7 +3249,7 @@ namespace OpenAuth.App
                                   .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
                                      select new HistoryDetailForUserResp
                                      {
-                                         Id = a.Id,
+                                         Id = a.MainId,
                                          Type = 2,
                                          ServiceOrderId = a.ServiceOrderId,
                                          TotalMoney = a.TotalMoney,
