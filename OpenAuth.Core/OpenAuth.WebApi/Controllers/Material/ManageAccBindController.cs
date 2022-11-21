@@ -152,6 +152,28 @@ namespace OpenAuth.WebApi.Controllers.Material
             return File(data, "application/octet-stream", "RateDetail.xlsx");
         }
 
+        /// <summary>
+        /// 保存评分表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<bool>> SaveRateDetails([FromBody] DetailExportSaveData req)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _app.SaveRateDetails(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
 
     }
 }

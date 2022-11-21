@@ -158,6 +158,15 @@ namespace OpenAuth.Repository.Domain.View
         public List<DetailExport> detports = new List<DetailExport>();
     }
 
+    public class DetailExportSaveData
+    {
+        public string Time { get; set; }
+        /// <summary>
+        /// 数据
+        /// </summary>
+        public List<DetailExport> detports = new List<DetailExport>();
+    }
+
     /// <summary>
     /// 行数据
     /// </summary>
