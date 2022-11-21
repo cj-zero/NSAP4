@@ -3250,6 +3250,7 @@ namespace OpenAuth.App
                                      select new HistoryDetailForUserResp
                                      {
                                          Id = a.MainId,
+                                         ReimburseId =a.Id,
                                          Type = 2,
                                          ServiceOrderId = a.ServiceOrderId,
                                          TotalMoney = a.TotalMoney,
