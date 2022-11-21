@@ -45,7 +45,10 @@ namespace OpenAuth.App.Serve.Request
         public string CustomerName { get; set; }//客户名
         public string FlowInstanceId { get; set; }//流程id 不用
         public int? Status { get; set; }//状态 不用
-        public string  StatusName { get; set; }//状态名
+        public string StatusName { get; set; }//状态名
+        public int ReimburseId { get; set; }//状态名
+
+        
 
 
 
