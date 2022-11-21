@@ -17,6 +17,8 @@ using System.Data;
 using OpenAuth.Repository;
 using System.Data.SqlClient;
 using OpenAuth.App.Request;
+using Newtonsoft.Json;
+using OpenAuth.Repository.Domain.Material;
 
 namespace OpenAuth.App.Material
 {
@@ -695,7 +697,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             var result = new TableData();
 
             string sql = string.Format(@"select Owner,Number,objnbs,StageName,fld005506,complete,
-                            fld006314,complete, duedate ,DueDays ,AssignedBy ,AssignedTo,CreatedBy ,
+                            fld006314,isFinished , duedate ,DueDays ,AssignedBy ,AssignedTo,CreatedBy ,
                             Owner,AssignDate,startDate,DATEADD(dd,-DueDays,duedate) Completedate
                             from Task_View
                             where 1=1 and CaseRecGuid= 'b1d44ce1-0a11-4ad7-a39d-a381e266efe0' ");
@@ -727,6 +729,11 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             {
                 sql += " and complete = " + req.complete;
             }
+            if (req.isFinished != null)
+            {
+                sql += " and isFinished = " + req.isFinished;
+            }
+
             var modeldata = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql, CommandType.Text, null).AsEnumerable();
 
             var taskView = UnitWork.Find<TaskView>(null);
@@ -751,6 +758,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                                 StageName = n.Field<string>("StageName"),
                                 fld005506 = n.Field<string>("fld005506"),
                                 complete = n.Field<int?>("complete"),
+                                isFinished = n.Field<bool?>("isFinished"), 
                                 fld006314 = n.Field<string>("fld006314"),
                                 duedate = n.Field<DateTime?>("duedate"),
                                 DueDays = n.Field<int?>("DueDays"),
@@ -815,8 +823,8 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
         public List<DataTable> DataView(string date)
         {
             List<DataTable> list = new List<DataTable>();
-            DateTime start = Convert.ToDateTime(date + "-01");
-            DateTime end = start.AddMonths(1);
+            string start = Convert.ToDateTime(date + "-01").ToString("yyyy-MM-dd");
+            string end = Convert.ToDateTime(date + "-01").AddMonths(1).ToString("yyyy-MM-dd");
             //数据概览
             string strSql = string.Format(@" SELECT
                             convert(varchar(100),A.DT,23) '日期',
@@ -829,7 +837,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                             where  AssignTime >= '" + start + "' AND AssignTime < '" + end + "' group by AssignTime ) T ON T.date = A.DT LEFT JOIN");
             strSql += string.Format(@"  (SELECT CompleteTime date,count(Number) AS num 
                             from  TaskView5
-                            where complete  =1 and  CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "' group by CompleteTime) T1 ON T1.date = A.DT");
+                            where isFinished = 1 and  CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "' group by CompleteTime) T1 ON T1.date = A.DT");
             list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
             //难度
             strSql = string.Format(@" select  name,
@@ -857,14 +865,39 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             string str = String.Join(",", NumberList.Select(x => $"'{x}'"));
             strSql = string.Format(@"select
                                      name
-                                     ,count(case when t.fld006314 = N'一般' then 1 else null end)*0.5 as dinandu
-                                      ,count(case when t.fld006314 = N'中等' then 1 else null end) as zhongnandu
-                                      ,count(case when t.fld006314 = N'较高' then 1 else null end)*2 as gaonandu
-                                      ,count(case when t.fld006314 = N'超高' then 1 else null end)*3 as chaogaonandu
-                                      ,count(case when t.DueDays >= 0 then 1 else null end) as anshi
-                                      ,count(case when t.DueDays < 0 then 1 else null end) as yanqi
-                                     from(select AssignedTo name, fld006314, DueDays  from TaskView5 where Number in (" + str + ")) t group by name");
-            list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+                                     ,count(case when t.fld006314 = N'一般' then 1 else null end)*0.5 as LowDifficulty
+                                      ,count(case when t.fld006314 = N'中等' then 1 else null end) as MediumDifficulty
+                                      ,count(case when t.fld006314 = N'较高' then 1 else null end)*2 as HighDifficulty
+                                      ,count(case when t.fld006314 = N'超高' then 1 else null end)*3 as SuperDifficulty
+                                      ,count(case when t.DueDays >= 0 then 1 else null end) as OnTime
+                                      ,count(case when t.DueDays < 0 then 1 else null end) as Delayed
+                                     from(select AssignedTo name, fld006314, DueDays  from TaskView5 where 1 = 1 ");
+            if (!string.IsNullOrWhiteSpace(str))
+            {
+                strSql += string.Format(@"and Number in (" + str + ")");
+            }
+            strSql += string.Format(@") t group by name");
+            var obj = UnitWork.ExcuteSql<ScoringDetail>(ContextType.ManagerDbContext, strSql, CommandType.Text, null);
+            var personalNames = obj.Select(u => u.name).ToList();
+            StringBuilder strSqlbind = new StringBuilder();
+            strSqlbind.AppendFormat("select * from manageaccountbind u  where LOCATE(u.MName , \"{0}\")  > 0  and u.DutyFlag = 1 and  Level is not null ", JsonConvert.SerializeObject(personalNames).Replace(@"""", ""));
+            var erp4BindList = UnitWork.ExcuteSql<ManageAccountBind>(ContextType.DefaultContextType, strSqlbind.ToString(), CommandType.Text, null).ToList();
+            var legitPersonalNameList = erp4BindList.Select(u => u.MName).ToList();
+            obj = obj.Where(u => legitPersonalNameList.Contains(u.name)).ToList();
+            var dt = (from n in erp4BindList
+                      join m in obj on n.MName equals m.name
+                      select new
+                      {
+                          n.Level,
+                          m.name,
+                          m.LowDifficulty,
+                          m.MediumDifficulty,
+                          m.HighDifficulty,
+                          m.SuperDifficulty,
+                          m.OnTime,
+                          m.Delayed
+                      }).ToDataTable();
+            list.Add(dt);
 
             return list;
         }

@@ -81,6 +81,7 @@ namespace OpenAuth.App.Material.Request
         public string fld005506 { get; set; }
         public string fld006314 { get; set; }
         public string complete { get; set; }
+        public bool? isFinished { get; set; }
         public string Month { get; set; }
     }
 
@@ -88,5 +89,17 @@ namespace OpenAuth.App.Material.Request
     {
         public List<string> Number { get; set; }
         public string Month { get; set; }
+    }
+
+    public class ScoringDetail
+    {
+        public string level { get; set; }
+        public string name { get; set; }
+        public decimal? LowDifficulty { get; set; }
+        public decimal? MediumDifficulty { get; set; }
+        public decimal? HighDifficulty { get; set; }
+        public decimal? SuperDifficulty { get; set; }
+        public decimal? OnTime { get; set; }
+        public decimal? Delayed { get; set; }
     }
 }
