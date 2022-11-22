@@ -124,6 +124,50 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
         /// <summary>
+        /// 考勤任务明细
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<DutyDetailsRsp>> DutyDetailsTableUtility([FromBody] DutyChartRequest req)
+        {
+            var result = new Response<DutyDetailsRsp>();
+            try
+            {
+                result.Result = await _app.DutyDetailsTableUtility(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取对应月份归档记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<ArchiveData>> GetArchives(string  req)
+        {
+            var result = new Response<ArchiveData>();
+            try
+            {
+                result.Result = await _app.GetArchives(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 导出评分表
         /// </summary>
         /// <param name="req"></param>
