@@ -681,12 +681,12 @@ namespace OpenAuth.WebApi.Controllers.Order
                 string msg = _serviceSaleOrderApp.Save(orderReq);
                 if (msg.Contains("-201"))
                 {
-                    result.Result = msg.Split('-')[0].ToString();
+                    result.Message = msg.Split('-')[0].ToString();
                     result.Code = 201;
                 }
                 else
                 {
-                    result.Result = msg;
+                    result.Message = msg;
                 }
             }
             catch (Exception ex)
@@ -778,14 +778,14 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <param name="ItemCode">item_cfg_id</param>
         /// <param name="WhsCode">仓库code</param>
         /// <returns></returns>
-        [HttpGet]
-        [Route("GetItemConfigList")]
-        public async Task<TableData> GetItemConfigList(string ItemCode, string WhsCode)
-        {
-            var result = new TableData();
-            result = _serviceSaleOrderApp.GetItemConfigList(ItemCode, WhsCode);
-            return result;
-        }
+        //[HttpGet]
+        //[Route("GetItemConfigList")]
+        //public async Task<TableData> GetItemConfigList(string ItemCode, string WhsCode)
+        //{
+        //    var result = new TableData();
+        //    result = _serviceSaleOrderApp.GetItemConfigList(ItemCode, WhsCode);
+        //    return result;
+        //}
         /// <summary>
         /// 客户未清销售订单
         /// GetOpenORDRsByCustomer
