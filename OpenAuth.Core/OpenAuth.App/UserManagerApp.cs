@@ -770,7 +770,7 @@ namespace OpenAuth.App
 
             #region 4.0 user_id 为空用户赋值
             List<User> updateUserList = new List<User>();
-            var emptyUser = await UnitWork.Find<User>(c => c.User_Id == null).ToListAsync();
+            var emptyUser = await UnitWork.Find<User>(c => c.User_Id == null && c.Status== 0).ToListAsync();
             var emptyUserName = emptyUser.Select(a => a.Name).ToList();
             //  check base_user
             var relatedBaseUser = await UnitWork.Find<base_user>(c => emptyUserName.Contains(c.user_nm)).ToListAsync();
