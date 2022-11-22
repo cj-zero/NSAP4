@@ -133,6 +133,7 @@ namespace OpenAuth.App
             obj.OrgId = org.Id;
             obj.Org = org.Name;
             obj.CreateTime = DateTime.Now;
+            obj.Remark = req.Remark;
             var o = await Repository.AddAsync(obj);
             var pistures = req.Pictures.MapToList<AttendanceClockPicture>();
             pistures.ForEach(p => p.AttendanceClockId = o.Id);
