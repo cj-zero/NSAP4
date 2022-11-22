@@ -290,7 +290,7 @@ namespace OpenAuth.App.ClientRelation
                     JobId = uptRelation.JobId
                 });
                 //update subno and parentno
-                var existParentNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == uptRelation.Operatorid && a.ParentNo.Contains(uptRelation.ClientNo)).ToList();
+                var existParentNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == uptRelation.Operatorid && a.ParentNo.Contains(uptRelation.ClientNo) && !jobRelation.Terminals.Contains(a.ClientNo)).ToList();
                 var existSubNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.ParentNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == uptRelation.Operatorid && a.SubNo.Contains(uptRelation.ClientNo)).ToList();
                 if (existParentNodes.Count != 0)
                 {

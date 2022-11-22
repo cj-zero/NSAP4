@@ -111,12 +111,136 @@ namespace OpenAuth.Repository.Domain.View
 
     }
 
+    public class RateTableDetailReq
+    {
+        public List<RateTableDetailExport> texports = new List<RateTableDetailExport>();
+    }
+
+    public class RateTableDetailExport
+    {
+        [ExporterHeader(DisplayName = "岗位级别")]
+        public string DutyLevel { get; set; }
+        [ExporterHeader(DisplayName = "姓名")]
+        public string Name { get; set; }
+        [ExporterHeader(DisplayName = "低难度(0.5件)")]
+        public string Low { get; set; }
+        [ExporterHeader(DisplayName = "中难度(件)")]
+        public string Middle { get; set; }
+        [ExporterHeader(DisplayName = "高难度(件*2)")]
+        public string High { get; set; }
+        [ExporterHeader(DisplayName = "超高难度(件*3)")]
+        public string Super { get; set; }
+        [ExporterHeader(DisplayName = "总件数")]
+        public string TotalCount { get; set; }
+        [ExporterHeader(DisplayName = "图纸完成量分值")]
+        public string RateSocre { get; set; }
+        [ExporterHeader(DisplayName = "按时完成")]
+        public string Due { get; set; }
+        [ExporterHeader(DisplayName = "延迟完成")]
+        public string Delay { get; set; }
+        [ExporterHeader(DisplayName = "总完成量")]
+        public string Total { get; set; }
+        [ExporterHeader(DisplayName = "按时完成率")]
+        public string DueRatio { get; set; }
+        [ExporterHeader(DisplayName = "按时完成分值")]
+        public string DueScore { get; set; }
+        [ExporterHeader(DisplayName = "超额完成(件)")]
+        public string ExcelCount { get; set; }
+        [ExporterHeader(DisplayName = "超额完成分值")]
+        public string ExcelScore { get; set; }
+    }
+
+    public class DetailExportData
+    {
+        /// <summary>
+        /// 数据
+        /// </summary>
+        public List<DetailExport> detports = new List<DetailExport>();
+    }
+
+    public class DetailExportSaveData
+    {
+        public string Time { get; set; }
+        /// <summary>
+        /// 数据
+        /// </summary>
+        public List<DetailExport> detports = new List<DetailExport>();
+    }
+
+    /// <summary>
+    /// 行数据
+    /// </summary>
+    public class DetailExport
+    {
+        /// <summary>
+        /// 岗位级别
+        /// </summary>
+        public string DutyLevel { get; set; }
+        /// <summary>
+        /// 姓名
+        /// </summary>
+        public string Name { get; set; }
+        /// <summary>
+        /// 低难度(0.5件)
+        /// </summary>
+        public string Low { get; set; }
+        /// <summary>
+        /// 中难度(件)
+        /// </summary>
+        public string Middle { get; set; }
+        /// <summary>
+        /// 高难度(件*2)
+        /// </summary>
+        public string High { get; set; }
+        /// <summary>
+        /// 超高难度(件*3)
+        /// </summary>
+        public string Super { get; set; }
+        /// <summary>
+        /// 总件数
+        /// </summary>
+        public string TotalCount { get; set; }
+        /// <summary>
+        /// 图纸完成量分值
+        /// </summary>
+        public string RateSocre { get; set; }
+        /// <summary>
+        /// 按时完成
+        /// </summary>
+        public string Due { get; set; }
+        /// <summary>
+        /// 延迟完成
+        /// </summary>
+        public string Delay { get; set; }
+        /// <summary>
+        /// 总完成量
+        /// </summary>
+        public string Total { get; set; }
+        /// <summary>
+        /// 按时完成率
+        /// </summary>
+        public string DueRatio { get; set; }
+        /// <summary>
+        /// 按时完成分值
+        /// </summary>
+        public string DueScore { get; set; }
+        /// <summary>
+        /// 超额完成(件)
+        /// </summary>
+        public string ExcelCount { get; set; }
+        /// <summary>
+        /// 超额完成分值
+        /// </summary>
+        public string ExcelScore { get; set; }
+    }
+
+
     public class RateTableReq
     {
         public List<RateTableExport>  texports =new List<RateTableExport>();
     }
 
-    [ExcelExporter(Name = "评分表", TableStyle = "Light10", AutoFitAllColumn = true, MaxRowNumberOnASheet = 2)]
+
     public class RateTableExport
     {
         [ExporterHeader(DisplayName = "岗位级别")]

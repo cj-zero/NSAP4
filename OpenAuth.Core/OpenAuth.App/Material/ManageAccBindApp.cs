@@ -1,5 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.Export;
+using Magicodes.ExporterAndImporter.Core;
+using Magicodes.ExporterAndImporter.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -23,6 +25,7 @@ using System.Reactive.Joins;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+
 
 namespace OpenAuth.App.Material
 {
@@ -103,7 +106,7 @@ namespace OpenAuth.App.Material
             strSqlMaterial.AppendFormat("  ORDER BY UserID  OFFSET   {0}  ROWS  FETCH NEXT   {1}  ROWS ONLY   ", (req.page - 1) * req.Limit, req.Limit);
             var MaterialUserList = UnitWork.ExcuteSql<MaterialUsers>(ContextType.ManagerDbContext, strSqlMaterial.ToString(), CommandType.Text, null);
             var MaterialIds = MaterialUserList.Select(u => u.UserID).ToList();
-            strSql.AppendFormat("select * from manageaccountbind u  where LOCATE(u.MAccount , \"{0}\")  > 0", JsonConvert.SerializeObject(MaterialIds).Replace(@"""", ""));
+            strSql.AppendFormat("select * from manageaccountbind u  where LOCATE(u.MAccount , \"{0}\")  > 0 and  u.IsDelete = 0 ", JsonConvert.SerializeObject(MaterialIds).Replace(@"""", ""));
             var erp4BindList = UnitWork.ExcuteSql<ManageAccountBind>(ContextType.DefaultContextType, strSql.ToString(), CommandType.Text, null).ToList();
             //concat bindData
             foreach (var muser in MaterialUserList)
@@ -191,11 +194,11 @@ namespace OpenAuth.App.Material
             DutyChartResponse dcr = new DutyChartResponse();
             // get due time personals
             StringBuilder strSql = new StringBuilder();
-            strSql.AppendFormat("select Owner,OwnerId,count(Number) as Total ,sum(case when Complete = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  duedate  >= '2022-10-01' AND duedate  <= '2022-10-31' group by Owner ");
+            strSql.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  duedate  >= '2022-10-01' AND duedate  <= '2022-10-31' group by Owner  ORDER BY CompleteCount DESC ");
             var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(),CommandType.Text);
             StringBuilder strFSql = new StringBuilder();
-            strFSql.AppendFormat("select Owner,OwnerId,count(Number) as Total ,sum(case when Complete = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  CompleteTime  >= '2022-10-01' AND CompleteTime  <= '2022-10-31' group by Owner ");
-            var personalFList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
+            strFSql.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  CompleteTime  >= '2022-10-01' AND CompleteTime  <= '2022-10-31' group by Owner    ORDER BY CompleteCount DESC ");
+            var personalFList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strFSql.ToString(), CommandType.Text);
             // get personals with their level for which the qualified line and excel line needed
             var personalNames = personalAssignList.Select(u => u.Owner).ToList();
             var personalFNames = personalFList.Select(u => u.Owner).ToList();
@@ -210,7 +213,11 @@ namespace OpenAuth.App.Material
             var legitPersonals = personalAssignList.Where(u => legitPersonalNameList.Contains(u.Owner)).ToList();
             var legitFPersonals = personalFList.Where(u => legitPersonalNameFList.Contains(u.Owner)).ToList();
             //concat data and order as the will
-            dcr.XData = legitPersonals.Select(a => a.Owner).ToList();
+            var FinalPersonals = new List<SerieManageData>();
+            FinalPersonals.AddRange(legitPersonals);
+            FinalPersonals.AddRange(legitFPersonals);
+           var FinalPersonalSort=  FinalPersonals.OrderByDescending(a => a.CompleteCount);
+            dcr.XData = FinalPersonalSort.Select(a => a.Owner).ToList();
             SerieData serieRuleQualified = new SerieData();
             serieRuleQualified.Name = "合格件数";
             SerieData serieRuleExcel = new SerieData();
@@ -240,8 +247,24 @@ namespace OpenAuth.App.Material
                         serieRuleExcel.SerieVal.Add(15);
                     }
                 }
-                serieDataTotal.SerieVal.Add(legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault().Total);
-                serieDataTotal.SerieVal.Add(legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault().CompleteCount);
+                if (legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault()!=null)
+                {
+                    serieDataTotal.SerieVal.Add(legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault().Total);
+                }
+                if (legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault() == null)
+                {
+                    serieDataTotal.SerieVal.Add(0);
+                }
+                //serieDataTotal.SerieVal.Add(legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault().Total);
+                if (legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault() != null)
+                {
+                    serieDataComplete.SerieVal.Add(legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault().CompleteCount);
+                }
+                if (legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault() == null)
+                {
+                    serieDataComplete.SerieVal.Add(0);
+                }
+
             }
             dcr.YData.Add(serieRuleQualified);
             dcr.YData.Add(serieRuleExcel);
@@ -272,6 +295,40 @@ namespace OpenAuth.App.Material
             return await ExportAllHandler.ExporterExcel(req);
             //return File(ExportAllHandler.ExporterExcel(req), "application/octet-stream", "test.xlsx");
         }
+
+        /// <summary>
+        /// 保存评分表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<bool> SaveRateDetails(DetailExportSaveData req)
+        {
+            bool result = true;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            RateDetail addItem = new RateDetail {
+                CreateDate = DateTime.Now,
+                Time = req.Time,
+                Data = JsonConvert.SerializeObject(req.detports),
+                Creator = loginContext.User.Name,
+                Creatorid = loginContext.User.Id,
+                UpdateDate = DateTime.Now,
+                Updaterid = loginContext.User.Id,
+                IsDelete = 0
+            };
+            await UnitWork.AddAsync<RateDetail, int>(addItem);
+            await UnitWork.SaveAsync();
+            return result;
+        }
+
+
+
+
+
     }
 
 }
