@@ -83,6 +83,7 @@ namespace OpenAuth.App.Material.Request
         public string complete { get; set; }
         public bool? isFinished { get; set; }
         public string Month { get; set; }
+        public string AssignedTo { get; set; }
     }
 
     public class submitMonth 

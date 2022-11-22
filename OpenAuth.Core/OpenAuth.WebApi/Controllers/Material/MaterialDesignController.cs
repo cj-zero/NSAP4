@@ -438,6 +438,68 @@ namespace OpenAuth.WebApi.Controllers.Material
             return _app.DataView(date);
 
         }
+
+        /// <summary>
+        /// 统计分析页面（个人）
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        [HttpGet]
+        public List<DataTable> DataViewOwner(string date, string name)
+        {
+            return _app.DataViewOwner(date, name);
+
+        }
         #endregion
+
+        #region WMS接口对接
+        /// <summary>
+        /// WMS接口对接
+        /// </summary>
+        /// <param name="ProductNo"></param>
+        /// <param name="ItemName"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public DataTable PostWMSFileUrl(string ProductNo, string ItemName)
+        {
+            //参数：生产订单号，图纸编码
+            //返回：版本号、图纸文件路径、样机 / 批量
+            string sql = string.Format(@" select n.VersionNo,n.FileUrl, n.IsDemo
+                                         from erp4_serve.manage_screening n
+                                         left join nsap_bone.product_owor s on n.DocEntry = s.OriginNum and n.ItemCode = s.ItemCode where 1 = 1");
+            if (!string.IsNullOrWhiteSpace(ProductNo))
+            {
+                sql += " and s.DocEntry = '" + ProductNo + "'";
+            }
+            if (!string.IsNullOrWhiteSpace(ItemName))
+            {
+                sql += " and n.ItemName = '" + ItemName + "'";
+            }
+            return UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null);
+        }
+        #endregion
+
+        /// <summary>
+        /// 测试获取文件
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public List<System.IO.FileInfo> getFile(System.IO.DirectoryInfo dir)
+        {
+            List<System.IO.FileInfo> fileList = new List<System.IO.FileInfo>();
+            System.IO.FileInfo[] allfile = dir.GetFiles();
+            foreach (System.IO.FileInfo file in allfile)
+            {
+                fileList.Add(file);
+            }
+            System.IO.DirectoryInfo[] allDir = dir.GetDirectories();
+            foreach (System.IO.DirectoryInfo d in allDir)
+            {
+                getFile(d);
+            }
+            return fileList;
+        }
     }
 }
