@@ -86,7 +86,9 @@ namespace OpenAuth.Repository.Domain.View
 
     public class DutyChartRequest
     { 
-        public int Month { get; set; }
+        public string Month { get; set; }
+        public int limit { get; set; }
+        public int page { get; set; }
     }
 
     public class DutyChartResponse
@@ -109,6 +111,36 @@ namespace OpenAuth.Repository.Domain.View
         public int DueTask { get; set; }
         public int ExcelTask { get; set; }
 
+    }
+
+    public class DutyDetailsRsp
+    {
+        public List<DutyDetails> ddr = new List<DutyDetails>();
+        public int Total { get; set; }
+    }
+
+
+    public class DutyDetails
+    {
+        public string Name { get; set; }
+        public string PartNum { get; set; }
+        public string Theme { get; set; }
+        public string TaskName { get; set; }
+        public string ProductModel { get; set; }
+        public string Completion { get; set; }
+        public string DiffcultDegree { get; set; }
+        public string Status { get; set; }
+        public DateTime DueDate { get; set; }
+        public string DueDays { get; set; }
+        public string Assigner { get; set; }
+        public string Assignee { get; set; }
+        public string Creator { get; set; }
+        public DateTime CreateDateTime { get; set; }
+        public string Owner { get; set; }
+        public DateTime AssignTime { get; set; }
+        public DateTime BeginTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public string MainAnnex { get; set; }
     }
 
     public class RateTableDetailReq
@@ -164,7 +196,16 @@ namespace OpenAuth.Repository.Domain.View
         /// <summary>
         /// 数据
         /// </summary>
-        public List<DetailExport> detports = new List<DetailExport>();
+        public string detports  { get; set; }
+}
+
+    public class ArchiveData
+    {
+        public bool ArchiveFlag { get; set; }
+        /// <summary>
+        /// 数据
+        /// </summary>
+        public string ArchiveDatas { get; set; }
     }
 
     /// <summary>

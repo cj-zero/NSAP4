@@ -6,10 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using NPOI.HPSF;
+using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
 using OpenAuth.App.ClientRelation;
 using OpenAuth.App.Clue.ModelDto;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
+using OpenAuth.App.Response;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Material;
@@ -194,22 +196,22 @@ namespace OpenAuth.App.Material
             DutyChartResponse dcr = new DutyChartResponse();
             // get due time personals
             StringBuilder strSql = new StringBuilder();
-            strSql.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  duedate  >= '2022-10-01' AND duedate  <= '2022-10-31' group by Owner  ORDER BY CompleteCount DESC ");
+            string start = Convert.ToDateTime(req.Month + "-01").ToString("yyyy-MM-dd");
+             string end = Convert.ToDateTime(req.Month + "-01").AddMonths(1).ToString("yyyy-MM-dd");
+            strSql.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by Owner  ORDER BY CompleteCount DESC ");
             var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(),CommandType.Text);
             StringBuilder strFSql = new StringBuilder();
-            strFSql.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  CompleteTime  >= '2022-10-01' AND CompleteTime  <= '2022-10-31' group by Owner    ORDER BY CompleteCount DESC ");
+            strFSql.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by Owner    ORDER BY CompleteCount DESC ");
             var personalFList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strFSql.ToString(), CommandType.Text);
             // get personals with their level for which the qualified line and excel line needed
             var personalNames = personalAssignList.Select(u => u.Owner).ToList();
             var personalFNames = personalFList.Select(u => u.Owner).ToList();
             StringBuilder strSqlbind = new StringBuilder();
             StringBuilder strSqlFbind = new StringBuilder();
-            strSqlbind.AppendFormat("select * from manageaccountbind u  where LOCATE(u.MName , \"{0}\")  > 0  and u.DutyFlag = 1 and  Level is not null ", JsonConvert.SerializeObject(personalNames).Replace(@"""", ""));
-            strSqlFbind.AppendFormat("select * from manageaccountbind u  where LOCATE(u.MName , \"{0}\")  > 0  and u.DutyFlag = 1 and  Level is not null ", JsonConvert.SerializeObject(personalFNames).Replace(@"""", ""));
+            strSqlbind.AppendFormat("select * from manageaccountbind u  where (LOCATE(u.MName , \"{0}\")  > 0  ||  LOCATE(u.MName , \"{1}\")  > 0  )and u.DutyFlag = 1 and  Level is not null ", JsonConvert.SerializeObject(personalNames).Replace(@"""", ""),JsonConvert.SerializeObject(personalFNames).Replace(@"""", ""));
             var erp4BindList = UnitWork.ExcuteSql<ManageAccountBind>(ContextType.DefaultContextType, strSqlbind.ToString(), CommandType.Text, null).ToList();
-            var erp4BindFList = UnitWork.ExcuteSql<ManageAccountBind>(ContextType.DefaultContextType, strSqlFbind.ToString(), CommandType.Text, null).ToList();
             var legitPersonalNameList = erp4BindList.Select(u => u.MName).ToList();
-            var legitPersonalNameFList = erp4BindFList.Select(u => u.MName).ToList();
+            var legitPersonalNameFList = erp4BindList.Select(u => u.MName).ToList();
             var legitPersonals = personalAssignList.Where(u => legitPersonalNameList.Contains(u.Owner)).ToList();
             var legitFPersonals = personalFList.Where(u => legitPersonalNameFList.Contains(u.Owner)).ToList();
             //concat data and order as the will
@@ -217,7 +219,7 @@ namespace OpenAuth.App.Material
             FinalPersonals.AddRange(legitPersonals);
             FinalPersonals.AddRange(legitFPersonals);
            var FinalPersonalSort=  FinalPersonals.OrderByDescending(a => a.CompleteCount);
-            dcr.XData = FinalPersonalSort.Select(a => a.Owner).ToList();
+            dcr.XData = FinalPersonalSort.Select(a => a.Owner).Distinct().ToList();
             SerieData serieRuleQualified = new SerieData();
             serieRuleQualified.Name = "合格件数";
             SerieData serieRuleExcel = new SerieData();
@@ -229,7 +231,7 @@ namespace OpenAuth.App.Material
             foreach (var xitem in dcr.XData)
             {
                 var bindLevel = erp4BindList.Where(a => a.MName == xitem).FirstOrDefault();
-                if (bindLevel!=null)
+                if (bindLevel != null)
                 {
                     if (bindLevel.Level == "1")
                     {
@@ -246,23 +248,24 @@ namespace OpenAuth.App.Material
                         serieRuleQualified.SerieVal.Add(10);
                         serieRuleExcel.SerieVal.Add(15);
                     }
-                }
-                if (legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault()!=null)
-                {
-                    serieDataTotal.SerieVal.Add(legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault().Total);
-                }
-                if (legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault() == null)
-                {
-                    serieDataTotal.SerieVal.Add(0);
-                }
-                //serieDataTotal.SerieVal.Add(legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault().Total);
-                if (legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault() != null)
-                {
-                    serieDataComplete.SerieVal.Add(legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault().CompleteCount);
-                }
-                if (legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault() == null)
-                {
-                    serieDataComplete.SerieVal.Add(0);
+
+                    if (legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault() != null)
+                    {
+                        serieDataTotal.SerieVal.Add(legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault().Total);
+                    }
+                    if (legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault() == null)
+                    {
+                        serieDataTotal.SerieVal.Add(0);
+                    }
+                    //serieDataTotal.SerieVal.Add(legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault().Total);
+                    if (legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault() != null)
+                    {
+                        serieDataComplete.SerieVal.Add(legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault().CompleteCount);
+                    }
+                    if (legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault() == null)
+                    {
+                        serieDataComplete.SerieVal.Add(0);
+                    }
                 }
 
             }
@@ -272,6 +275,44 @@ namespace OpenAuth.App.Material
             dcr.YData.Add(serieDataComplete);
             return dcr;
         }
+
+        /// <summary>
+        /// 考勤任务明细
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<DutyDetailsRsp> DutyDetailsTableUtility(DutyChartRequest req)
+        {
+            DutyDetailsRsp ddr = new DutyDetailsRsp();
+            StringBuilder strSql = new StringBuilder();
+            string start = Convert.ToDateTime(req.Month + "-01").ToString("yyyy-MM-dd");
+            string end = Convert.ToDateTime(req.Month + "-01").AddMonths(1).ToString("yyyy-MM-dd");
+            strSql.AppendFormat("SELECT Owner as Name,Number as PartNum, objNBS as Theme, StageName as TaskName, fld005506 as ProductModel, Complete as Completion,fld006314 as DiffcultDegree, Status as Status, DueDate as DueDate, DueDays, AssignedBy as Assigner,AssignedTo as Assignee, CreatedBy as Creator,TaskView5.[Created Date]   as CreateDateTime , Owner, AssignTime as AssignTime, StartDate as BeginTime,CompleteTime as EndTime from TaskView5 where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'   ORDER BY TaskView5.[Created Date] DESC  OFFSET  " + ((req.page - 1) * req.limit).ToString() + "   ROWS  FETCH NEXT  " + req.limit.ToString() + "  ROWS ONLY    ");
+            // +" OFFSET " + ((query.page - 1) * query.limit).ToString() + " ROWS  FETCH NEXT " + query.limit.ToString() + " ROWS ONLY  ";
+ 
+             var personalAssignList = UnitWork.ExcuteSql<DutyDetails>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
+
+            var countquery = "select count(1) count  from TaskView5  where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  ";
+            var countList = UnitWork.ExcuteSql<CardCountDto>(ContextType.ManagerDbContext, countquery.ToString(), CommandType.Text, null);
+            ddr.Total = countList.FirstOrDefault().count;
+            // order by complete num and create time 
+            StringBuilder strSqlOrder = new StringBuilder();
+            strSqlOrder.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by Owner  ORDER BY CompleteCount DESC ");
+            var personalOrderList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSqlOrder.ToString(), CommandType.Text);
+            foreach (var perOrder in personalOrderList)
+            {
+                var perAssignList = personalAssignList.Where(u => u.Owner == perOrder.Owner).ToList();
+                if (perAssignList != null)
+                {
+                    ddr.ddr.AddRange(perAssignList);
+                }
+                
+            }
+
+            //ddr.ddr.AddRange(personalAssignList);
+            return ddr;
+        }
+
 
         /// <summary>
         /// 评分表
@@ -325,7 +366,27 @@ namespace OpenAuth.App.Material
             return result;
         }
 
-
+        /// <summary>
+        /// 获取对应月份归档记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<ArchiveData> GetArchives(string req)
+        {
+            ArchiveData archiveData = new ArchiveData();
+            var adata = UnitWork.FindSingle<RateDetail>(a => a.Time == req);
+            if (adata!=null)
+            {
+                archiveData.ArchiveDatas = adata.Data;
+                archiveData.ArchiveFlag = true;
+            }
+            else
+            {
+                archiveData.ArchiveFlag = false;
+            }
+            return archiveData;
+        }
 
 
 

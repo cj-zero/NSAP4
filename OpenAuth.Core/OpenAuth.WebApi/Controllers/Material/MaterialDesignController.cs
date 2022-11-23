@@ -288,7 +288,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
             List<DataTable> list = new List<DataTable>();
             string sql = "  select * from ( select RecordGuid,CreatedDate, fld005508 DocEntry, max(_System_Progress) progress,fld005506 itemCode,_System_objNBS ProjectNo from OBJ162 group by RecordGuid, fld005508,_System_objNBS,fld005506,CreatedDate) a ";
-            sql += "where a.DocEntry = 'SE-" + docentry + "' and itemCode = '" + itemcode + "'";
+            sql += "where a.DocEntry = 'SE-" + docentry + "' and itemCode = '" + itemcode.Replace("'","''") + "'";
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
             list.Add(dts);
             if (dts != null && dts.Rows.Count > 0)
@@ -438,6 +438,19 @@ namespace OpenAuth.WebApi.Controllers.Material
             return _app.DataView(date);
 
         }
+
+        /// <summary>
+        /// 统计分析页面（个人）
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        [HttpGet]
+        public List<DataTable> DataViewOwner(string date, string name)
+        {
+            return _app.DataViewOwner(date, name);
+
+        }
         #endregion
 
         #region WMS接口对接
@@ -466,5 +479,27 @@ namespace OpenAuth.WebApi.Controllers.Material
             return UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null);
         }
         #endregion
+
+        /// <summary>
+        /// 测试获取文件
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public List<System.IO.FileInfo> getFile(System.IO.DirectoryInfo dir)
+        {
+            List<System.IO.FileInfo> fileList = new List<System.IO.FileInfo>();
+            System.IO.FileInfo[] allfile = dir.GetFiles();
+            foreach (System.IO.FileInfo file in allfile)
+            {
+                fileList.Add(file);
+            }
+            System.IO.DirectoryInfo[] allDir = dir.GetDirectories();
+            foreach (System.IO.DirectoryInfo d in allDir)
+            {
+                getFile(d);
+            }
+            return fileList;
+        }
     }
 }
