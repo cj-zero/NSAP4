@@ -700,7 +700,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                             fld006314,isFinished , duedate ,DueDays ,AssignedBy ,AssignedTo,CreatedBy ,
                             Owner,AssignDate,startDate,DATEADD(dd,-DueDays,duedate) Completedate
                             from Task_View
-                            where 1=1 and CaseRecGuid= 'b1d44ce1-0a11-4ad7-a39d-a381e266efe0' ");
+                            where 1=1  ");
             if (!string.IsNullOrWhiteSpace(req.Owner))
             {
                 sql += " and Owner like '%" + req.Owner + "%'";
@@ -736,6 +736,22 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             if (req.isFinished != null)
             {
                 sql += " and isFinished = " + req.isFinished;
+            }
+            if (req.AssignDateStart != null)
+            {
+                sql += " and AssignDate >= '" + req.AssignDateStart + "'";
+            }
+            if (req.AssignDateEnd != null)
+            {
+                sql += " and AssignDate <= '" + req.AssignDateEnd + "'";
+            }
+            if (req.duedateStart != null)
+            {
+                sql += " and duedate  >= '" + req.duedateStart + "'";
+            }
+            if (req.duedateEnd != null)
+            {
+                sql += " and duedate <= '" + req.duedateEnd + "'";
             }
 
             var modeldata = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql, CommandType.Text, null).AsEnumerable();
@@ -774,6 +790,22 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                                 Completedate = n.Field<DateTime?>("Completedate"),
                                 Month = t == null ? "" : t.Field<string>("Month")
                             };
+            if (req.Status != null)
+            {
+                if (req.Status == "Y")
+                {
+                    querydata = querydata.Where(q => q.Month != "");
+                }
+                else
+                {
+                    querydata = querydata.Where(q => q.Month == "");
+                }
+            }
+            if (req.Month != null)
+            {
+                querydata = querydata.Where(q => q.Month == req.Month);
+            }
+
             var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
 
             result.Data = data;
