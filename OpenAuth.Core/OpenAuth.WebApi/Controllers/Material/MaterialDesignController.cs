@@ -288,7 +288,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
             List<DataTable> list = new List<DataTable>();
             string sql = "  select * from ( select RecordGuid,CreatedDate, fld005508 DocEntry, max(_System_Progress) progress,fld005506 itemCode,_System_objNBS ProjectNo from OBJ162 group by RecordGuid, fld005508,_System_objNBS,fld005506,CreatedDate) a ";
-            sql += "where a.DocEntry = 'SE-" + docentry + "' and itemCode = '" + itemcode + "'";
+            sql += "where a.DocEntry = 'SE-" + docentry + "' and itemCode = '" + itemcode.Replace("'", "''") + "'";
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
             list.Add(dts);
             if (dts != null && dts.Rows.Count > 0)
