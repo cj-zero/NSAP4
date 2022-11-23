@@ -187,16 +187,53 @@ namespace OpenAuth.App
         public async Task<TableData> AppGetClockHistory(AppGetClockHistoryReq req)
         {
             var result = new TableData();
-            var query = UnitWork.Find<AttendanceClock>(c => c.AppUserId == req.AppUserId).Include(c => c.AttendanceClockPictures).OrderByDescending(c => c.ClockDate).ThenByDescending(c => c.ClockTime);
+            DateTime dt = req.ClockDate == null ? DateTime.Now.Date.AddDays(1) : req.ClockDate.Value.AddDays(1).Date;
+            var userInfo = await (from a in UnitWork.Find<AppUserMap>(null)
+                                  join c in UnitWork.Find<Relevance>(null) on a.UserID equals c.FirstId
+                                  where req.AppUserId==a.AppUserId && c.Key == Define.USERORG
+                                  select new { c.SecondId }).FirstOrDefaultAsync();
+            if (req.Types==1)
+            {
+                var query = await UnitWork.Find<AttendanceClock>(c => c.AppUserId == req.AppUserId)
+                    .Include(c => c.AttendanceClockPictures)
+                    .Where(c => c.ClockDate < dt && c.ClockDate>=req.ClockDate && c.OrgId == userInfo.SecondId && c.AppUserId == req.AppUserId)
+                    .WhereIf(req.ClockType != 0, c => c.ClockType == req.ClockType)
+                    .OrderByDescending(c => c.ClockDate)
+                    .ThenByDescending(c => c.ClockTime).ToListAsync();
 
+                var query1 = await UnitWork.Find<AttendanceClock>(c => c.AppUserId == req.AppUserId)
+                    .Include(c => c.AttendanceClockPictures)
+                    .Where(c => c.ClockDate < dt && c.ClockDate >= req.ClockDate && c.OrgId == userInfo.SecondId)
+                    .WhereIf(req.ClockType != 0, c => c.ClockType == req.ClockType)
+                    .WhereIf(req.Types != 1, c => c.AppUserId == req.AppUserId)
+                    .OrderByDescending(c => c.ClockDate)
+                    .ThenByDescending(c => c.ClockTime).ToListAsync();
+                query.AddRange(query1);
+                var count = query.Count;
+                var data = query.Skip((req.page - 1) * req.limit).Take(req.limit)
+                    .ToList();
 
-            var count = await query.CountAsync();
-            var data = await query.Skip((req.page - 1) * req.limit).Take(req.limit)
-                .ToListAsync();
+                result.Count = count;
+                result.Data = data;
+                return result;
+            }
+            else
+            {
+                var query = UnitWork.Find<AttendanceClock>(c => c.AppUserId == req.AppUserId)
+                    .Include(c => c.AttendanceClockPictures)
+                    .Where(c => c.ClockDate < dt && c.ClockDate >= req.ClockDate && c.OrgId == userInfo.SecondId)
+                    .WhereIf(req.ClockType != 0, c => c.ClockType == req.ClockType)
+                    .WhereIf(req.Types != 1, c => c.AppUserId == req.AppUserId)
+                    .OrderByDescending(c => c.ClockDate)
+                    .ThenByDescending(c => c.ClockTime);
+                var count = await query.CountAsync();
+                var data = await query.Skip((req.page - 1) * req.limit).Take(req.limit)
+                    .ToListAsync();
 
-            result.Count = count;
-            result.Data = data;
-            return result;
+                result.Count = count;
+                result.Data = data;
+                return result;
+            }
         }
 
         /// <summary>
