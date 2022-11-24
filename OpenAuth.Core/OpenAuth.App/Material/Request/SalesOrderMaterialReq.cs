@@ -81,7 +81,7 @@ namespace OpenAuth.App.Material.Request
         public string fld005506 { get; set; }
         public string fld006314 { get; set; }
         public string complete { get; set; }
-        public bool? isFinished { get; set; }
+        public int isFinished { get; set; }
         public string Status { get; set; }
         public string Month { get; set; }
         public string AssignedTo { get; set; }
