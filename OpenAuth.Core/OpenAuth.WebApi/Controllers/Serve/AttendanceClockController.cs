@@ -178,6 +178,9 @@ namespace OpenAuth.WebApi.Controllers
             {
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("AppUserId", req.AppUserId);
+                parameters.Add("Types", req.Types);
+                parameters.Add("ClockDate", req.ClockDate);
+                parameters.Add("ClockType", req.ClockType);
                 parameters.Add("limit", req.limit);
                 parameters.Add("page", req.page);
                 parameters.Add("key", req.key);

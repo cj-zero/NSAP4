@@ -187,5 +187,27 @@ namespace OpenAuth.App
             }
             return result;
         }
+
+        /// <summary>
+        /// 获取部门用户列表
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        public async Task<TableData> DepartmentUserList(int AppUserId,int pageIndex, int pageSize)
+        {
+            var result = new TableData();
+            var userInfo = await (from a in UnitWork.Find<AppUserMap>(null)
+                                  join c in UnitWork.Find<Relevance>(null) on a.UserID equals c.FirstId
+                                  where AppUserId == a.AppUserId && c.Key == Define.USERORG
+                                  select new { c.SecondId }).FirstOrDefaultAsync();
+            result.Data = await (from a in UnitWork.Find<Relevance>(null)
+                               join b in UnitWork.Find<User>(null) on a.FirstId equals b.Id
+                               join c in UnitWork.Find<AppUserMap>(null) on b.Id equals c.UserID
+                               where a.SecondId == userInfo.SecondId && a.Key == Define.USERORG && b.Status == 0
+                               select new { c.AppUserId, b.Name }).OrderBy(c => c.Name).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
+            return result;
+        }
     }
 }
