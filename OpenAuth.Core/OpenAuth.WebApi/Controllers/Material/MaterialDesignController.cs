@@ -98,7 +98,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             StringBuilder stringBuilder = new StringBuilder();
             string strSql = string.Format("select a.contract_id contract_Id,a.CardCode,  a.CardName, a.apply_dt Apply_dt,a.upd_dt ");
             strSql += string.Format(" FROM nsap_bone.sale_contract_review a");
-            strSql += string.Format(" WHERE a.sbo_id = {0} AND a.ItemCode='" + DocNum + "' AND a.CardCode = '" + CardCode + "' AND a.apply_dt > DATE_SUB(CURDATE(), INTERVAL 6 MONTH)", SboId);
+            strSql += string.Format(" WHERE a.sbo_id = {0} AND a.ItemCode='" + DocNum.Replace("'", "\\'") + "' AND a.CardCode = '" + CardCode + "' AND a.apply_dt > DATE_SUB(CURDATE(), INTERVAL 6 MONTH)", SboId);
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
             tableData.Data = dts.Tolist<ReturnContractReview>();
             return tableData;
