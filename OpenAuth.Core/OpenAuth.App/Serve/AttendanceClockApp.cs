@@ -205,8 +205,15 @@ namespace OpenAuth.App
                     .OrderByDescending(c => c.ClockDate)
                     .ThenByDescending(c => c.ClockTime).Skip((req.page - 1) * req.limit).Take(req.limit)
                     .ToListAsync();
-                query.AddRange(query1);
-                result.Data = query;
+                if (req.page==1)
+                {
+                    query.AddRange(query1);
+                    result.Data = query;
+                }
+                else
+                {
+                    result.Data = query1;
+                }
                 return result;
             }
             else
