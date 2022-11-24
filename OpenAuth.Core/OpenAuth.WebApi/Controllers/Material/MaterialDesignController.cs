@@ -302,7 +302,7 @@ namespace OpenAuth.WebApi.Controllers.Material
                 DataTable dts1 = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql1.ToString(), CommandType.Text, null);
                 advanceData.dt = dts1;
             }
-            string sql2 = "select * from manage_screening where DocEntry = '" + docentry + "' and ItemCode = '" + itemcode.Replace("'", "\'") + "' ";
+            string sql2 = "select * from manage_screening where DocEntry = '" + docentry + "' and ItemCode = '" + itemcode.Replace("'", "\\'") + "' ";
             DataTable dts2 = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql2.ToString(), CommandType.Text, null);
             if (dts2 != null && dts2.Rows.Count > 0)
             {
