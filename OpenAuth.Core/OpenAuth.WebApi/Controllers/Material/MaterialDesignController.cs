@@ -446,9 +446,9 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
         [HttpGet]
-        public List<DataTable> DataViewOwner(string date, string name)
+        public List<DataTable> DataViewOwner(string date)
         {
-            return _app.DataViewOwner(date, name);
+            return _app.DataViewOwner(date);
 
         }
         #endregion
