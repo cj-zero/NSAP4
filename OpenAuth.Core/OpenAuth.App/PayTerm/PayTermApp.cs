@@ -23,6 +23,8 @@ using OpenAuth.Repository;
 using OpenAuth.App.CommonHelp;
 using Infrastructure.Extensions;
 using OpenAuth.Repository.Extensions;
+using OpenAuth.App.SaleBusiness.Request;
+using OpenAuth.App.SaleBusiness.Common;
 
 namespace OpenAuth.App.PayTerm
 {
@@ -34,6 +36,7 @@ namespace OpenAuth.App.PayTerm
         private ServiceBaseApp _serviceBaseApp;
         private ServiceSaleOrderApp _serviceSaleOrderApp;
         private UserDepartMsgHelp _userDepartMsgHelp;
+        private SaleBusinessMethodHelp _saleBusinessMethodHelp;
         private readonly DDVoiceApp _dDVoice;
         private List<string> RecePayTypes = new List<string>() { "预付/货前款", "货到款", "验收款", "质保款" };
 
@@ -42,7 +45,7 @@ namespace OpenAuth.App.PayTerm
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public PayTermApp(IUnitWork unitWork, IAuth auth, ICapPublisher capBus,UserDepartMsgHelp userDepartMsgHelp,  ServiceBaseApp serviceBaseApp, ServiceSaleOrderApp serviceSaleOrderApp, DDVoiceApp dDVoiceApp) : base(unitWork, auth)
+        public PayTermApp(IUnitWork unitWork, IAuth auth, ICapPublisher capBus,UserDepartMsgHelp userDepartMsgHelp, SaleBusinessMethodHelp saleBusinessMethodHelp, ServiceBaseApp serviceBaseApp, ServiceSaleOrderApp serviceSaleOrderApp, DDVoiceApp dDVoiceApp) : base(unitWork, auth)
         {
             _UnitWork = unitWork;
             _auth = auth;
@@ -51,6 +54,7 @@ namespace OpenAuth.App.PayTerm
             _capBus = capBus;
             _userDepartMsgHelp = userDepartMsgHelp;
             _dDVoice = dDVoiceApp;
+            _saleBusinessMethodHelp = saleBusinessMethodHelp;
         }
 
         #region 付款条件设置
@@ -2304,12 +2308,38 @@ namespace OpenAuth.App.PayTerm
                         //VIP客户不调入即将冻结
                         if (!vipCustomers.Exists(r => r.CardCode == item.CardCode))
                         {
-                            payWillFreezeCustomers.Add(new PayWillFreezeCustomer()
+                            int? slpCode = await UnitWork.Find<OCRD>(r => r.CardCode == item.CardCode).Select(r => r.SlpCode).FirstOrDefaultAsync();
+                            if (slpCode != null)
                             {
-                                CardCode = item.CardCode,
-                                CardName = item.CardName,
-                                FreezeDateTime = date
-                            });
+                                string slpName = await UnitWork.Find<OSLP>(r => r.SlpCode == slpCode).Select(r => r.SlpName).FirstOrDefaultAsync();
+                                payWillFreezeCustomers.Add(new PayWillFreezeCustomer()
+                                {
+                                    SaleId = slpCode.ToString(),
+                                    SaleName = slpName,
+                                    CardCode = item.CardCode,
+                                    CardName = item.CardName,
+                                    FreezeDateTime = date,
+                                    Remark = "满足自动冻结规则，并且不属于VIP客户，拉入即将冻结客户",
+                                    CreateUserId = "00000000-0000-0000-0000-000000000000",
+                                    CreateUserName = "超级管理员",
+                                    CreateTime = DateTime.Now
+                                });
+                            }
+                            else
+                            {
+                                payWillFreezeCustomers.Add(new PayWillFreezeCustomer()
+                                {
+                                    SaleId = "0",
+                                    SaleName = "",
+                                    CardCode = item.CardCode,
+                                    CardName = item.CardName,
+                                    FreezeDateTime = date,
+                                    Remark = "满足自动冻结规则，并且不属于VIP客户，拉入即将冻结客户",
+                                    CreateUserId = "00000000-0000-0000-0000-000000000000",
+                                    CreateUserName = "超级管理员",
+                                    CreateTime = DateTime.Now
+                                });
+                            }                               
                         }
                     }
 
@@ -2339,10 +2369,11 @@ namespace OpenAuth.App.PayTerm
                                         CardName = item.CardName,
                                         SaleId = slpCode.ToString(),
                                         SaleName = slpName,
-                                        FreezeCause = "满足自动冻结规则，并且不属于VIP客户",
+                                        FreezeCause = "满足自动冻结规则，并且不属于VIP客户，拉入冻结客户",
                                         IsAutoThaw = true,
                                         FreezeStartTime = null,
                                         FreezeEndTime = null,
+                                        SendCount = 0,
                                         ThawStartTime = null,
                                         ThawEndTime = null,
                                         ListName = "冻结客户",
@@ -2360,10 +2391,11 @@ namespace OpenAuth.App.PayTerm
                                         CardName = item.CardName,
                                         SaleId = "0",
                                         SaleName = "",
-                                        FreezeCause = "满足自动冻结规则，并且不属于VIP客户",
+                                        FreezeCause = "满足自动冻结规则，并且不属于VIP客户，拉入冻结客户",
                                         IsAutoThaw = true,
                                         FreezeStartTime = null,
                                         FreezeEndTime = null,
+                                        SendCount = 0,
                                         ThawStartTime = null,
                                         ThawEndTime = null,
                                         ListName = "冻结客户",
@@ -2400,7 +2432,8 @@ namespace OpenAuth.App.PayTerm
 
                     //移除在自动冻结规则中的客户
                     List<PayFreezeCustomer> autoThawNeedDelete = autoThawNeedCustomers.Where(r => !ruleCustomers.Any(x => x.CardCode == r.CardCode && x.CardName == r.CardName)).ToList();
-                    List<PayWillFreezeCustomer> willFreezeAllDelete = willFreezeAllCustomers.Where(r => !ruleCustomers.Any(x => x.CardCode == r.CardCode && x.CardName == r.CardName)).ToList();
+                    var willFreezeAllCustomerLists = await UnitWork.Find<PayWillFreezeCustomer>(null).ToListAsync();
+                    List<PayWillFreezeCustomer> willFreezeAllDelete = willFreezeAllCustomerLists.Where(r => !ruleCustomers.Any(x => x.CardCode == r.CardCode && x.CardName == r.CardName)).ToList();
                     await UnitWork.BatchDeleteAsync<PayFreezeCustomer>(autoThawNeedDelete.ToArray());
                     await UnitWork.BatchDeleteAsync<PayWillFreezeCustomer>(willFreezeAllDelete.ToArray());
                     await UnitWork.SaveAsync();
@@ -2423,7 +2456,7 @@ namespace OpenAuth.App.PayTerm
             List<DDSendSale> willFreezeCurtomers = await UnitWork.Find<PayWillFreezeCustomer>(null).Select(r => new DDSendSale { CardCode = r.CardCode, CardName = r.CardName, FreezeDateTime = r.FreezeDateTime.ToString("yyyy-MM-dd") }).ToListAsync();
 
             //查询已经冻结客户
-            List<DDSendSale> freezeCustomers = await UnitWork.Find<PayFreezeCustomer>(null).Select(r => new DDSendSale { CardCode = r.CardCode, CardName = r.CardName, FreezeDateTime = r.CreateTime.ToString("yyyy-MM-dd") }).ToListAsync();
+            List<DDSendSale> freezeCustomers = await UnitWork.Find<PayFreezeCustomer>(r => r.SendCount <= 0).Select(r => new DDSendSale { CardCode = r.CardCode, CardName = r.CardName, FreezeDateTime = r.CreateTime.ToString("yyyy-MM-dd") }).ToListAsync();
 
             #region 钉钉推送即将冻结的客户给业务员
             if (willFreezeCurtomers != null && willFreezeCurtomers.Count() > 0)
@@ -2431,28 +2464,24 @@ namespace OpenAuth.App.PayTerm
                 try
                 {
                     //查询客户对应的业务员编码
-                    var slpCodes = await UnitWork.Find<crm_ocrd>(r => r.sbo_id == Define.SBO_ID && (freezeCustomers.Select(x => x.CardCode).ToList()).Contains(r.CardCode) && r.SlpCode != null).Select(r => new CrmOcrdHelp { SlpCode = (int)r.SlpCode, CardCode = r.CardCode }).ToListAsync();
-                    if (slpCodes != null && slpCodes.Count() > 0)
+                    var slpCodes1 = await UnitWork.Find<crm_ocrd>(r => r.sbo_id == Define.SBO_ID && (freezeCustomers.Select(x => x.CardCode).ToList()).Contains(r.CardCode) && r.SlpCode != null).Select(r => new CrmOcrdHelp { SlpCode = (int)r.SlpCode, CardCode = r.CardCode }).ToListAsync();
+                    if (slpCodes1 != null && slpCodes1.Count() > 0)
                     {
                         //查询业务员绑定的3.0 userId
-                        var userIds = await UnitWork.Find<sbo_user>(r => r.sbo_id == Define.SBO_ID && (slpCodes.Select(x => x.SlpCode).ToList()).Contains((int)r.sale_id)).Select(r => new SboUserHelp { user_id = (int)r.user_id, sale_id = (int)r.sale_id }).ToListAsync();
-                        if (userIds != null && userIds.Count() > 0)
+                        var userIds1 = await UnitWork.Find<sbo_user>(r => r.sbo_id == Define.SBO_ID && (slpCodes1.Select(x => x.SlpCode).ToList()).Contains((int)r.sale_id)).Select(r => new SboUserHelp { user_id = (int)r.user_id, sale_id = (int)r.sale_id }).ToListAsync();
+                        if (userIds1 != null && userIds1.Count() > 0)
                         {
                             //查询3.0 userId绑定的4.0 userId
-                            var users = await UnitWork.Find<User>(r => (userIds.Select(r => r.user_id).ToList()).Contains((int)r.User_Id)).Select(r => new UserHelp { Id = r.Id, User_Id = (int)r.User_Id }).ToListAsync();
-                            if (users != null && users.Count() > 0)
+                            var users1 = await UnitWork.Find<User>(r => (userIds1.Select(r => r.user_id).ToList()).Contains((int)r.User_Id)).Select(r => new UserHelp { Id = r.Id, User_Id = (int)r.User_Id }).ToListAsync();
+                            if (users1 != null && users1.Count() > 0)
                             {
                                 //查询绑定的钉钉用户Id
-                                var ddBindUsers = await UnitWork.Find<DDBindUser>(r => (users.Select(r => r.Id).ToList()).Contains(r.UserId)).ToListAsync();
+                                var ddBindUsers = await UnitWork.Find<DDBindUser>(r => (users1.Select(r => r.Id).ToList()).Contains(r.UserId)).ToListAsync();
                                 var ddSendSales = (from a in willFreezeCurtomers
-                                                   join b in slpCodes on a.CardCode equals b.CardCode into ab
-                                                   from b in ab.DefaultIfEmpty()
-                                                   join c in userIds on b.SlpCode equals c.sale_id into bc
-                                                   from c in bc.DefaultIfEmpty()
-                                                   join d in users on c.user_id equals d.User_Id into cd
-                                                   from d in cd.DefaultIfEmpty()
-                                                   join e in ddBindUsers on d.Id equals e.UserId into de
-                                                   from e in de.DefaultIfEmpty()
+                                                   join b in slpCodes1 on a.CardCode equals b.CardCode 
+                                                   join c in userIds1 on b.SlpCode equals c.sale_id 
+                                                   join d in users1 on c.user_id equals d.User_Id 
+                                                   join e in ddBindUsers on d.Id equals e.UserId 
                                                    select new DDSendSale
                                                    {
                                                        CardCode = a.CardCode,
@@ -2467,11 +2496,13 @@ namespace OpenAuth.App.PayTerm
                                     List<DDSendSale> cardCodes = ddSendSales.Where(r => r.DDUserId == item).ToList();
                                     if (cardCodes != null && cardCodes.Count() > 0)
                                     {
+                                        StringBuilder remarks = new StringBuilder();
                                         foreach (DDSendSale dDSendSale in cardCodes)
                                         {
-                                            string remarks = "客户编码为" + dDSendSale.CardCode + "的客户 " + dDSendSale.CardName + ",将在" + dDSendSale.FreezeDateTime + " 即将冻结";
-                                            await _dDVoice.DDSendMsg("text", remarks, item);
+                                             remarks.Append("客户编码为" + dDSendSale.CardCode + "的客户 " + dDSendSale.CardName + ",将在" + dDSendSale.FreezeDateTime + " 即将冻结 ");
                                         }
+
+                                        await _dDVoice.DDSendMsg("text", remarks.ToString(), item);
                                     }
                                     else
                                     {
@@ -2520,14 +2551,10 @@ namespace OpenAuth.App.PayTerm
                                 //查询绑定的钉钉用户Id
                                 var ddBindUsers = await UnitWork.Find<DDBindUser>(r => (users.Select(r => r.Id).ToList()).Contains(r.UserId)).ToListAsync();
                                 var ddSendSales = (from a in freezeCustomers
-                                                   join b in slpCodes on a.CardCode equals b.CardCode into ab
-                                                   from b in ab.DefaultIfEmpty()
-                                                   join c in userIds on b.SlpCode equals c.sale_id into bc
-                                                   from c in bc.DefaultIfEmpty()
-                                                   join d in users on c.user_id equals d.User_Id into cd
-                                                   from d in cd.DefaultIfEmpty()
-                                                   join e in ddBindUsers on d.Id equals e.UserId into de
-                                                   from e in de.DefaultIfEmpty()
+                                                   join b in slpCodes on a.CardCode equals b.CardCode
+                                                   join c in userIds on b.SlpCode equals c.sale_id
+                                                   join d in users on c.user_id equals d.User_Id
+                                                   join e in ddBindUsers on d.Id equals e.UserId
                                                    select new DDSendSale
                                                    {
                                                        CardCode = a.CardCode,
@@ -2537,6 +2564,7 @@ namespace OpenAuth.App.PayTerm
                                                    }).ToList();
 
                                 List<string> ddUsers = ddSendSales.GroupBy(r => new { r.DDUserId }).Select(r => r.Key.DDUserId).ToList();
+                                List<string> cardCodeLists = new List<string>();
                                 foreach (string item in ddUsers)
                                 {
                                     if (!string.IsNullOrEmpty(item))
@@ -2544,11 +2572,14 @@ namespace OpenAuth.App.PayTerm
                                         List<DDSendSale> cardCodes = ddSendSales.Where(r => r.DDUserId == item).ToList();
                                         if (cardCodes != null && cardCodes.Count() > 0)
                                         {
+                                            StringBuilder remarks = new StringBuilder();
                                             foreach (DDSendSale dDSendSale in cardCodes)
                                             {
-                                                string remarks = "客户编码为" + dDSendSale.CardCode + "的客户 " + dDSendSale.CardName + ",已经在" + dDSendSale.FreezeDateTime + " 冻结";
-                                                await _dDVoice.DDSendMsg("text", remarks, item);
+                                                 remarks.Append("客户编码为" + dDSendSale.CardCode + "的客户 " + dDSendSale.CardName + ",在" + dDSendSale.FreezeDateTime + "已冻结 ");
+                                                cardCodeLists.Add(dDSendSale.CardCode);
                                             }
+
+                                            await _dDVoice.DDSendMsg("text", remarks.ToString(), item);
                                         }
                                         else
                                         {
@@ -2566,6 +2597,20 @@ namespace OpenAuth.App.PayTerm
                                             await UnitWork.SaveAsync();
                                         }
                                     }
+                                }
+
+                                //将已经发送通知的冻结客户发送次数更改为1
+                                if (cardCodeLists.Count() > 0)
+                                {
+                                    foreach (string item in cardCodeLists)
+                                    {
+                                        await UnitWork.UpdateAsync<PayFreezeCustomer>(r => r.CardCode == item, r => new PayFreezeCustomer()
+                                        {
+                                            SendCount = 1
+                                        });
+                                    }
+                                    
+                                    await UnitWork.SaveAsync();
                                 }
                             }
                         }
@@ -2587,10 +2632,14 @@ namespace OpenAuth.App.PayTerm
         {
             var result = new TableData();
             var payautofreee = await UnitWork.Find<PayAutoFreeze>(r => r.ModelTypeId == 2 && r.IsUse == true).ToListAsync();
-            string filedStrig = "1=1 AND ";
+            string filedStrig = "1=1 ";
             if (payautofreee != null && payautofreee.Count() > 0)
             {
-                filedStrig = "T.DuePercent " + payautofreee.FirstOrDefault().DataFormat + ((payautofreee.FirstOrDefault().DataNumber) / 100);
+                filedStrig = filedStrig + " AND T.DuePercent " + payautofreee.FirstOrDefault().DataFormat + ((payautofreee.FirstOrDefault().DataNumber) / 100);
+            }
+            else
+            {
+                return result;
             }
 
             //获取客户总数
@@ -3577,44 +3626,90 @@ namespace OpenAuth.App.PayTerm
 
             var loginUser = loginContext.User;
             var result = new TableData();
-
-            //查询冻结客户
-            var objs = UnitWork.Find<PayFreezeCustomer>(null);
-            var freezeCustomers = objs.WhereIf(!string.IsNullOrWhiteSpace(request.SaleUser), r => r.SaleId.Contains(request.SaleUser) || r.SaleName.Contains(request.SaleUser))
-                                   .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CardCode.Contains(request.CustomerCodeOrName) || r.CardName.Contains(request.CustomerCodeOrName));
-
-            //分页按照创建时间排序
-            freezeCustomers = freezeCustomers.OrderByDescending(r => r.CreateTime);
-            var freezeCustomerList = await freezeCustomers.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
-            var freezeCustomersLists = freezeCustomerList.Select(r => new
+            QueryTime qt = _saleBusinessMethodHelp.TimeRange(request.TimeRange);
+            if (qt == null || qt.endTime == null || qt.startTime == null)
             {
-                r.Id,
-                r.CardCode,
-                r.CardName,
-                r.SaleId,
-                SaleDeptName = _userDepartMsgHelp.GetUserDepart(Convert.ToInt32(r.SaleId)),
-                r.SaleName,
-                r.FreezeCause,
-                r.IsAutoThaw,
-                r.FreezeStartTime,
-                r.FreezeEndTime,
-                r.ThawStartTime,
-                r.ThawEndTime,
-                r.ListName,
-                r.FreezeType,
-                r.CreateUserId,
-                r.CreateUserName,
-                CreateDeptName = _userDepartMsgHelp.GetUserOrgName(r.CreateUserId),
-                r.CreateTime,
-                r.UpdateUserId,
-                UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(r.UpdateUserId),
-                r.UpdateUserName,
-                r.UpdateTime
-            });
+                //查询冻结客户
+                var objs = UnitWork.Find<PayFreezeCustomer>(null);
+                var freezeCustomers = objs.WhereIf(!string.IsNullOrWhiteSpace(request.SaleUser), r => r.SaleId.Contains(request.SaleUser) || r.SaleName.Contains(request.SaleUser))
+                                       .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CardCode.Contains(request.CustomerCodeOrName) || r.CardName.Contains(request.CustomerCodeOrName));
 
-            result.Data = freezeCustomersLists;
-            result.Count = freezeCustomers.Count();
-            result.Message = "获取成功";
+                //分页按照创建时间排序
+                freezeCustomers = freezeCustomers.OrderByDescending(r => r.CreateTime);
+                var freezeCustomerList = await freezeCustomers.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+                var freezeCustomersLists = freezeCustomerList.Select(r => new
+                {
+                    r.Id,
+                    r.CardCode,
+                    r.CardName,
+                    r.SaleId,
+                    SaleDeptName = _userDepartMsgHelp.GetUserDepart(Convert.ToInt32(r.SaleId)),
+                    r.SaleName,
+                    r.FreezeCause,
+                    r.IsAutoThaw,
+                    r.FreezeStartTime,
+                    r.FreezeEndTime,
+                    r.ThawStartTime,
+                    r.ThawEndTime,
+                    r.ListName,
+                    r.FreezeType,
+                    r.SendCount,
+                    r.CreateUserId,
+                    r.CreateUserName,
+                    CreateDeptName = _userDepartMsgHelp.GetUserOrgName(r.CreateUserId),
+                    r.CreateTime,
+                    r.UpdateUserId,
+                    UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(r.UpdateUserId),
+                    r.UpdateUserName,
+                    r.UpdateTime
+                });
+
+                result.Data = freezeCustomersLists;
+                result.Count = freezeCustomers.Count();
+                result.Message = "获取成功";
+            }
+            else
+            {
+                //查询冻结客户
+                var objs = UnitWork.Find<PayFreezeCustomer>(r => r.CreateTime >= Convert.ToDateTime(qt.startTime) && r.CreateTime <= Convert.ToDateTime(qt.endTime));
+                var freezeCustomers = objs.WhereIf(!string.IsNullOrWhiteSpace(request.SaleUser), r => r.SaleId.Contains(request.SaleUser) || r.SaleName.Contains(request.SaleUser))
+                                       .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CardCode.Contains(request.CustomerCodeOrName) || r.CardName.Contains(request.CustomerCodeOrName));
+
+                //分页按照创建时间排序
+                freezeCustomers = freezeCustomers.OrderByDescending(r => r.CreateTime);
+                var freezeCustomerList = await freezeCustomers.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+                var freezeCustomersLists = freezeCustomerList.Select(r => new
+                {
+                    r.Id,
+                    r.CardCode,
+                    r.CardName,
+                    r.SaleId,
+                    SaleDeptName = _userDepartMsgHelp.GetUserDepart(Convert.ToInt32(r.SaleId)),
+                    r.SaleName,
+                    r.FreezeCause,
+                    r.IsAutoThaw,
+                    r.FreezeStartTime,
+                    r.FreezeEndTime,
+                    r.ThawStartTime,
+                    r.ThawEndTime,
+                    r.ListName,
+                    r.FreezeType,
+                    r.SendCount,
+                    r.CreateUserId,
+                    r.CreateUserName,
+                    CreateDeptName = _userDepartMsgHelp.GetUserOrgName(r.CreateUserId),
+                    r.CreateTime,
+                    r.UpdateUserId,
+                    UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(r.UpdateUserId),
+                    r.UpdateUserName,
+                    r.UpdateTime
+                });
+
+                result.Data = freezeCustomersLists;
+                result.Count = freezeCustomers.Count();
+                result.Message = "获取成功";
+            }
+
             return result;
         }
 
@@ -3650,6 +3745,7 @@ namespace OpenAuth.App.PayTerm
                 r.ThawStartTime,
                 r.ThawEndTime,
                 r.ListName,
+                r.SendCount,
                 r.FreezeType,
                 r.CreateUserId,
                 r.CreateUserName,
@@ -3695,6 +3791,7 @@ namespace OpenAuth.App.PayTerm
             {
                 try
                 {
+                    obj.SendCount = 0;
                     obj.ListName = "冻结客户";
                     obj.FreezeType = 2;
                     obj.SaleId = string.IsNullOrEmpty(obj.SaleId) ? "0" : obj.SaleId;
@@ -3761,6 +3858,7 @@ namespace OpenAuth.App.PayTerm
                         FreezeEndTime = obj.FreezeEndTime,
                         ThawStartTime = obj.ThawStartTime,
                         ThawEndTime = obj.ThawEndTime,
+                        SendCount = obj.SendCount,
                         FreezeType = obj.FreezeType,
                         CreateUserId = obj.CreateUserId,
                         CreateUserName = obj.CreateUserName,
@@ -3803,6 +3901,126 @@ namespace OpenAuth.App.PayTerm
             if (payFreezeCustomers != null && payFreezeCustomers.Count() > 0)
             {
                 await UnitWork.DeleteAsync<PayFreezeCustomer>(r => r.Id == Id);
+                await UnitWork.SaveAsync();
+                result.Message = "删除成功";
+            }
+            else
+            {
+                result.Message = "删除失败，该客户不存在";
+                result.Code = 500;
+            }
+
+            return result;
+        }
+        #endregion
+
+        #region 即将冻结客户
+        /// <summary>
+        /// 获取即将冻结客户列表
+        /// </summary>
+        /// <param name="request">冻结客户查询实体</param>
+        /// <returns>返回即将冻结客户列表</returns>
+        public async Task<TableData> GetWillFreezeCustomer(CustomerReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var loginUser = loginContext.User;
+            var result = new TableData();
+            QueryTime qt = _saleBusinessMethodHelp.TimeRange(request.TimeRange);
+            if (qt == null || qt.endTime == null || qt.startTime == null)
+            {
+                //查询即将冻结客户
+                var objs = UnitWork.Find<PayWillFreezeCustomer>(null);
+                var willFreezeCustomers = objs.WhereIf(!string.IsNullOrWhiteSpace(request.SaleUser), r => r.SaleId.Contains(request.SaleUser) || r.SaleName.Contains(request.SaleUser))
+                                              .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CardCode.Contains(request.CustomerCodeOrName) || r.CardName.Contains(request.CustomerCodeOrName));
+
+                //分页按照创建时间排序
+                willFreezeCustomers = willFreezeCustomers.OrderBy(r => r.FreezeDateTime);
+                var willFreezeCustomerList = await willFreezeCustomers.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+                var willFreezeCustomersLists = willFreezeCustomerList.Select(r => new
+                {
+                    r.Id,
+                    r.SaleId,
+                    SaleDeptName = _userDepartMsgHelp.GetUserDepart(Convert.ToInt32(r.SaleId)),
+                    r.SaleName,
+                    r.CardCode,
+                    r.CardName,
+                    r.FreezeDateTime,
+                    r.Remark,
+                    r.CreateUserId,
+                    r.CreateUserName,
+                    CreateDeptName = _userDepartMsgHelp.GetUserOrgName(r.CreateUserId),
+                    r.CreateTime,
+                    r.UpdateUserId,
+                    UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(r.UpdateUserId),
+                    r.UpdateUserName,
+                    r.UpdateTime
+                });
+
+                result.Data = willFreezeCustomersLists;
+                result.Count = willFreezeCustomers.Count();
+                result.Message = "获取成功";
+            }
+            else
+            {
+                //查询即将冻结客户
+                var objs = UnitWork.Find<PayWillFreezeCustomer>(r => r.CreateTime >= Convert.ToDateTime(qt.startTime) && r.CreateTime <= Convert.ToDateTime(qt.endTime));
+                var willFreezeCustomers = objs.WhereIf(!string.IsNullOrWhiteSpace(request.SaleUser), r => r.SaleId.Contains(request.SaleUser) || r.SaleName.Contains(request.SaleUser))
+                                              .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CardCode.Contains(request.CustomerCodeOrName) || r.CardName.Contains(request.CustomerCodeOrName));
+
+                //分页按照创建时间排序
+                willFreezeCustomers = willFreezeCustomers.OrderBy(r => r.FreezeDateTime);
+                var willFreezeCustomerList = await willFreezeCustomers.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+                var willFreezeCustomersLists = willFreezeCustomerList.Select(r => new
+                {
+                    r.Id,
+                    r.SaleId,
+                    SaleDeptName = _userDepartMsgHelp.GetUserDepart(Convert.ToInt32(r.SaleId)),
+                    r.SaleName,
+                    r.CardCode,
+                    r.CardName,
+                    r.FreezeDateTime,
+                    r.Remark,
+                    r.CreateUserId,
+                    r.CreateUserName,
+                    CreateDeptName = _userDepartMsgHelp.GetUserOrgName(r.CreateUserId),
+                    r.CreateTime,
+                    r.UpdateUserId,
+                    UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(r.UpdateUserId),
+                    r.UpdateUserName,
+                    r.UpdateTime
+                });
+
+                result.Data = willFreezeCustomersLists;
+                result.Count = willFreezeCustomers.Count();
+                result.Message = "获取成功";
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 删除即将冻结客户
+        /// </summary>
+        /// <param name="Id">即将冻结客户Id</param>
+        /// <returns>返回删除结果</returns>
+        public async Task<TableData> DeleteWillFreezeCustomer(string Id)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            var result = new TableData();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var payWillFreezeCustomers = await UnitWork.Find<PayWillFreezeCustomer>(r => r.Id == Id).ToListAsync();
+            if (payWillFreezeCustomers != null && payWillFreezeCustomers.Count() > 0)
+            {
+                await UnitWork.DeleteAsync<PayWillFreezeCustomer>(r => r.Id == Id);
                 await UnitWork.SaveAsync();
                 result.Message = "删除成功";
             }

@@ -72,28 +72,6 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 已冻结客户和将要冻结客户数量
-        /// </summary>
-        /// <returns>返回客户数量信息</returns>
-        [HttpGet]
-        public async Task<TableData> GetFreezeCustomer()
-        {
-            var result = new TableData();
-            try
-            {
-                return await _saleBusinessApp.GetFreezeCustomer();
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
-            }
-
-            return result;
-        }
-
-        /// <summary>
         /// 销售状态提醒
         /// </summary>
         /// <returns>返回销售状态提醒信息</returns>

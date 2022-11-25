@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Serilog;
 using Infrastructure;
 using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.Interface;
 using OpenAuth.Repository.Interface;
 using OpenAuth.App.Order.Request;
@@ -45,6 +46,7 @@ namespace OpenAuth.App.PayTerm
             int groupNum = addOrderReq.Order.GroupNum;
             decimal docTotal = addOrderReq.Order.DocTotal;
             bool isFlag = false;
+            bool isOriginal = false;
 
             //如果客户为VIP客户，不走限制规则判定
             var vipCustomers = await UnitWork.Find<PayVIPCustomer>(r => r.CardCode == cardCode).ToListAsync();
@@ -77,10 +79,17 @@ namespace OpenAuth.App.PayTerm
                 isFlag = clientRelations.FirstOrDefault().Flag == 1 ? true : false;
             }
 
+            //查询当前客户是否为原始客户
+            var oquts = await UnitWork.Find<OQUT>(r => r.CardCode == cardCode).Select(r => r.CardCode).ToListAsync();
+            if (oquts != null && oquts.Count() > 0)
+            {
+                isOriginal = true;
+            }
+
             try
             {
                 //根据限制规则生成逻辑运算公式
-                var limitRules = await UnitWork.Find<PayLimitRule>(r => r.IsUse == true).OrderByDescending(r => r.PayPriority).ToListAsync();
+                List<PayLimitRule> limitRules = await UnitWork.Find<PayLimitRule>(r => r.IsUse == true).OrderByDescending(r => r.PayPriority).ToListAsync();
                 if (limitRules != null && limitRules.Count() > 0)
                 {
                     foreach (PayLimitRule item in limitRules)

@@ -87,5 +87,10 @@ namespace OpenAuth.App.PayTerm.PayTermSetHelp
         /// 业务员
         /// </summary>
         public string SaleUser { get; set; }
+
+        /// <summary>
+        /// 时间范围
+        /// </summary>
+        public string TimeRange { get; set; }
     }
 }
