@@ -729,7 +729,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                             from TaskView5
                             where 1=1  ");
             string sqlcount = string.Format(@"select count(1) count
-                            from TaskView5
+                            from ( select  *  from TaskView5
                             where 1=1  ");
             string sqlwhere = "";
             if (!string.IsNullOrWhiteSpace(req.Owner))
@@ -819,6 +819,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             }
             sql += sqlwhere;
             sqlcount += sqlwhere;
+            sqlcount += " ) T ";
             sql += "  ORDER BY CreatedDate DESC  OFFSET   " + ((req.page - 1) * req.limit).ToString() + "   ROWS  FETCH NEXT  " + req.limit.ToString() + "  ROWS ONLY    ";
 
             var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
