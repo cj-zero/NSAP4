@@ -185,6 +185,28 @@ namespace OpenAuth.App.Material
             return result;
         }
 
+        /// <summary>
+        /// 校验提交统计是否合法
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<List<string>> LegitCheckUtility(LegitCheckRequest req)
+        {
+            List<string> passport = new List<string>();
+            var queryBindUtility = UnitWork.Find<ManageAccountBind>(a => req.checkList.Contains(a.MName)  && a.IsDelete == 0 && a.DutyFlag == 1 ).ToList();
+            if (queryBindUtility != null)
+            {
+                foreach (var item in req.checkList)
+                {
+                    if (!queryBindUtility.Exists(a=>a.MName== item))
+                    {
+                        passport.Add(item);
+                    }
+                }
+            }
+            return passport;
+        }
+
 
         /// <summary>
         /// 考勤柱状图数据

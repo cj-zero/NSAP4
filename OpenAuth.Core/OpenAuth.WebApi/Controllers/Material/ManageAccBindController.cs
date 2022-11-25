@@ -101,6 +101,31 @@ namespace OpenAuth.WebApi.Controllers.Material
             return result;
         }
 
+
+
+        /// <summary>
+        /// 校验提交统计是否合法
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<List<string>>> LegitCheckUtility([FromBody] LegitCheckRequest req)
+        {
+            var result = new Response<List<string>>();
+            try
+            {
+                result.Result = await _app.LegitCheckUtility(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+
         /// <summary>
         /// 考勤柱状图数据
         /// </summary>
