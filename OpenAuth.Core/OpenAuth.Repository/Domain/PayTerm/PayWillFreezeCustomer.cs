@@ -39,9 +39,63 @@ namespace OpenAuth.Repository.Domain
         public string CardName { get; set; }
 
         /// <summary>
+        /// 业务员Id
+        /// </summary>
+        [Description("业务员Id")]
+        public string SaleId { get; set; }
+
+        /// <summary>
+        /// 业务员名称
+        /// </summary>
+        [Description("业务员名称")]
+        public string SaleName { get; set; }
+
+        /// <summary>
         /// 冻结时间
         /// </summary>
         [Description("冻结时间")]
         public System.DateTime? FreezeDateTime { get; set; }
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        [Description("备注")]
+        public string Remark { get; set; }
+
+        /// <summary>
+        /// 创建人Id
+        /// </summary>
+        [Description("创建人Id")]
+        public string CreateUserId { get; set; }
+
+        /// <summary>
+        /// 创建人
+        /// </summary>
+        [Description("创建人")]
+        public string CreateUserName { get; set; }
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        [Description("创建时间")]
+        public System.DateTime? CreateTime { get; set; }
+
+        /// <summary>
+        /// 更新人Id
+        /// </summary>
+        [Description("更新人Id")]
+        public string UpdateUserId { get; set; }
+
+        /// <summary>
+        /// 更新人
+        /// </summary>
+        [Description("更新人")]
+        public string UpdateUserName { get; set; }
+
+        /// <summary>
+        /// 更新时间
+        /// </summary>
+        [Description("更新时间")]
+        public System.DateTime? UpdateTime { get; set; }
     }
 }

@@ -107,6 +107,12 @@ namespace OpenAuth.Repository.Domain
         public int? FreezeType { get; set; }
 
         /// <summary>
+        /// 发送次数
+        /// </summary>
+        [Description("发送次数")]
+        public int? SendCount { get; set; }
+
+        /// <summary>
         /// 创建人Id
         /// </summary>
         [Description("创建人Id")]

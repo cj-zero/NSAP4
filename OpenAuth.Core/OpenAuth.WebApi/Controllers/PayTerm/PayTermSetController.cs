@@ -992,5 +992,53 @@ namespace OpenAuth.WebApi.Controllers.PayTerm
             return result;
         }
         #endregion
+
+        #region 即将冻结客户
+        /// <summary>
+        /// 即将冻结客户列表
+        /// </summary>
+        /// <param name="obj">客户信息实体</param>
+        /// <returns>返回即将冻结客户列表信息</returns>
+        [HttpPost]
+        public async Task<TableData> GetWillFreezeCustomer(CustomerReq obj)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _payTermApp.GetWillFreezeCustomer(obj);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()} 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 删除即将冻结客户
+        /// </summary>
+        /// <param name="Id">即将冻结客户Id</param>
+        /// <returns>返回删除结果</returns>
+        [HttpGet]
+        public async Task<TableData> DeleteWillFreezeCustomer(string Id)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _payTermApp.DeleteWillFreezeCustomer(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{Id.ToJson()} 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        #endregion
     }
 }

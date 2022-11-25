@@ -21,9 +21,44 @@ namespace OpenAuth.App.SaleBusiness.Request
         public string ModelNum { get; set; }
 
         /// <summary>
+        /// 模块总数
+        /// </summary>
+        public string ModelCount { get; set; }
+
+        /// <summary>
         /// 模块路径
         /// </summary>
         public string Url { get; set; }
+
+        /// <summary>
+        /// 模块子数据文本1
+        /// </summary>
+        public string ModelChildTextOne { get; set; }
+
+        /// <summary>
+        /// 模块子数据文本2
+        /// </summary>
+        public string ModelChildTextTwo { get; set; }
+
+        /// <summary>
+        /// 模块子数据1
+        /// </summary>
+        public string ModelChildNumOne { get; set; }
+
+        /// <summary>
+        /// 模块子数据2
+        /// </summary>
+        public string ModelChildNumTwo { get; set; }
+
+        /// <summary>
+        /// 模块子数据总数1
+        /// </summary>
+        public string ModelChildCountOne { get; set; }
+
+        /// <summary>
+        /// 模块子数据总数2
+        /// </summary>
+        public string ModelChildCountTwo { get; set; }
     }
 
     /// <summary>
