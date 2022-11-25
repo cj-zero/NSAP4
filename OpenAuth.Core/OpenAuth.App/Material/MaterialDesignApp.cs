@@ -715,7 +715,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             {
                 statisticView.AddRange(UnitWork.Find<TaskView>(q => q.Month == req.Month).ToList());
                 NumberList.AddRange(statisticView.Select(q => q.Number).ToList());
-                
+
             }
             else
             {
@@ -758,7 +758,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             }
             if (!string.IsNullOrWhiteSpace(req.fld006314))
             {
-                sqlwhere += " and fld006314 = N'" + req.fld006314+"'";
+                sqlwhere += " and fld006314 = N'" + req.fld006314 + "'";
             }
             if (!string.IsNullOrWhiteSpace(req.complete))
             {
@@ -786,7 +786,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             }
             if (!string.IsNullOrEmpty(req.DutyFlag))
             {
-                if (req.DutyFlag=="1")
+                if (req.DutyFlag == "1")
                 {
                     string str = String.Join(",", NumberList.Select(x => $"'{x}'"));
                     if (!string.IsNullOrWhiteSpace(str))
@@ -827,11 +827,11 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             foreach (var item in modeldata)
             {
                 var specSta = statisticView.Where(u => u.Number == item.Number).FirstOrDefault();
-                if (specSta!=null)
+                if (specSta != null)
                 {
                     item.Month = statisticView.Where(u => u.Number == item.Number).FirstOrDefault().Month;
                 }
-                
+
             }
 
             #region rejected code 
@@ -885,10 +885,10 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             //{
             //    querydata = querydata.Where(q => q.Month == req.Month);
             //}
-            #endregion 
+            #endregion
 
 
-           // var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            // var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
 
             result.Data = modeldata.ToList();
             result.Count = countList.FirstOrDefault().count;
@@ -941,8 +941,8 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
         public List<DataTable> DataView(string date)
         {
             List<DataTable> list = new List<DataTable>();
-            DateTime start = Convert.ToDateTime(date + "-01");
-            DateTime end = start.AddMonths(1);
+            string start = Convert.ToDateTime(date + "-01").ToString("yyyy-MM-dd");
+            string end = Convert.ToDateTime(date + "-01").AddMonths(1).ToString("yyyy-MM-dd");
             //数据概览
             string strSql = string.Format(@" SELECT
                             convert(varchar(100),A.DT,23) '日期',
@@ -955,7 +955,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                             where  AssignTime >= '" + start + "' AND AssignTime < '" + end + "' group by AssignTime ) T ON T.date = A.DT LEFT JOIN");
             strSql += string.Format(@"  (SELECT CompleteTime date,count(Number) AS num 
                             from  TaskView5
-                            where complete  =1 and  CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "' group by CompleteTime) T1 ON T1.date = A.DT");
+                            where isFinished = 1 and  CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "' group by CompleteTime) T1 ON T1.date = A.DT");
             list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
             //难度
             strSql = string.Format(@" select  name,
@@ -1043,8 +1043,8 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             dt.Columns.Add("qualified", Type.GetType("System.Int32"));//合格
             dt.Columns.Add("excellent", Type.GetType("System.Int32"));//优秀
             dt.Columns.Add("archive", Type.GetType("System.Int32"));//是否存档
-            dt.Rows.Add( dt.NewRow());
-            dt.Rows[0]["archive"] = adata!=null?1:0;
+            dt.Rows.Add(dt.NewRow());
+            dt.Rows[0]["archive"] = adata != null ? 1 : 0;
             var ManageAccountBind = UnitWork.Find<ManageAccountBind>(q => q.LName == loginContext.User.Name && q.DutyFlag == 1 && q.Level != null).FirstOrDefault();
             if (ManageAccountBind != null)
             {
@@ -1116,7 +1116,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                 dt1.Rows[0]["submitother"] = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null).Rows.Count;
                 list.Add(dt1);
             }
-         
+
 
             return list;
         }

@@ -21,7 +21,7 @@ namespace OpenAuth.WebApi.Controllers.Material
     [Route("api/Material/[controller]/[action]")]
     [ApiController]
     [ApiExplorerSettings(GroupName = "Material")]
-    public class ManageAccBindController :  Controller
+    public class ManageAccBindController : Controller
     {
         private readonly ManageAccBindApp _app;
         /// <summary>
@@ -41,7 +41,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         [HttpPost]
         public async Task<Response<UserManageUtilityRsp>> GetUserUtilityList([FromBody] UserManageUtilityRequest req)
         {
-            var result = new  Response<UserManageUtilityRsp>();
+            var result = new Response<UserManageUtilityRsp>();
             try
             {
                 result.Result = await _app.GetUserUtilityList(req);
@@ -176,7 +176,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<ArchiveData>> GetArchives(string  req)
+        public async Task<Response<ArchiveData>> GetArchives(string req)
         {
             var result = new Response<ArchiveData>();
             try
@@ -202,7 +202,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         {
             var data = await _app.ExportRateTableUtility(req.texports);
 
-            return File(data, "application/octet-stream","Rate.xlsx");
+            return File(data, "application/octet-stream", "Rate.xlsx");
         }
 
         /// <summary>
@@ -217,7 +217,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             var fileName = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "DutyDetail.xlsx");
             //var exportData = new DetailExportData();
             //exportData.detports.Add(new DetailExport {  Name="jack"});
-            var data =  await exporter.ExportBytesByTemplate(req, fileName);
+            var data = await exporter.ExportBytesByTemplate(req, fileName);
             return File(data, "application/octet-stream", "RateDetail.xlsx");
         }
 

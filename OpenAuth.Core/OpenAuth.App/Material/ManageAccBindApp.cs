@@ -113,16 +113,17 @@ namespace OpenAuth.App.Material
             //concat bindData
             foreach (var muser in MaterialUserList)
             {
-                if (erp4BindList.Exists(u=>u.MAccount == muser.UserID.ToString()))
+                if (erp4BindList.Exists(u => u.MAccount == muser.UserID.ToString()))
                 {
                     var specBinding = erp4BindList.Where(u => u.MAccount == muser.UserID.ToString()).FirstOrDefault();
                     bindList.Add(specBinding);
                 }
                 else
                 {
-                    bindList.Add(new ManageAccountBind { 
+                    bindList.Add(new ManageAccountBind
+                    {
                         MAccount = muser.UserID.ToString(),
-                        MName=muser.FirstNameAndLastName==null? muser.UserName: muser.FirstNameAndLastName
+                        MName = muser.FirstNameAndLastName == null ? muser.UserName : muser.FirstNameAndLastName
                     });
                 }
             }
@@ -151,7 +152,7 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var queryBindUtility = UnitWork.FindSingle<ManageAccountBind>(a => a.MAccount == req.MAccount && a.IsDelete == 0 );
+            var queryBindUtility = UnitWork.FindSingle<ManageAccountBind>(a => a.MAccount == req.MAccount && a.IsDelete == 0);
             if (queryBindUtility != null)
             {
                 queryBindUtility.LAccount = req.LAccount;
@@ -166,21 +167,22 @@ namespace OpenAuth.App.Material
             }
             else
             {
-                await UnitWork.AddAsync<ManageAccountBind>(new ManageAccountBind { 
+                await UnitWork.AddAsync<ManageAccountBind>(new ManageAccountBind
+                {
                     MAccount = req.MAccount,
                     MName = req.MName,
                     LName = req.LName,
-                    LAccount=req.LAccount,
+                    LAccount = req.LAccount,
                     DutyFlag = req.DutyFlag,
                     Level = req.Level,
                     UpdateDate = DateTime.Now,
                     CreateDate = DateTime.Now,
                     Creatorid = loginContext.User.Id,
                     Creator = loginContext.User.Name,
-                    IsDelete =0
+                    IsDelete = 0
                 });
             }
-            
+
             await UnitWork.SaveAsync();
             return result;
         }
@@ -193,12 +195,12 @@ namespace OpenAuth.App.Material
         public async Task<List<string>> LegitCheckUtility(LegitCheckRequest req)
         {
             List<string> passport = new List<string>();
-            var queryBindUtility = UnitWork.Find<ManageAccountBind>(a => req.checkList.Contains(a.MName)  && a.IsDelete == 0 && a.DutyFlag == 1 ).ToList();
+            var queryBindUtility = UnitWork.Find<ManageAccountBind>(a => req.checkList.Contains(a.MName) && a.IsDelete == 0 && a.DutyFlag == 1).ToList();
             if (queryBindUtility != null)
             {
                 foreach (var item in req.checkList)
                 {
-                    if (!queryBindUtility.Exists(a=>a.MName== item))
+                    if (!queryBindUtility.Exists(a => a.MName == item))
                     {
                         passport.Add(item);
                     }
@@ -219,9 +221,9 @@ namespace OpenAuth.App.Material
             // get due time personals
             StringBuilder strSql = new StringBuilder();
             string start = Convert.ToDateTime(req.Month + "-01").ToString("yyyy-MM-dd");
-             string end = Convert.ToDateTime(req.Month + "-01").AddMonths(1).ToString("yyyy-MM-dd");
+            string end = Convert.ToDateTime(req.Month + "-01").AddMonths(1).ToString("yyyy-MM-dd");
             strSql.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by Owner  ORDER BY CompleteCount DESC ");
-            var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(),CommandType.Text);
+            var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
             StringBuilder strFSql = new StringBuilder();
             strFSql.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by Owner    ORDER BY CompleteCount DESC ");
             var personalFList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strFSql.ToString(), CommandType.Text);
@@ -230,7 +232,7 @@ namespace OpenAuth.App.Material
             var personalFNames = personalFList.Select(u => u.Owner).ToList();
             StringBuilder strSqlbind = new StringBuilder();
             StringBuilder strSqlFbind = new StringBuilder();
-            strSqlbind.AppendFormat("select * from manageaccountbind u  where (LOCATE(u.MName , \"{0}\")  > 0  ||  LOCATE(u.MName , \"{1}\")  > 0  )and u.DutyFlag = 1 and  Level is not null ", JsonConvert.SerializeObject(personalNames).Replace(@"""", ""),JsonConvert.SerializeObject(personalFNames).Replace(@"""", ""));
+            strSqlbind.AppendFormat("select * from manageaccountbind u  where (LOCATE(u.MName , \"{0}\")  > 0  ||  LOCATE(u.MName , \"{1}\")  > 0  )and u.DutyFlag = 1 and  Level is not null ", JsonConvert.SerializeObject(personalNames).Replace(@"""", ""), JsonConvert.SerializeObject(personalFNames).Replace(@"""", ""));
             var erp4BindList = UnitWork.ExcuteSql<ManageAccountBind>(ContextType.DefaultContextType, strSqlbind.ToString(), CommandType.Text, null).ToList();
             var legitPersonalNameList = erp4BindList.Select(u => u.MName).ToList();
             var legitPersonalNameFList = erp4BindList.Select(u => u.MName).ToList();
@@ -240,7 +242,7 @@ namespace OpenAuth.App.Material
             var FinalPersonals = new List<SerieManageData>();
             FinalPersonals.AddRange(legitPersonals);
             FinalPersonals.AddRange(legitFPersonals);
-           var FinalPersonalSort=  FinalPersonals.OrderByDescending(a => a.CompleteCount);
+            var FinalPersonalSort = FinalPersonals.OrderByDescending(a => a.CompleteCount);
             dcr.XData = FinalPersonalSort.Select(a => a.Owner).Distinct().ToList();
             SerieData serieRuleQualified = new SerieData();
             serieRuleQualified.Name = "合格件数";
@@ -311,8 +313,8 @@ namespace OpenAuth.App.Material
             string end = Convert.ToDateTime(req.Month + "-01").AddMonths(1).ToString("yyyy-MM-dd");
             strSql.AppendFormat("SELECT Owner as Name,Number as PartNum, objNBS as Theme, StageName as TaskName, fld005506 as ProductModel, Complete as Completion,fld006314 as DiffcultDegree, Status as Status, DueDate as DueDate, DueDays, AssignedBy as Assigner,AssignedTo as Assignee, CreatedBy as Creator,CreatedDate   as CreateDateTime , Owner, AssignTime as AssignTime, StartDate as BeginTime,CompleteTime as EndTime from TaskView5 where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'   ORDER BY CreatedDate DESC  OFFSET  " + ((req.page - 1) * req.limit).ToString() + "   ROWS  FETCH NEXT  " + req.limit.ToString() + "  ROWS ONLY    ");
             // +" OFFSET " + ((query.page - 1) * query.limit).ToString() + " ROWS  FETCH NEXT " + query.limit.ToString() + " ROWS ONLY  ";
- 
-             var personalAssignList = UnitWork.ExcuteSql<DutyDetails>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
+
+            var personalAssignList = UnitWork.ExcuteSql<DutyDetails>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
 
             var countquery = "select count(1) count  from TaskView5  where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  ";
             var countList = UnitWork.ExcuteSql<CardCountDto>(ContextType.ManagerDbContext, countquery.ToString(), CommandType.Text, null);
@@ -328,7 +330,7 @@ namespace OpenAuth.App.Material
                 {
                     ddr.ddr.AddRange(perAssignList);
                 }
-                
+
             }
 
             //ddr.ddr.AddRange(personalAssignList);
@@ -373,7 +375,8 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            RateDetail addItem = new RateDetail {
+            RateDetail addItem = new RateDetail
+            {
                 CreateDate = DateTime.Now,
                 Time = req.Time,
                 Data = JsonConvert.SerializeObject(req.detports),
@@ -398,7 +401,7 @@ namespace OpenAuth.App.Material
         {
             ArchiveData archiveData = new ArchiveData();
             var adata = UnitWork.FindSingle<RateDetail>(a => a.Time == req);
-            if (adata!=null)
+            if (adata != null)
             {
                 archiveData.ArchiveDatas = adata.Data;
                 archiveData.ArchiveFlag = true;
