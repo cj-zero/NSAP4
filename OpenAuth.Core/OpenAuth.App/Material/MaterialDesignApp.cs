@@ -356,13 +356,13 @@ namespace OpenAuth.App.Material
                                     ItemTypeName = t1 == null ? "" : t1.ItemTypeName,
                                     ItemName = t == null ? "" : t.ItemCode
                                 }).ToList();
-                    if (data == null)
+                    if (data == null || data.Count == 0)
                     {
-                        sale_contract_review reviewInfo = UnitWork.Find<sale_contract_review>(q => q.sbo_id == 1 && q.contract_id == ContractReviewCode).FirstOrDefault();
+                        string custom_req = UnitWork.Find<sale_contract_review>(q => q.sbo_id == 1 && q.contract_id == ContractReviewCode).Select(q=>q.custom_req).FirstOrDefault();
                         data = (from s in UnitWork.Find<store_itemtype>(q => q.is_default == true && typeList.Contains(q.ItemTypeName))
                                 select new
                                 {
-                                    custom_req = reviewInfo.custom_req,
+                                    custom_req = custom_req,
                                     ItemTypeName = s.ItemTypeName,
                                     ItemName = ""
                                 }).ToList();
