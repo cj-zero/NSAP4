@@ -32,5 +32,11 @@ namespace OpenAuth.App.Serve.Request
         /// 原技术员Id
         /// </summary>
         public int TechnicianId { get; set; }
+
+        /// <summary>
+        /// 呼叫主题
+        /// </summary>
+        public string themeCode { get; set; }=String.Empty;
+        
     }
 }
