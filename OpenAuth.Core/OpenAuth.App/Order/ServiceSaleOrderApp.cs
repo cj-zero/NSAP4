@@ -1247,7 +1247,17 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     }
                 }
             }
-            tableData.Data = dt.Tolist<SaleItemDto>();
+
+            List<SaleItemDto> saleItemDtos = dt.Tolist<SaleItemDto>();
+            foreach (SaleItemDto item in saleItemDtos)
+            {
+                if (item.item_cfg_id != 0)
+                {
+                    item.Children = GetItemConfigList(item.item_cfg_id.ToString(), item.WhsCode);
+                }
+            }
+
+            tableData.Data = saleItemDtos;
             tableData.Count = Convert.ToInt32(paramOut.Value);
             return tableData;
         }
@@ -1359,9 +1369,9 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         /// </summary>
         /// <param name="ItemCode"></param>
         /// <param name="WhsCode"></param>
-        public TableData GetItemConfigList(string ItemCode, string WhsCode)
+        public List<SaleItemDtoChild> GetItemConfigList(string ItemCode, string WhsCode)
         {
-            TableData tableData = new TableData();
+            List<SaleItemDtoChild> saleItemDtos = new List<SaleItemDtoChild>();
             if (!string.IsNullOrEmpty(ItemCode))
             {
                 string sql = $@"SELECT ROW_NUMBER() OVER (ORDER BY a.ItemCode) RowNum, a.ItemCode,a.item_name as ItemName,a.high_price,a.low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,
@@ -1388,10 +1398,11 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                         LEFT JOIN nsap_bone.store_oitm m ON m.ItemCode=a.ItemCode AND m.sbo_id=1 
                         LEFT JOIN nsap_bone.store_oitw w ON w.ItemCode=a.ItemCode AND w.WhsCode='{WhsCode}' AND m.sbo_id=w.sbo_id 
                         WHERE a.item_cfg_id={ItemCode}";
+
                 DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
-                tableData.Data = dataTable.Tolist<SaleItemDto>();
+                saleItemDtos = dataTable.Tolist<SaleItemDtoChild>();
             }
-            return tableData;
+            return saleItemDtos;
         }
         /// <summary>
         /// 物料数据获取
@@ -1744,7 +1755,8 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 PayBefShip = !string.IsNullOrEmpty(order.PayBefShip) ? order.PayBefShip : "0.0",//发货前付
                 GoodsToPro = !string.IsNullOrEmpty(order.GoodsToPro) ? order.GoodsToPro : "0.0",//货到付百分比
                 DocCur = order.DocCur,
-                U_ERPFrom = "5",//来源4.0系统
+                U_ERPFrom = !string.IsNullOrEmpty(order.U_ERPFrom) ? order.U_ERPFrom : "5",//来源4.0系统
+                U_EshopNo = !string.IsNullOrEmpty(order.U_EshopNo) ? order.U_EshopNo : "",
                 DocDate = order.DocDate.ToString(),
                 DocDueDate = order.DocDueDate.ToString(),
                 DocRate = order.DocRate.ToString(),

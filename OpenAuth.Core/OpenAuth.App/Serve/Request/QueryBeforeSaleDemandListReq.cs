@@ -64,6 +64,10 @@
         /// 需求编号
         /// </summary>
         public string DemandNumber { get; set; }
+        public int U_SAP_ID { get; set; }
+
+
         
+
     }
 }

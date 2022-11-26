@@ -19,6 +19,7 @@ using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.Repository.Interface;
 using OpenAuth.App.CommonHelp;
+using OpenAuth.App.PayTerm;
 using OpenAuth.WebApi.Comm;
 using Serilog;
 using System;
@@ -28,6 +29,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections;
 
 namespace OpenAuth.WebApi.Controllers.Order
 {
@@ -42,13 +44,14 @@ namespace OpenAuth.WebApi.Controllers.Order
         private UserDepartMsgHelp _userDepartMsgHelp;
         private readonly FileApp _app;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
+        private readonly PayLimitRuleApp _payLimitRuleApp;
         //private readonly OrderDraftServiceApp _orderDraftServiceApp;
         private readonly IOptions<AppSetting> _appConfiguration;
         private IHttpClientFactory _httpClient;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
-        public OrderDraftController(UserDepartMsgHelp userDepartMsgHelp, IHttpClientFactory _httpClient, FileApp app, IUnitWork UnitWork, IOptions<AppSetting> appConfiguration, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        public OrderDraftController(UserDepartMsgHelp userDepartMsgHelp, IHttpClientFactory _httpClient, FileApp app, IUnitWork UnitWork, IOptions<AppSetting> appConfiguration, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, PayLimitRuleApp payLimitRuleApp)
         {
             this._httpClient = _httpClient;
             this._app = app;
@@ -58,6 +61,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _auth.GetCurrentUser();
             //this._orderDraftServiceApp = orderDraftServiceApp;
+            this._payLimitRuleApp = payLimitRuleApp;
             this._userDepartMsgHelp = userDepartMsgHelp;
             _appConfiguration = appConfiguration;
         }
@@ -357,6 +361,35 @@ namespace OpenAuth.WebApi.Controllers.Order
             string sortString = string.Empty;
             string filterString = string.Empty;
             string sortName = string.Empty;
+
+            #region 获取已经冻结的客户
+            List<string> cardCodes = await _payLimitRuleApp.GetFreezeCustomers();
+            if (cardCodes != null && cardCodes.Count() > 0)
+            {
+                string arrs = "";
+                for (int i = 0; i < cardCodes.Count(); i++)
+                {
+                    if (cardCodes.Count() == 1)
+                    {
+                        arrs = "'" + cardCodes[0] + "'";
+                    }
+                    else
+                    {
+                        if (i == cardCodes.Count() - 1)
+                        {
+                            arrs = arrs + "'" + cardCodes[i] + "'";
+                        }
+                        else
+                        {
+                            arrs = arrs + "'" + cardCodes[i] + "'" + ",";
+                        }
+                    }
+                }
+
+                filterString += string.Format(" a.CardCode NOT IN ({0}) AND ", arrs);
+            }
+            #endregion
+
             if (dt.Rows.Count > 0)
             {
                 isOpen = dt.Rows[0][6].ToString();
@@ -627,6 +660,15 @@ namespace OpenAuth.WebApi.Controllers.Order
             var result = new Response<string>();
             try
             {
+                bool isSuccess = await _payLimitRuleApp.CheckOrderDraft(orderReq);
+                if (!isSuccess)
+                {
+                    result.Result = "";
+                    result.Code = 500;
+                    result.Message = "当前报价单不符合限制规则，不允许保存";
+                    return result;
+                }
+
                 if (orderReq.Order.Comments.Contains("'"))
                 {
                     orderReq.Order.Comments = orderReq.Order.Comments.Replace("'", "''");
@@ -639,12 +681,12 @@ namespace OpenAuth.WebApi.Controllers.Order
                 string msg = _serviceSaleOrderApp.Save(orderReq);
                 if (msg.Contains("-201"))
                 {
-                    result.Result = msg.Split('-')[0].ToString();
+                    result.Message = msg.Split('-')[0].ToString();
                     result.Code = 201;
                 }
                 else
                 {
-                    result.Result = msg;
+                    result.Message = msg;
                 }
             }
             catch (Exception ex)
@@ -736,14 +778,14 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <param name="ItemCode">item_cfg_id</param>
         /// <param name="WhsCode">仓库code</param>
         /// <returns></returns>
-        [HttpGet]
-        [Route("GetItemConfigList")]
-        public async Task<TableData> GetItemConfigList(string ItemCode, string WhsCode)
-        {
-            var result = new TableData();
-            result = _serviceSaleOrderApp.GetItemConfigList(ItemCode, WhsCode);
-            return result;
-        }
+        //[HttpGet]
+        //[Route("GetItemConfigList")]
+        //public async Task<TableData> GetItemConfigList(string ItemCode, string WhsCode)
+        //{
+        //    var result = new TableData();
+        //    result = _serviceSaleOrderApp.GetItemConfigList(ItemCode, WhsCode);
+        //    return result;
+        //}
         /// <summary>
         /// 客户未清销售订单
         /// GetOpenORDRsByCustomer

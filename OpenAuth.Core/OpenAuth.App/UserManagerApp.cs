@@ -767,6 +767,27 @@ namespace OpenAuth.App
             var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_QuitShieldUser").Select(c => c.DtValue).ToListAsync();
             var quitUsers = erpUsers.Where(c => c.out_date.ToString() != "0000-00-00").Select(c => c.log_nm).ToList();//3.0已离职
             userAccounts = user.Where(c => c.Status == 0 && quitUsers.Contains(c.Account) && !category.Contains(c.Account)).Select(c => c.Account).ToList();//4.0未停用用户
+
+            #region 4.0 user_id 为空用户赋值
+            List<User> updateUserList = new List<User>();
+            var emptyUser = await UnitWork.Find<User>(c => c.User_Id == null && c.Status== 0).ToListAsync();
+            var emptyUserName = emptyUser.Select(a => a.Name).ToList();
+            //  check base_user
+            var relatedBaseUser = await UnitWork.Find<base_user>(c => emptyUserName.Contains(c.user_nm)).ToListAsync();
+            foreach (var ruitem in relatedBaseUser)
+            {
+                var uitem = emptyUser.Where(a=>a.Name == ruitem.user_nm).FirstOrDefault();
+                if (uitem!=null)
+                {
+                    uitem.User_Id = (int)ruitem.user_id;
+                    updateUserList.Add(uitem);
+                }
+
+            }
+            await UnitWork.BatchUpdateAsync<User>(updateUserList.ToArray());
+            await UnitWork.SaveAsync();
+            #endregion
+
             foreach (var item in userAccounts)
             {
                 UnitWork.Update<User>(c => c.Account == item, c => new User

@@ -161,5 +161,27 @@ namespace OpenAuth.WebApi.Controllers
         {
             _beforeSaleDemandApp = app;
         }
+
+        /// <summary>
+        /// 获取详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetSaleListByUSAPID(int id)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _beforeSaleDemandApp.GetSaleListByUSAPID(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{id}， 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }

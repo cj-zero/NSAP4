@@ -280,6 +280,17 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("实际测试结束日期")]
         public System.DateTime? ActualTestEndDate { get; set; }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int? ServiceOrderId { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int? U_SAP_ID { get; set; }
         /// <summary>
         /// 售前申请附件
         /// </summary>

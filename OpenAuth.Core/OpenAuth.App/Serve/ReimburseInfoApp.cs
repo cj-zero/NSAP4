@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -9,6 +11,7 @@ using Infrastructure.Export;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NStandard;
 using OpenAuth.App.Interface;
@@ -3201,7 +3204,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<TableData> HistoryDetailForUser(QueryReimburseInfoListReq req)
+        public async Task<TableData> HistoryDetailForUser(QueryHistoryDetailForUserReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -3209,93 +3212,204 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             TableData result = new TableData();
+            List<HistoryDetailForUserResp> list = new List<HistoryDetailForUserResp>();
 
-            //报销单
-            var ReimburseInfos = await UnitWork.Find<ReimburseInfo>(r => req.CreateUserId == r.CreateUserId && r.RemburseStatus == 9)
-                                .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
-                                .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
-                               .Include(r => r.ReimburseTravellingAllowances)
-                               .Include(r => r.ReimburseFares)
-                               .Include(r => r.ReimburseAccommodationSubsidies)
-                               .Include(r => r.ReimburseOtherCharges)
-                               //.OrderByDescending(r => r.MainId)
-                               .ToListAsync();
-
-            var flowInstaceId = await UnitWork.Find<FlowInstance>(c => c.CustomName == "个人代理结算单" && c.ActivityName == "结束").Select(c => c.Id).ToListAsync();
-
-            var ServiceOrderIds = ReimburseInfos.Select(c => c?.ServiceOrderId).ToList();
-            var serviceDailyExpends = await UnitWork.Find<ServiceDailyExpends>(s => ServiceOrderIds.Contains(s.ServiceOrderId) && s.DailyExpenseType == 1).ToListAsync();
-            var CompletionReports = await UnitWork.Find<CompletionReport>(c => ServiceOrderIds.Contains(c.ServiceOrderId) && (c.IsReimburse == 2 || c.IsReimburse == 4)).Select(c => new
+            decimal commissionMoney = 0, reimburseMoney = 0, outsourcMoney = 0, wagesMoney= 0,blameBelongMoney = 0;
+            if (req.OrderType == 0 || req.OrderType == 1)
             {
-                c.ServiceOrderId,
-                c.CreateUserId,
-                c.EndDate,
-                c.TechnicianName,
-                c.BusinessTripDate,
-                c.IsReimburse,
-                c.BusinessTripDays,
-                c.TerminalCustomerId,
-                c.TerminalCustomer
-            }).ToListAsync();
-
-            var petitioner = await (from a in UnitWork.Find<User>(u => u.Id.Equals(req.CreateUserId))
-                                    join b in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on a.Id equals b.FirstId into ab
-                                    from b in ab.DefaultIfEmpty()
-                                    join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
-                                    from c in bc.DefaultIfEmpty()
-                                    select new { a.Name, a.Id, OrgName = c.Name, c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
-            var orgname = petitioner.OrgName + "-" + petitioner.Name;
-            var ReimburseInfoList = ReimburseInfos.Select(r => new
+                #region 提成
+                var CommissionInfos = from a in UnitWork.Find<CommissionOrder>(r => req.CreateUserId == r.CreateUserId && r.ApprovalStatus >= 3)
+                               .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
+                               .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
+                               .WhereIf(req.PayStatus == 1, c => c.ApprovalStatus == 3)
+                               .WhereIf(req.PayStatus == 2, c => c.ApprovalStatus == 4)
+                                      select new HistoryDetailForUserResp
+                                      {
+                                          Id = a.Id,
+                                          Type = 1,
+                                          ServiceOrderId = a.ServiceOrderId,
+                                          TotalMoney = a.Amount,
+                                          PayTime = a.PayTime,
+                                          FlowInstanceId = a.FlowInstanceId,
+                                          Status = a.Status
+                                          //   c.ActivityType,
+                                          //  c.ActivityName
+                                      };
+                #endregion
+                commissionMoney = CommissionInfos.Sum(a => (decimal)a.TotalMoney);
+                list.AddRange(CommissionInfos);
+            }
+            if (req.OrderType == 0   || req.OrderType == 2)
             {
-                r.Id,
-                r.MainId,
-                r.RemburseStatus,
-                r?.ServiceOrderId,
-                Days = r.ReimburseTravellingAllowances.Sum(t => t.Days) <= 0 && serviceDailyExpends.Where(s => s.ServiceOrderId == r.ServiceOrderId) != null ? serviceDailyExpends.Where(s => s.ServiceOrderId == r.ServiceOrderId).Sum(s => s.Days) : r.ReimburseTravellingAllowances.Sum(t => t.Days),
-                r.TotalMoney,
-                FaresMoney = r.ReimburseFares.Sum(f => f.Money),
-                TravellingAllowancesMoney = r.ReimburseTravellingAllowances.FirstOrDefault()?.Days.Value * r.ReimburseTravellingAllowances.FirstOrDefault()?.Money.Value,
-                AccommodationSubsidiesMoney = r.ReimburseAccommodationSubsidies.Sum(a => a.TotalMoney),
-                OtherChargesMoney = r.ReimburseOtherCharges.Sum(o => o.Money),
-                BusinessTripDate = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).Min(c => c.BusinessTripDate),
-                EndDate = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).Max(c => c.EndDate),
-                TerminalCustomerId = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).FirstOrDefault().TerminalCustomerId,
-                TerminalCustomer = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).FirstOrDefault().TerminalCustomer,
-                OrgName = orgname
-            }).ToList();
+                #region 报销单
+                var ReimburseInfos = from a in UnitWork.Find<ReimburseInfo>(r => req.CreateUserId == r.CreateUserId && r.RemburseStatus >= 7 && r.RemburseStatus <= 9)
+                                  .WhereIf(req.PayStatus == 1, c => c.RemburseStatus != 9)
+                                  .WhereIf(req.PayStatus == 2, c => c.RemburseStatus == 9)
+                                  .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
+                                  .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
+                                     select new HistoryDetailForUserResp
+                                     {
+                                         Id = a.MainId,
+                                         ReimburseId =a.Id,
+                                         Type = 2,
+                                         ServiceOrderId = a.ServiceOrderId,
+                                         TotalMoney = a.TotalMoney,
+                                         PayTime = a.PayTime,
+                                         FlowInstanceId = a.FlowInstanceId,
+                                         Status = a.RemburseStatus,
+                                         StatusName = a.RemburseStatus == 9 ? "已支付" : "待支付"
+                                     };
+                #endregion
+                reimburseMoney = ReimburseInfos.Sum(a => (decimal)a.TotalMoney);
 
+                list.AddRange(ReimburseInfos);
+            }
+         
 
-            var ReimburseInfoRes = ReimburseInfoList.Select(r => new
+            if (req.OrderType == 0 || req.OrderType == 3)
             {
-                r.Id,
-                r.MainId,
-                r.RemburseStatus,
-                r?.ServiceOrderId,
-                Type = "报销",
-                r.Days,
-                r.TotalMoney,
-                r.FaresMoney,
-                AverageDaily = r.Days > 0 ? r.TotalMoney / r.Days : r.TotalMoney,
-                FMProportion = Convert.ToDecimal((r.FaresMoney / r.TotalMoney)).ToString("p"),
-                r.TravellingAllowancesMoney,
-                TAProportion = Convert.ToDecimal((r.TravellingAllowancesMoney / r.TotalMoney)).ToString("p"),
-                r.AccommodationSubsidiesMoney,
-                ASProportion = Convert.ToDecimal((r.AccommodationSubsidiesMoney / r.TotalMoney)).ToString("p"),
-                r.OtherChargesMoney,
-                OCProportion = Convert.ToDecimal((r.OtherChargesMoney / r.TotalMoney)).ToString("p"),
-                r.BusinessTripDate,
-                r.EndDate,
-                r.OrgName,
-                r.TerminalCustomerId,
-                r.TerminalCustomer
-            }).OrderByDescending(r => r.MainId).ToList();
+                #region 结算/代理
+                var OutsourcInfos = (from a in UnitWork.Find<Outsourc>(r => req.CreateUserId == r.CreateUserId)
+                                     .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
+                                     .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
+                                     .Include(c => c.OutsourcExpenses)
+                                     .Where(a => a.OutsourcExpenses.Count() > 0)
+                                         //  join c in UnitWork.Find<FlowInstance>(c => c.CustomName == "个人代理结算单") on a.FlowInstanceId equals c.Id
+                                     select new HistoryDetailForUserResp
+                                     {
+                                         Id = a.Id,
+                                         Type = 3,
+                                         ServiceOrderId = a.OutsourcExpenses.FirstOrDefault().ServiceOrderId,
+                                         TotalMoney = a.TotalMoney,
+                                         PayTime = a.PayTime,
+                                         FlowInstanceId = a.FlowInstanceId
 
-            var resultData = ReimburseInfoRes
-                               .Skip((req.page - 1) * req.limit)
-                               .Take(req.limit);
-            result.Count = ReimburseInfoRes.Count;
-            result.Data = resultData;
+                                         //  c.ActivityType,
+                                         //    c.ActivityName
+                                     }).ToList();
+                var FlowInstInfos = UnitWork.Find<FlowInstance>(c => c.CustomName == "个人代理结算单" && (c.ActivityName == "总经理审批" || c.ActivityName == "结束"))
+                                      .Select(a => new { a.Id, a.ActivityName })
+                                      .ToList();
+                foreach (var item in OutsourcInfos)
+                {
+                    var FlowInstInfo = FlowInstInfos.FirstOrDefault(a => a.Id == item.FlowInstanceId);
+                    if (FlowInstInfo != null)
+                    {
+                        item.StatusName = FlowInstInfo.ActivityName == "总经理审批" ? "待支付" : "已支付";
+                    }
+                }
+                if (req.PayStatus == 1)
+                {
+                    OutsourcInfos = OutsourcInfos.Where(a => a.StatusName == "待支付").ToList();
+                }
+                if (req.PayStatus == 2)
+                {
+                    OutsourcInfos = OutsourcInfos.Where(a => a.StatusName == "已支付").ToList();
+                }
+                #endregion
+                list.AddRange(OutsourcInfos);
+                outsourcMoney = OutsourcInfos.Sum(a => (decimal)a.TotalMoney);
+            }
+
+            if (req.OrderType == 0 || req.OrderType == 4)
+            {
+                var Wages = GetWages(req.CreateUserId);
+            
+                if (req.StartDate !=null)
+                {
+                    Wages = Wages.Where(a => a.PayTime >= req.StartDate).ToList();
+                }
+                if (req.EndDate != null)
+                {
+                    Wages = Wages.Where(a => a.PayTime <= req.EndDate).ToList();
+                }
+                list.AddRange(Wages);
+                wagesMoney = Wages.Sum(a => (decimal)a.TotalMoney);
+            }
+            var totalMoney = list.Sum(a => a.TotalMoney);
+
+
+
+           result.Count =list.Count(); 
+            list = list.OrderByDescending(a => a.PayTime).Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToList();
+            var ServiceOrderIds = list.Select(a => a.ServiceOrderId).Distinct().ToList();
+            var ServiceOrderInfos = UnitWork.Find<ServiceOrder>(a => ServiceOrderIds.Contains(a.Id)).ToList();
+
+            foreach (var item in list)
+            {
+                var first = ServiceOrderInfos.FirstOrDefault(a => a.Id == item.ServiceOrderId);
+                if (first !=null)
+                {
+                    item.CustomerId = first.CustomerId;
+                    item.CustomerName = first.CustomerName;
+                }
+            }
+
+            var detail = new
+            {
+                commissionMoney = commissionMoney,
+                reimburseMoney = reimburseMoney,
+                outsourcMoney = outsourcMoney,
+                wagesMoney = wagesMoney,
+                blameBelongMoney = blameBelongMoney,
+                totalMoney = totalMoney,
+            };
+            //decimal commissionMonery, reimburseMonery, outsourcMonery, wagesMonery;
+            //decimal blameBelongMonery = 0;
+            result.Data = new { 
+                data =list,
+                detail =detail,
+            };
             return result;
+        }
+        public List<HistoryDetailForUserResp> GetWages(string CreateUserId)
+        {
+            List<HistoryDetailForUserResp> list = new List<HistoryDetailForUserResp>();
+            var user = UnitWork.Find<User>(a => a.Id == CreateUserId).FirstOrDefault();
+            if (user == null || user.EntryTime == null) return list;
+            var date = user.EntryTime.ToDateTime();
+            if (date.Day >10)
+            {
+                date = Convert.ToDateTime(date.AddMonths(1).ToString("yyyy-MM-10 00:00:00 "));
+            }
+
+            var nsapUser = UnitWork.Find<NsapUserMap>(a => CreateUserId == a.UserID).FirstOrDefault();
+            var nsapUserId = (uint)nsapUser?.NsapUserId;
+
+            var detail = UnitWork.Find<base_user_detail>(a => nsapUserId == a.user_id).Select(a => a.full_salary).FirstOrDefault();
+            var monery = DeSerialize(detail)?.conversion_wages.ToDecimal();
+
+            for (DateTime i = date; i < DateTime.Now; i= i.AddMonths(1))
+            {
+                HistoryDetailForUserResp info = new HistoryDetailForUserResp();
+                info.Type = 4;
+                info.PayTime = i;
+                info.TotalMoney = monery??0;//工资
+
+                list.Add(info);
+            }
+            return list;
+        }
+        public static NSAP.Entity.Admin.conversionWages DeSerialize(byte[] bytes)
+        {
+            try
+            {
+                if (bytes == null || bytes.Length == 0) return null;
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    IFormatter bs = new BinaryFormatter();
+                    stream.Write(bytes, 0, bytes.Length);
+                    stream.Seek(0, SeekOrigin.Begin);
+                    return (NSAP.Entity.Admin.conversionWages)bs.Deserialize(stream);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                return null;
+            }
+
         }
         /// <summary>
         /// 个人历史费用-报销

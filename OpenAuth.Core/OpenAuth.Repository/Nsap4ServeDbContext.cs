@@ -157,6 +157,7 @@ namespace OpenAuth.Repository
         #region 工程部项目筛选
         public virtual DbSet<ManageScreening> ManageScreening { get; set; }
         public virtual DbSet<ManageScreeningHistory> ManageScreeningHistory { get; set; }
+        public virtual DbSet<TaskView> TaskView { get; set; }
         #endregion
         #region 线索
         public virtual DbSet<Clue> Clue { get; set; }
@@ -189,6 +190,13 @@ namespace OpenAuth.Repository
         public virtual DbSet<PayTermSet> paytermset { get; set; }
         public virtual DbSet<PayPhase> payphase { get; set; }
         public virtual DbSet<PayTermSave> paytermsave { get; set; }
+        public virtual DbSet<PayUserRate> payuserate { get; set; }
+        public virtual DbSet<PayLimitRule> paylimitrule { get; set; }
+        public virtual DbSet<PayLimitRuleDetail> paylimitruledetail { get; set; }
+        public virtual DbSet<PayAutoFreeze> payautofreeze { get; set; }
+        public virtual DbSet<PayVIPCustomer> payvipcustomer { get; set; }
+        public virtual DbSet<PayFreezeCustomer> payFreezeCustomer { get; set; }
+        public virtual DbSet<PayWillFreezeCustomer> paywillfreezecustomer { get; set; }
         #endregion
 
         #region 消息推送记录

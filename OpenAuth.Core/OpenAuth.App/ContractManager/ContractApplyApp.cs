@@ -3758,6 +3758,7 @@ namespace OpenAuth.App.ContractManager
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.SaleNo), r => r.SaleNo.Contains(request.SaleNo))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.ItemNo), r => r.ItemNo.Contains(request.ItemNo))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.ItemName), r => r.ItemName.Contains(request.ItemName))
+                                    .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), r => r.CreateName.Contains(request.CreateName))
                                     .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
                                     .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)).ToList();
 

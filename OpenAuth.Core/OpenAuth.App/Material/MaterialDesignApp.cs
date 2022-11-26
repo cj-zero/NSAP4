@@ -17,6 +17,13 @@ using System.Data;
 using OpenAuth.Repository;
 using System.Data.SqlClient;
 using OpenAuth.App.Request;
+using Newtonsoft.Json;
+using OpenAuth.Repository.Domain.Material;
+using static OpenAuth.App.Material.MaterialDesignApp;
+using Org.BouncyCastle.Ocsp;
+using OfficeOpenXml.FormulaParsing.Excel.Functions.Text;
+using OpenAuth.App.Order;
+using Magicodes.ExporterAndImporter.Core.Extension;
 
 namespace OpenAuth.App.Material
 {
@@ -349,13 +356,13 @@ namespace OpenAuth.App.Material
                                     ItemTypeName = t1 == null ? "" : t1.ItemTypeName,
                                     ItemName = t == null ? "" : t.ItemCode
                                 }).ToList();
-                    if (data == null)
+                    if (data == null || data.Count == 0)
                     {
-                        sale_contract_review reviewInfo = UnitWork.Find<sale_contract_review>(q => q.sbo_id == 1 && q.contract_id == ContractReviewCode).FirstOrDefault();
+                        string custom_req = UnitWork.Find<sale_contract_review>(q => q.sbo_id == 1 && q.contract_id == ContractReviewCode).Select(q=>q.custom_req).FirstOrDefault();
                         data = (from s in UnitWork.Find<store_itemtype>(q => q.is_default == true && typeList.Contains(q.ItemTypeName))
                                 select new
                                 {
-                                    custom_req = reviewInfo.custom_req,
+                                    custom_req = custom_req,
                                     ItemTypeName = s.ItemTypeName,
                                     ItemName = ""
                                 }).ToList();
@@ -682,5 +689,438 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                 Count = count.Rows[0][0].ToInt(),
             };
         }
+
+        #region 工程部考勤
+        /// <summary>
+        /// 查看视图【统计分析】
+        /// </summary>
+        /// <returns></returns>
+        public TableData TaskView(TaskViewReq req, int SboId)//, int? SalesOrderId, string ItemCode, string CardCode)
+        {
+            #region 注释
+            DateTime nowTime = DateTime.Now;
+            var result = new TableData();
+
+            var userInfo = _auth.GetCurrentUser();
+            if (userInfo == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //判断是否是工程部主管  工程部HR
+            bool isSupervisor = userInfo.Roles.Any(r => r.Name == "工程部主管" || r.Name == "工程部HR");
+            //get all submit to statistics data 
+            List<string> NumberList = new List<string>();
+            List<TaskView> statisticView = new List<TaskView>();
+            if (!string.IsNullOrEmpty(req.Month))
+            {
+                statisticView.AddRange(UnitWork.Find<TaskView>(q => q.Month == req.Month).ToList());
+                NumberList.AddRange(statisticView.Select(q => q.Number).ToList());
+
+            }
+            else
+            {
+                statisticView.AddRange(UnitWork.Find<TaskView>(null).ToList());
+                NumberList.AddRange(statisticView.Select(q => q.Number).ToList());
+            }
+
+            string sql = string.Format(@"select Owner,Number,objnbs,StageName,fld005506,complete,
+                            fld006314,isFinished , duedate ,DueDays ,AssignedBy ,AssignedTo,CreatedBy ,CreatedDate,
+                            Owner,AssignDate,startDate,DATEADD(dd,-DueDays,duedate) Completedate,'' as Month
+                            from TaskView5
+                            where 1=1  ");
+            string sqlcount = string.Format(@"select count(1) count
+                            from ( select  *  from TaskView5
+                            where 1=1  ");
+            string sqlwhere = "";
+            if (!string.IsNullOrWhiteSpace(req.Owner))
+            {
+                sqlwhere += " and Owner like N'%" + req.Owner + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.AssignedTo))
+            {
+                sqlwhere += " and AssignedTo = N'" + req.AssignedTo + "'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.Number))
+            {
+                sqlwhere += " and Number like N'%" + req.Number + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.objnbs))
+            {
+                sqlwhere += " and objnbs like N'%" + req.objnbs + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.StageName))
+            {
+                sqlwhere += " and StageName like N'%" + req.StageName + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.fld005506))
+            {
+                sqlwhere += " and fld005506 like N'%" + req.fld005506 + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.fld006314))
+            {
+                sqlwhere += " and fld006314 = N'" + req.fld006314 + "'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.complete))
+            {
+                sqlwhere += " and complete = " + req.complete;
+            }
+            if (req.isFinished == 0 || req.isFinished == 1)
+            {
+                sqlwhere += " and isFinished = " + req.isFinished;
+            }
+            if (req.AssignDateStart != null)
+            {
+                sqlwhere += " and AssignDate >= '" + req.AssignDateStart + "'";
+            }
+            if (req.AssignDateEnd != null)
+            {
+                sqlwhere += " and AssignDate <= '" + req.AssignDateEnd + "'";
+            }
+            if (req.duedateStart != null)
+            {
+                sqlwhere += " and duedate  >= '" + req.duedateStart + "'";
+            }
+            if (req.duedateEnd != null)
+            {
+                sqlwhere += " and duedate <= '" + req.duedateEnd + "'";
+            }
+            if (!string.IsNullOrEmpty(req.DutyFlag))
+            {
+                if (req.DutyFlag == "1")
+                {
+                    string str = String.Join(",", NumberList.Select(x => $"'{x}'"));
+                    if (!string.IsNullOrWhiteSpace(str))
+                    {
+                        sqlwhere += string.Format(@"and Number in (" + str + ")");
+                    }
+                }
+                if (req.DutyFlag == "0")
+                {
+                    string str = String.Join(",", NumberList.Select(x => $"'{x}'"));
+                    if (!string.IsNullOrWhiteSpace(str))
+                    {
+                        sqlwhere += string.Format(@"and Number not  in (" + str + ")");
+                    }
+                }
+            }
+
+            if (!isSupervisor)
+            {
+                //get  related account
+                StringBuilder strSql = new StringBuilder();
+                strSql.AppendFormat("select * from manageaccountbind u  where u.LName =  \"{0}\"  and  u.IsDelete = 0 ", userInfo.User.Name);
+                var erp4Bind = UnitWork.ExcuteSql<ManageAccountBind>(ContextType.DefaultContextType, strSql.ToString(), CommandType.Text, null).FirstOrDefault();
+                if (erp4Bind != null)
+                {
+                    //sql = sql.Where(q => q.Owner == erp4Bind.MName);
+                    sqlwhere += string.Format(@"and Owner = " + erp4Bind.MName);
+                }
+
+            }
+            sql += sqlwhere;
+            sqlcount += sqlwhere;
+            sqlcount += " ) T ";
+            sql += "  ORDER BY CreatedDate DESC  OFFSET   " + ((req.page - 1) * req.limit).ToString() + "   ROWS  FETCH NEXT  " + req.limit.ToString() + "  ROWS ONLY    ";
+
+            var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
+            var countList = UnitWork.ExcuteSql<CardCountDto>(ContextType.ManagerDbContext, sqlcount.ToString(), CommandType.Text, null);
+
+            foreach (var item in modeldata)
+            {
+                var specSta = statisticView.Where(u => u.Number == item.Number).FirstOrDefault();
+                if (specSta != null)
+                {
+                    item.Month = statisticView.Where(u => u.Number == item.Number).FirstOrDefault().Month;
+                }
+
+            }
+
+            #region rejected code 
+            //var taskView = UnitWork.Find<TaskView>(null);
+            //if (!string.IsNullOrWhiteSpace(req.Month))
+            //{
+            //    taskView.Where(q => q.Month == req.Month);
+            //}
+
+            //var manageData = taskView.ToDataTable().AsEnumerable(); // new DataTable().AsEnumerable();
+
+
+            //var querydata = from n in modeldata
+            //                 join m in statisticView
+            //                 on new { Number = n.Field<string>("Number") }
+            //                equals new { Number = m.Number } into temp
+            //                from t in temp.DefaultIfEmpty()
+            //                select new
+            //                {
+            //                    Owner = n.Field<string>("Owner"),
+            //                    Number = n.Field<string>("Number"),
+            //                    objnbs = n.Field<string>("objnbs"),
+            //                    StageName = n.Field<string>("StageName"),
+            //                    fld005506 = n.Field<string>("fld005506"),
+            //                    complete = n.Field<int?>("complete"),
+            //                    isFinished = n.Field<bool?>("isFinished"),
+            //                    fld006314 = n.Field<string>("fld006314"),
+            //                    duedate = n.Field<DateTime?>("duedate"),
+            //                    DueDays = n.Field<int?>("DueDays"),
+            //                    AssignedBy = n.Field<string>("AssignedBy"),
+            //                    AssignedTo = n.Field<string>("AssignedTo"),
+            //                    CreatedBy = n.Field<string>("CreatedBy"),
+            //                    CreatedDate = n.Field<DateTime?>("CreatedDate"),
+            //                    AssignDate = n.Field<DateTime?>("AssignDate"),
+            //                    startDate = n.Field<DateTime?>("startDate"),
+            //                    Completedate = n.Field<DateTime?>("Completedate"),
+            //                    Month = t == null ? "" : t.Month
+            //                };
+            //if (req.Status != null)
+            //{
+            //    if (req.Status == "Y")
+            //    {
+            //        querydata = querydata.Where(q => q.Month != "");
+            //    }
+            //    else
+            //    {
+            //        querydata = querydata.Where(q => q.Month == "");
+            //    }
+            //}
+            //if (req.Month != null)
+            //{
+            //    querydata = querydata.Where(q => q.Month == req.Month);
+            //}
+            #endregion
+
+
+            // var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+
+            result.Data = modeldata.ToList();
+            result.Count = countList.FirstOrDefault().count;
+
+            return result;
+            #endregion
+
+        }
+
+        /// <summary>
+        /// 提交到月度统计
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<Infrastructure.Response> SubmitMonth(submitMonth req)
+        {
+            var response = new Infrastructure.Response();
+            response.Message = "";
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            List<TaskView> list = new List<TaskView>();
+            for (int i = 0; i < req.Number.Count; i++)
+            {
+                string v = req.Number[i];
+                TaskView info = UnitWork.Find<TaskView>(q => q.Number == v && q.Month == req.Month).FirstOrDefault();
+                if (info == null)
+                {
+                    TaskView item = new TaskView();
+                    item.Number = v;
+                    item.Month = req.Month;
+                    item.CreateUser = loginContext.User.Name;
+                    item.CreateDate = DateTime.Now;
+                    item.UpdateUser = loginContext.User.Name;
+                    item.UpdateDate = DateTime.Now;
+                    list.Add(item);
+                }
+            }
+            UnitWork.BatchAdd<TaskView, int>(list.ToArray());
+            await UnitWork.SaveAsync();
+            response.Message = "操作成功";
+            return response;
+        }
+
+
+        public List<DataTable> DataView(string date)
+        {
+            List<DataTable> list = new List<DataTable>();
+            string start = Convert.ToDateTime(date + "-01").ToString("yyyy-MM-dd");
+            string end = Convert.ToDateTime(date + "-01").AddMonths(1).ToString("yyyy-MM-dd");
+            //数据概览
+            string strSql = string.Format(@" SELECT
+                            convert(varchar(100),A.DT,23) '日期',
+                            ISNULL(T.NUM,'0') '分配数',
+                            ISNULL(T1.NUM,'0') '完成数'
+                            FROM 
+                            (select DATEADD(D,NUMBER,'" + start + "') DT FROM master..spt_values WHERE type='P' AND DATEADD(D,NUMBER, '" + start + "') < '" + end + "') A LEFT JOIN");
+            strSql += string.Format(@"(SELECT AssignTime AS date,count(Number) AS num 
+                            from  TaskView5
+                            where  AssignTime >= '" + start + "' AND AssignTime < '" + end + "' group by AssignTime ) T ON T.date = A.DT LEFT JOIN");
+            strSql += string.Format(@"  (SELECT CompleteTime date,count(Number) AS num 
+                            from  TaskView5
+                            where isFinished = 1 and  CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "' group by CompleteTime) T1 ON T1.date = A.DT");
+            list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+            //难度
+            strSql = string.Format(@" select  name,
+                            count(1) as value
+                            from (select fld006314 name from TaskView5 where StartDate >= '" + start + "' AND StartDate < '" + end + "') t group by name");
+            list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+            //是否延期
+            strSql = string.Format(@"
+                            select  name,
+                            count(1) as value
+                            from (select (case when DueDays>=0 then N'按时完成' else N'延期完成' end ) name from TaskView5 where CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "') t group by name");
+            list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+            //进度
+            strSql = string.Format(@"
+                            select  name,
+                            count(1) as value
+                            from (select Status name from TaskView5 where CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "') t group by name");
+            list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+
+
+            //评分明细表
+            var timeList = date.Split('.');
+            string timeStr = timeList[0] + "年" + timeList[1] + "月";
+            var NumberList = UnitWork.Find<TaskView>(q => q.Month == timeStr).Select(q => q.Number).ToList();
+            string str = String.Join(",", NumberList.Select(x => $"'{x}'"));
+            strSql = string.Format(@"select
+                                     name
+                                     ,count(case when t.fld006314 = N'一般' then 1 else null end)*0.5 as LowDifficulty
+                                      ,count(case when t.fld006314 = N'中等' then 1 else null end) as MediumDifficulty
+                                      ,count(case when t.fld006314 = N'较高' then 1 else null end)*2 as HighDifficulty
+                                      ,count(case when t.fld006314 = N'超高' then 1 else null end)*3 as SuperDifficulty
+                                      ,count(case when t.DueDays >= 0 then 1 else null end) as OnTime
+                                      ,count(case when t.DueDays < 0 then 1 else null end) as Delayed
+                                     from(select Owner as name, fld006314, DueDays  from TaskView5 where 1 = 1 ");
+            if (!string.IsNullOrWhiteSpace(str))
+            {
+                strSql += string.Format(@"and Number in (" + str + ")");
+            }
+            strSql += string.Format(@") t group by name");
+            //str is null
+            DataTable dt = new DataTable();
+            var obj = UnitWork.ExcuteSql<ScoringDetail>(ContextType.ManagerDbContext, strSql, CommandType.Text, null);
+            var personalNames = obj.Select(u => u.name).ToList();
+            StringBuilder strSqlbind = new StringBuilder();
+            strSqlbind.AppendFormat("select * from manageaccountbind u  where LOCATE(u.MName , \"{0}\")  > 0  and u.DutyFlag = 1 and  Level is not null ", JsonConvert.SerializeObject(personalNames).Replace(@"""", ""));
+            var erp4BindList = UnitWork.ExcuteSql<ManageAccountBind>(ContextType.DefaultContextType, strSqlbind.ToString(), CommandType.Text, null).ToList();
+            var legitPersonalNameList = erp4BindList.Select(u => u.MName).ToList();
+            obj = obj.Where(u => legitPersonalNameList.Contains(u.name)).ToList();
+            if (!string.IsNullOrWhiteSpace(str))
+            {
+                dt = (from n in erp4BindList
+                      join m in obj on n.MName equals m.name
+                      select new
+                      {
+                          n.Level,
+                          m.name,
+                          m.LowDifficulty,
+                          m.MediumDifficulty,
+                          m.HighDifficulty,
+                          m.SuperDifficulty,
+                          m.OnTime,
+                          m.Delayed
+                      }).ToDataTable();
+            }
+            list.Add(dt);
+
+            return list;
+        }
+
+        public List<DataTable> DataViewOwner(string date)
+        {
+            List<DataTable> list = new List<DataTable>();
+            string start = Convert.ToDateTime(date + "-01").ToString("yyyy-MM-dd");
+            string end = Convert.ToDateTime(date + "-01").AddMonths(1).ToString("yyyy-MM-dd");
+
+            //当前月份是否归档
+            var adata = UnitWork.FindSingle<RateDetail>(a => a.Time == date);
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //任务件数指标
+            DataTable dt = new DataTable();
+            dt.Columns.Add("qualified", Type.GetType("System.Int32"));//合格
+            dt.Columns.Add("excellent", Type.GetType("System.Int32"));//优秀
+            dt.Columns.Add("archive", Type.GetType("System.Int32"));//是否存档
+            dt.Rows.Add(dt.NewRow());
+            dt.Rows[0]["archive"] = adata != null ? 1 : 0;
+            var ManageAccountBind = UnitWork.Find<ManageAccountBind>(q => q.LName == loginContext.User.Name && q.DutyFlag == 1 && q.Level != null).FirstOrDefault();
+            if (ManageAccountBind != null)
+            {
+                if (ManageAccountBind.Level == "1")
+                {
+                    dt.Rows[0]["qualified"] = 20;
+                    dt.Rows[0]["excellent"] = 30;
+                }
+                else if (ManageAccountBind.Level == "2")
+                {
+                    dt.Rows[0]["qualified"] = 15;
+                    dt.Rows[0]["excellent"] = 25;
+                }
+                else
+                {
+                    dt.Rows[0]["qualified"] = 10;
+                    dt.Rows[0]["excellent"] = 15;
+                }
+            }
+            list.Add(dt);
+            if (ManageAccountBind != null && !string.IsNullOrEmpty(ManageAccountBind.MName))
+            {
+
+                //指派的任务件数
+                string strSql = string.Format(@"SELECT count(Number) AS num 
+                            from  TaskView5
+                            where  AssignTime >= '" + start + "' AND AssignTime < '" + end + "' and AssignedTo = '" + ManageAccountBind.MName + "' ");
+                //var assingTable = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null);
+                list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+                //已完成的任务件数
+                strSql = string.Format(@"SELECT count(Number) AS num 
+                            from  TaskView5
+                            where isFinished = 1 and  CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "' and AssignedTo = '" + ManageAccountBind.MName + "'");
+                //var finishedTable = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null);
+                list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+                //难度
+                strSql = string.Format(@" select  name,
+                            count(1) as value
+                            from (select fld006314 name from TaskView5 where StartDate >= '" + start + "' AND StartDate < '" + end + "' and AssignedTo = '" + ManageAccountBind.MName + "') t group by name");
+                list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+                //是否延期
+                strSql = string.Format(@"
+                            select  name,
+                            count(1) as value
+                            from (select (case when DueDays>=0 then N'按时完成' else N'延期完成' end ) name from TaskView5 where CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "' and AssignedTo = '" + ManageAccountBind.MName + "') t group by name");
+                list.Add(UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null));
+                ////进度
+                DataTable dt1 = new DataTable();
+                dt1.Columns.Add("unsubmit", Type.GetType("System.Int32"));//未提交
+                dt1.Columns.Add("submit", Type.GetType("System.Int32"));//已提交
+                dt1.Columns.Add("submitother", Type.GetType("System.Int32"));//提交到其他
+                dt1.Rows.Add(dt1.NewRow());
+                string d = date.Split('.')[0] + "年" + date.Split('.')[1] + "月";
+
+                string strunsubmit = String.Join(",", UnitWork.Find<TaskView>(null).Select(q => q.Number).Select(x => $"'{x}'"));
+                string strsubmitother = String.Join(",", UnitWork.Find<TaskView>(q => q.Month == d).Select(q => q.Number).Select(x => $"'{x}'"));
+                strSql = string.Format(@"
+                            select count(1) as value
+                            from TaskView5 where CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "' and duedate >= '" + start + "' AND duedate < '" + end + "' and AssignedTo = '" + ManageAccountBind.MName + "' and Number not in (" + strunsubmit + ") ");
+                dt1.Rows[0]["unsubmit"] = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null).Rows.Count;
+                strSql = string.Format(@"
+                            select count(1) as value
+                            from TaskView5 where CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "' and duedate >= '" + start + "' AND duedate < '" + end + "' and AssignedTo = '" + ManageAccountBind.MName + "' and Number in (" + strsubmitother + ") ");
+                dt1.Rows[0]["submit"] = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null).Rows.Count;
+
+                strSql = string.Format(@"
+                            select count(1) as value
+                            from TaskView5 where CompleteTime >= '" + start + "' AND CompleteTime < '" + end + "' and duedate >= '" + start + "' AND duedate < '" + end + "' and AssignedTo = '" + ManageAccountBind.MName + "' and Number not in (" + strsubmitother + ") ");
+                dt1.Rows[0]["submitother"] = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null).Rows.Count;
+                list.Add(dt1);
+            }
+
+
+            return list;
+        }
+        #endregion
     }
 }

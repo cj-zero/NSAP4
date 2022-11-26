@@ -71,4 +71,71 @@ namespace OpenAuth.App.Material.Request
 
         public string SubmitNo { get; set; }
     }
+
+    public class TaskViewReq : PageReq
+    {
+        public string Owner { get; set; }
+        public string Number { get; set; }
+        public string objnbs { get; set; }
+        public string StageName { get; set; }
+        public string fld005506 { get; set; }
+        public string fld006314 { get; set; }
+        public string complete { get; set; }
+        public int? isFinished { get; set; }
+
+        /// <summary>
+        /// 考勤月份
+        /// </summary>
+        public string Month { get; set; }
+        /// <summary>
+        /// 考勤状态
+        /// </summary>
+        public string DutyFlag { get; set; }
+        public string AssignedTo { get; set; }
+        public DateTime? duedateStart { get; set; }
+        public DateTime? duedateEnd { get; set; }
+        public DateTime? AssignDateStart { get; set; }
+        public DateTime? AssignDateEnd { get; set; }
+    }
+
+
+    public class statisticsTable
+    {
+        public string Owner { get; set; }
+        public string Number { get; set; }
+        public string objnbs { get; set; }
+        public string StageName { get; set; }
+        public string fld005506 { get; set; }
+        public int? complete { get; set; }
+        public bool? isFinished { get; set; }
+        public string fld006314 { get; set; }
+        public DateTime duedate { get; set; }
+        public int? DueDays { get; set; }
+        public string AssignedBy { get; set; }
+        public string AssignedTo { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime AssignDate { get; set; }
+        public DateTime startDate { get; set; }
+        public DateTime Completedate { get; set; }
+        public string Month { get; set; }
+    }
+
+    public class submitMonth 
+    {
+        public List<string> Number { get; set; }
+        public string Month { get; set; }
+    }
+
+    public class ScoringDetail
+    {
+        public string level { get; set; }
+        public string name { get; set; }
+        public decimal LowDifficulty { get; set; }
+        public decimal MediumDifficulty { get; set; }
+        public decimal HighDifficulty { get; set; }
+        public decimal SuperDifficulty { get; set; }
+        public decimal OnTime { get; set; }
+        public decimal Delayed { get; set; }
+    }
 }

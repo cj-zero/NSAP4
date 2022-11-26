@@ -478,7 +478,95 @@ namespace OpenAuth.WebApi.Controllers.Serve
 
             return result;
         }
+        /// <summary>
+        ///  个人历史费用-报销 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> HistoryDetailForUser([FromQuery] QueryHistoryDetailForUserReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.HistoryDetailForUser(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
 
+            return result;
+        }
+        /// <summary>
+        ///  个人历史费用-报销 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> HistoryForUserByReimburse([FromQuery] QueryReimburseInfoListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.HistoryForUserByReimburse(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 个人历史费用-结算/代理 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> HistoryForUserByOutsourc([FromQuery] QueryReimburseInfoListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.HistoryForUserByOutsourc(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        /// 个人历史费用-提成
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> HistoryForUserByCommission([FromQuery] QueryReimburseInfoListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.HistoryForUserByCommission(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
+
+        
         /// <summary>
         /// 根据指定时间获取费用单 
         /// </summary>

@@ -67,6 +67,17 @@ namespace OpenAuth.App.Request
         /// </summary>
         public DateTime? EndDate { get; set; }
 
+
+        /// <summary>
+        /// 填报开始日期
+        /// </summary>
+        public DateTime? CostStartDate { get; set; }
+
+        /// <summary>
+        /// 填报结束日期
+        /// </summary>
+        public DateTime? CostEndDate { get; set; }
+
         /// <summary>
         /// 草稿箱
         /// </summary>

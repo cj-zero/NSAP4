@@ -13,6 +13,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.Workbench;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Domain.Workbench;
 using OpenAuth.Repository.Interface;
 
@@ -51,11 +52,12 @@ namespace OpenAuth.App
                         .WhereIf(!string.IsNullOrWhiteSpace(req.CustomerCode), c => c.CustomerId.Contains(req.CustomerCode))
                         .WhereIf(!string.IsNullOrWhiteSpace(req.CustomerName), c => c.CustomerName.Contains(req.CustomerName))
                         .WhereIf(!string.IsNullOrWhiteSpace(req.DemandNumber), c => c.BeforeDemandCode.Contains(req.DemandNumber))
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), c => c.BeforeSaleDemandProjectName.Contains(req.KeyWord));
-                        //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateStart.ToString()), q => q.ApplyDate > req.ApplyDateStart)
-                        //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateEnd.ToString()), q => q.ApplyDate < Convert.ToDateTime(req.ApplyDateEnd).AddDays(1))
-                        //.WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateStart.ToString()), q => q.UpdateTime > req.UpdateDateStart)
-                        //.WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateEnd.ToString()), q => q.UpdateTime < Convert.ToDateTime(req.UpdateDateEnd).AddDays(1));
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), c => c.BeforeSaleDemandProjectName.Contains(req.KeyWord))
+                        .WhereIf(req.U_SAP_ID > 0, c => c.U_SAP_ID ==req.U_SAP_ID);
+            //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateStart.ToString()), q => q.ApplyDate > req.ApplyDateStart)
+            //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateEnd.ToString()), q => q.ApplyDate < Convert.ToDateTime(req.ApplyDateEnd).AddDays(1))
+            //.WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateStart.ToString()), q => q.UpdateTime > req.UpdateDateStart)
+            //.WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateEnd.ToString()), q => q.UpdateTime < Convert.ToDateTime(req.UpdateDateEnd).AddDays(1));
 
             if (req.BeforeSaleDemandProjectId > 0)
             {
@@ -164,7 +166,9 @@ namespace OpenAuth.App
                 CurrentProcessor = c.Beforesaledemandoperationhistories.OrderByDescending(x => x.CreateTime).FirstOrDefault().CreateUser + "—" + c.Beforesaledemandoperationhistories.OrderByDescending(x => x.CreateTime).FirstOrDefault().Action,
                 NextUser = flowinstanceObjs.Where(f => f.Id.Equals(c.FlowInstanceId)).FirstOrDefault()?.ActivityName + "—" + flowinstanceObjs.Where(f => f.Id.Equals(c.FlowInstanceId)).FirstOrDefault()?.Name,
                 c.UpdateTime,
-                c.Status
+                c.Status,
+                c.ServiceOrderId,
+                c.U_SAP_ID,
             }).ToList();
 
             result.Count = await query.CountAsync();
@@ -1041,11 +1045,33 @@ namespace OpenAuth.App
                 CreateUserName = obj.CreateUserName,
                 CreateUserId = obj.CreateUserId,
                 CreateTime = obj.CreateTime,
-                UpdateTime = DateTime.Now
+                UpdateTime = DateTime.Now,
+                ServiceOrderId = obj.ServiceOrderId,
+                U_SAP_ID = obj.U_SAP_ID,
                 //todo:补充或调整自己需要的字段
             });
 
         }
+        public async Task<TableData> GetSaleListByUSAPID(int id)
+        {
+            TableData result = new TableData();
+            var list = UnitWork.Find<ServiceWorkOrder>(a => a.ServiceOrderId == id).Select(a => a.ManufacturerSerialNumber).ToList();
+            var deliveryNoList = UnitWork.Find<OINS>(a => list.Contains(a.manufSN)).Select(a => a.deliveryNo).Distinct().ToList();
 
+            var BaseEntryList = UnitWork.Find<DLN1>(a => a.BaseType == 17 && deliveryNoList.Contains(a.DocEntry))
+                .GroupBy(a => a.DocEntry)
+                .Select(g =>  g.Min(a => a.BaseEntry) )
+                .ToList();
+            var data = UnitWork.Find<ORDR>(a => BaseEntryList.Contains(a.DocEntry)).ToList();
+            result.Data = data.Select(a => new { 
+            
+                a.DocEntry,
+                a.CardCode,
+                a.CardName,
+                a.DocTotal,
+                a.Comments
+            });
+            return result;
+        }
     }
 }
