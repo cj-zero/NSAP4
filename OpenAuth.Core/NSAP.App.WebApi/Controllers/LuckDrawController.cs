@@ -94,5 +94,28 @@ namespace NSAP.App.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 获取部门用户列表
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> DepartmentUserList(int AppUserId,int pageIndex=1,int pageSize=10)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DepartmentUserList(AppUserId,pageIndex, pageSize);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
     }
 }
