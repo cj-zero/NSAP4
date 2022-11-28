@@ -65,9 +65,9 @@ namespace OpenAuth.App
                                     && a.status == 1
                                     select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, d.dev_uid, d.unit_id, d.low_no })
                                     .ToListAsync();
-            var binList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).ToListAsync();
-            var host_list = onlineList.Select(c => new { c.edge_guid, c.srv_guid, c.bts_server_ip }).Distinct().Skip((page - 1) * limit).Take(limit).ToList();
             var onlineLowGuid = onlineList.Select(c => c.low_guid).Distinct().ToList();
+            var binList = await UnitWork.Find<DeviceBindMap>(null).Where(c => onlineLowGuid.Contains(c.LowGuid)).ToListAsync();
+            var host_list = onlineList.Select(c => new { c.edge_guid, c.srv_guid, c.bts_server_ip }).Distinct().Skip((page - 1) * limit).Take(limit).ToList();
             var hasTestGuidList = await UnitWork.Find<DeviceTestLog>(null).Where(c => onlineLowGuid.Contains(c.LowGuid)).Select(c => c.LowGuid).Distinct().ToListAsync();
             int total = onlineList.Select(c => new { c.edge_guid, c.srv_guid, c.bts_server_ip }).Distinct().Count();
             List<OnlineDeviceResp> list = new List<OnlineDeviceResp>();
@@ -95,13 +95,13 @@ namespace OpenAuth.App
                     {
                         low_list low_List = new low_list();
                         low_List.low_guid = litem.low_guid;
-                        low_List.has_bind = binList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.LowGuid == litem.low_guid).Any();
+                        low_List.has_bind = binList.Where(c => c.LowGuid == litem.low_guid).Any();
                         low_List.unit_id = litem.unit_id;
                         low_List.low_no = litem.low_no;
                         low_List.has_test = hasTestGuidList.Select(c => c == litem.low_guid).Any();
                         if (low_List.has_bind)
                         {
-                            low_List.GeneratorCode = binList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
+                            low_List.GeneratorCode = binList.Where(c => c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                         }
 
                         ml.low_Lists.Add(low_List);
@@ -259,11 +259,11 @@ namespace OpenAuth.App
                 var low_no = model.low_Lists.Where(c => c.LowGuid == map_info.LowGuid).Select(c => c.low_no).FirstOrDefault();
                 throw new Exception($"【{model.DevUid}/{low_no}】下位机GUID【{map_info.LowGuid}】已被【{map_info.GeneratorCode}/{map_info.DevUid}/{map_info.LowNo}】绑定!");
             }
-            var BindType = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).Select(c => c.BindType).FirstOrDefaultAsync();
-            if (BindType == 1 && model.BindType == 2)
-            {
-                throw new Exception("当前生产码已有中位机绑定,无法单独绑定下位机!");
-            }
+            //var BindType = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).Select(c => c.BindType).FirstOrDefaultAsync();
+            //if (BindType == 1 && model.BindType == 2)
+            //{
+            //    throw new Exception("当前生产码已有中位机绑定,无法单独绑定下位机!");
+            //}
             var department = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
             var lowGuids = model.low_Lists.Select(c => c.LowGuid).Distinct();
             var lowList = await UnitWork.Find<edge_low>(null).Where(c => lowGuids.Contains(c.low_guid)).Select(c => new { c.low_guid, c.range_curr_array, c.dev_uid, c.edge_guid, c.srv_guid }).ToListAsync();
@@ -332,7 +332,7 @@ namespace OpenAuth.App
             List<DeviceBindLog> logList = new List<DeviceBindLog>();
             if (model.UnBindType == 2)
             {
-                var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode && c.Guid == model.Guid && c.LowGuid == model.LowGuid).ToArrayAsync();
+                var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode && c.LowGuid == model.LowGuid).ToArrayAsync();
                 if (!bindMap.Any())
                 {
                     throw new Exception("当前生产码暂无绑定数据无法解绑!");
