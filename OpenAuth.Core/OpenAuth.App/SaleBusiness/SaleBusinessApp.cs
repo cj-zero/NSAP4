@@ -587,8 +587,8 @@ namespace OpenAuth.App.SaleBusiness
             customerBusiness.ModelChildNumTwo = modelChildNumTwo == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelChildNumTwo, 2);
             customerBusiness.ModelChildCountOne = modelChildCountOne + "个";
             customerBusiness.ModelChildCountTwo = modelChildCountTwo + "个";
-            customerBusiness.ModelChildTextOne = "增值税普通发票";
-            customerBusiness.ModelChildTextTwo = "增值税专用发票";
+            customerBusiness.ModelChildTextOne = "普通发票";
+            customerBusiness.ModelChildTextTwo = "专用发票";
             return customerBusiness;
         }
 

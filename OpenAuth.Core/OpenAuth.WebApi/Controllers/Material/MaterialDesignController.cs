@@ -239,7 +239,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             bool flag = false;
             //合同类型为”商务合同“且点击【上传合同】按钮弹出的弹窗中选择”销售文件（我司为供货商）“，且合同状态为”结束“
             var info = from n in UnitWork.Find<ContractApply>(q => q.ContractType == "1" && q.ContractStatus == "-1")
-                       join m in UnitWork.Find<ContractFileType>(q => q.FileType == "6")
+                       join m in UnitWork.Find<ContractFileType>(q => q.FileType == "6" || q.FileType == "7")
                        on n.Id equals m.ContractApplyId into temp
                        from t in temp
                        where n.SaleNo == DocNum
@@ -288,7 +288,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
             List<DataTable> list = new List<DataTable>();
             string sql = "  select * from ( select RecordGuid,CreatedDate, fld005508 DocEntry, max(_System_Progress) progress,fld005506 itemCode,_System_objNBS ProjectNo from OBJ162 group by RecordGuid, fld005508,_System_objNBS,fld005506,CreatedDate) a ";
-            sql += "where a.DocEntry = 'SE-" + docentry + "' and itemCode = '" + itemcode.Replace("'","''") + "'";
+            sql += "where a.DocEntry = 'SE-" + docentry + "' and itemCode = '" + itemcode.Replace("'", "''") + "'";
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
             list.Add(dts);
             if (dts != null && dts.Rows.Count > 0)
@@ -479,7 +479,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             return UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null);
         }
 
-     
+
         #endregion
 
         /// <summary>
