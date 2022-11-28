@@ -50,5 +50,16 @@ namespace OpenAuth.App.Response
         /// 距离
         /// </summary>
         public double Distance { get; set; }
+        /// <summary>
+        /// 擅长技能
+        /// </summary>
+        public string SkillName { get; set; }
+
+        /// <summary>
+        /// 等级
+        /// </summary>
+        public string GradeName { get; set; }
+
+
     }
 }

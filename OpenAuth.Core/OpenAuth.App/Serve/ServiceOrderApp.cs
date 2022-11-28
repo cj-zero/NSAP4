@@ -1583,6 +1583,19 @@ namespace OpenAuth.App
             }
         }
         /// <summary>
+        /// 重新同步至SAP，未获取到SAPID时用
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        public async Task RePulish_New()
+        {
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => string.IsNullOrWhiteSpace(c.U_SAP_ID.ToString())).Select(c => c.Id).ToListAsync();
+            foreach (var item in serviceOrder)
+            {
+                _capBus.Publish("Serve.ServcieOrder.Create", item);
+            }
+        }
+        /// <summary>
         /// 派单工单列表
         /// </summary>
         /// <param name="req"></param>
@@ -2073,6 +2086,8 @@ namespace OpenAuth.App
                 AllowOrNot = q.AllowOrNot,
                 Remark = q.Remark,
                 FromId = q.FromId,
+                Longitude = q.Longitude,
+                Latitude = q.Latitude,
                 ServiceWorkOrders = q.ServiceWorkOrders.Where(a => (string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId) || a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
                 && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
                 && (status.Count == 0 || status.Contains(a.Status.Value))
@@ -3287,7 +3302,6 @@ namespace OpenAuth.App
             result.Data = data;
             return result;
         }
-
         /// <summary>
         /// 查询可以被派单的技术员列表
         /// </summary>
@@ -3301,8 +3315,8 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
-            var tUsers = await UnitWork.Find<AppUserMap>(null).WhereIf(!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"), 
-                w => (w.AppUserRole == 1 || w.AppUserRole == 2 || w.AppUserRole == 3 || w.AppUserRole == 6)).ToListAsync();
+            var tUsers = await UnitWork.Find<AppUserMap>(null).WhereIf(!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"),
+                w => (w.AppUserRole == 2 || w.AppUserRole == 3 || w.AppUserRole == 6)).ToListAsync();
             var ids = tUsers.Select(u => u.UserID);
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             if (!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"))
@@ -3313,20 +3327,21 @@ namespace OpenAuth.App
             var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
             var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
 
-            var userCount = await UnitWork.Find<ServiceWorkOrder>(s => appUserIds.Contains(s.CurrentUserId) && s.Status.Value < 7)
-                .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
-                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+
 
             var userInfos = us.Select(u => new AllowSendOrderUserResp
             {
                 Id = u.Id,
                 Name = u.Name,
-                Count = userCount.FirstOrDefault(s => s.Key.Equals(u.AppUserId))?.Count ?? 0,
                 AppUserId = u.AppUserId,
             }).ToList();
 
             if (!string.IsNullOrWhiteSpace(req.CurrentUser)) userInfos = userInfos.Where(u => u.Name.Contains(req.CurrentUser)).ToList();
 
+            if (req.themeCode == null)
+            {
+                req.themeCode = "";
+            }
             SendOrderTechnicianReq info = new SendOrderTechnicianReq();
             info.themeCode = req.themeCode.Split(";").ToList();
             info.appUserId = userInfos.Select(a => a.AppUserId).ToList();
@@ -3334,15 +3349,45 @@ namespace OpenAuth.App
             info.pageSize = req.limit;
 
             var userList = GetSendOrderTechnicianList(info);
-            var list = userInfos
-            .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToList();
+            //技术员当天定位
+            var userListId = userList?.Select(a => (int?)a.appUserId).ToList();
+            var currentDate = await UnitWork.Find<RealTimeLocation>(c => userListId.Contains( c.AppUserId) && c.CreateTime >= DateTime.Now.AddDays(-1) && c.CreateTime < DateTime.Now).ToListAsync();
+
+            var userCount = await UnitWork.Find<ServiceWorkOrder>(s => userListId.Contains(s.CurrentUserId) && s.Status < 6 && s.CompleteDate == null)
+      .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct()
+      .GroupBy(s => s.CurrentUserId)
+      .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
 
 
 
-            result.Data = list;
+            var orgList =await _userManagerApp.GetUsersOrg(tUsers.Where(a => userListId.Contains(a.AppUserId)).Select(a => a.UserID).ToList());
+            result.Data = (from a in userList
+                          join b in userInfos on a.appUserId equals b.AppUserId
+                          select new AllowSendOrderUserResp
+                          {
+                              Id = b.Id,
+                              Name = orgList.FirstOrDefault(c => c.Id == b.Id)?.OrgName +"-"+ b.Name,
+                              Count = userCount.FirstOrDefault(s => s.Key.Equals(b.AppUserId))?.Count ?? 0,
+                              AppUserId = b.AppUserId,
+                              SkillName = a.skillName,
+                              GradeName = a.gradeName,
+                              Distance = GetDistance(currentDate,b.AppUserId,req.Latitude,req.Longitude)
+
+                          }).ToList();
             result.Count = userInfos.Count;
             return result;
+        }
+        public double GetDistance(List<RealTimeLocation> currentDate,int?   AppUserId, decimal Latitude, decimal Longitude)
+        {
+            var info = currentDate.Where(a => a.AppUserId == AppUserId).OrderByDescending(a => a.CreateTime).FirstOrDefault();
+            if (info ==  null)
+            {
+                return 0;
+            }
+            var Distance = (info.Latitude == 0 || Latitude == 0) ? 0 :
+                Math.Round(NauticaUtil.GetDistance(Convert.ToDouble(info.Latitude), Convert.ToDouble(info.Longitude ?? 0), Convert.ToDouble(Latitude), Convert.ToDouble(Longitude)) / 1000);
+
+            return Distance;
         }
         public List<SendOrderTechnicianResp> GetSendOrderTechnicianList(SendOrderTechnicianReq info)
         {
@@ -3359,11 +3404,14 @@ namespace OpenAuth.App
                 if (resObj["Data"] != null)
                 {
                     technicianLevelList = JsonHelper.Instance.Deserialize<List<SendOrderTechnicianResp>>(resObj["Data"].ToString());
+                    if (technicianLevelList == null)
+                    {
+                        technicianLevelList = new List<SendOrderTechnicianResp>();
+                    }
                 }
             }
             catch (Exception ex)
             {
-
             }
             return technicianLevelList;
         }
@@ -3849,31 +3897,32 @@ namespace OpenAuth.App
                 status = Array.ConvertAll(num, int.Parse).ToList();
             }
             #region MyRegion
-            var userList = UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.SecondId == "0733b6d1-2793-438a-854d-37426b5b39d0").Select(a => a.FirstId).ToList();
-            userList = UnitWork.Find < User >(a => userList.Contains(a .Id) && a.Status == 0).Select(a => a.Id).ToList();
-            var query1 = await (from a in UnitWork.Find<ServiceOrder>(c => c.CreateTime >= DateTime.Parse("2022-08-01 00:00:00") 
-                                && c.CreateTime < DateTime.Parse("2022-12-24 00:00:00") && c.VestInOrg == 1)
-                                join b in UnitWork.Find<ServiceDailyReport>(c => userList.Contains( c.CreateUserId)) on a.Id equals b.ServiceOrderId
-                                select new { a.U_SAP_ID, a.TerminalCustomerId, a.TerminalCustomer, a.CreateTime, b.MaterialCode, b.ManufacturerSerialNumber, b.CreaterName, b.TroubleDescription, b.ProcessDescription }).ToListAsync();
-            var list1 = new List<ServiceOrderExcelDto>();
-            foreach (var serviceOrder in query1)
-            {
-                list1.Add(new ServiceOrderExcelDto
-                {
-                    U_SAP_ID = serviceOrder.U_SAP_ID,
-                    TerminalCustomer = serviceOrder.TerminalCustomer,
-                    TerminalCustomerId = serviceOrder.TerminalCustomerId,
-                    MaterialCode = serviceOrder.MaterialCode,
-                    ManufacturerSerialNumber = serviceOrder.ManufacturerSerialNumber,
-                    CurrentUser = serviceOrder.CreaterName,
-                    SubmitDate = serviceOrder.CreateTime,
-                    TroubleDescription = string.Join(",", GetServiceTroubleAndSolution(serviceOrder.TroubleDescription, "description")),
-                    ProcessDescription = string.Join(",", GetServiceTroubleAndSolution(serviceOrder.ProcessDescription, "description")),
-                });
-            }
-            IExporter exporter1 = new ExcelExporter();
-            var bytes1 = await exporter1.ExportAsByteArray(list1);
-            return bytes1;
+            //var userList = UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.SecondId == "0733b6d1-2793-438a-854d-37426b5b39d0").Select(a => a.FirstId).ToList();
+            //userList = UnitWork.Find < User >(a => userList.Contains(a .Id) && a.Status == 0).Select(a => a.Id).ToList();
+
+            //var query1 = await (from a in UnitWork.Find<ServiceOrder>(c => c.CreateTime >= DateTime.Parse("2022-01-01 00:00:00") 
+            //                    && c.CreateTime < DateTime.Parse("2022-11-28 00:00:00") && c.VestInOrg == 1)
+            //                    join b in UnitWork.Find<ServiceDailyReport>(null) on a.Id equals b.ServiceOrderId
+            //                    select new { a.U_SAP_ID, a.TerminalCustomerId, a.TerminalCustomer, a.CreateTime, b.MaterialCode, b.ManufacturerSerialNumber, b.CreaterName, b.TroubleDescription, b.ProcessDescription }).ToListAsync();
+            //var list1 = new List<ServiceOrderExcelDto>();
+            //foreach (var serviceOrder in query1)
+            //{
+            //    list1.Add(new ServiceOrderExcelDto
+            //    {
+            //        U_SAP_ID = serviceOrder.U_SAP_ID,
+            //        TerminalCustomer = serviceOrder.TerminalCustomer,
+            //        TerminalCustomerId = serviceOrder.TerminalCustomerId,
+            //        MaterialCode = serviceOrder.MaterialCode,
+            //        ManufacturerSerialNumber = serviceOrder.ManufacturerSerialNumber,
+            //        CurrentUser = serviceOrder.CreaterName,
+            //        SubmitDate = serviceOrder.CreateTime,
+            //        TroubleDescription = string.Join(",", GetServiceTroubleAndSolution(serviceOrder.TroubleDescription, "description")),
+            //        ProcessDescription = string.Join(",", GetServiceTroubleAndSolution(serviceOrder.ProcessDescription, "description")),
+            //    });
+            //}
+            //IExporter exporter1 = new ExcelExporter();
+            //var bytes1 = await exporter1.ExportAsByteArray(list1);
+            //return bytes1;
             #endregion
 
             var ids = await UnitWork.Find<ServiceWorkOrder>(null)
@@ -7574,9 +7623,8 @@ namespace OpenAuth.App
                 throw new CommonException("技术员已领料，不可转派", 60004);
             }
             var ServiceOrderModel = await UnitWork.Find<ServiceOrder>(s => s.Id == Convert.ToInt32(req.ServiceOrderId)).FirstOrDefaultAsync();
-
-            var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
-            var ids = await Model.ToListAsync();
+            
+            var ids = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id).ToListAsync();
             var canTransfer = await CheckCanTransfer(req.CurrentUserId, Convert.ToInt32(req.ServiceOrderId), string.Empty, req.QryMaterialTypes);
             if (!canTransfer)
             {
@@ -9233,6 +9281,11 @@ namespace OpenAuth.App
         public async Task<TableData> GetPracticalTasks(QueryPracticalTaskReq req)
         {
             var result = new TableData();
+
+            if (req.solutionCode == null )
+            {
+                req.solutionCode = "";
+            }
             var FromTheme = req.solutionCode.Split(",").ToList();
             var workOrder = UnitWork.Find<ServiceWorkOrder>(a => a.CurrentUserNsapId == req.userId && a.CompleteDate >= req.startTime && a.CompleteDate <= req.endTime).ToList();
             List<int> listId = new List<int>();
@@ -9300,6 +9353,10 @@ namespace OpenAuth.App
 
         public async Task<TableData> GetEvaluate(QueryPracticalTaskReq req)
         {
+            if (req.solutionCode == null)
+            {
+                req.solutionCode = "";
+            }
 
             var result = new TableData();
             var FromTheme = req.solutionCode.Split(",").ToList();

@@ -447,6 +447,17 @@ namespace OpenAuth.WebApi.Controllers
             await _serviceOrderApp.RePulish(internalContactId, serviceOrderId);
         }
         /// <summary>
+        /// 同步SAPId
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task RePulish_New()
+        {
+            await _serviceOrderApp.RePulish_New();
+        }
+
+        /// <summary>
         /// 获取服务单详情
         /// </summary>
         /// <param name="id"></param>
