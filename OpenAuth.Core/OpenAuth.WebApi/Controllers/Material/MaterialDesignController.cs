@@ -98,7 +98,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             StringBuilder stringBuilder = new StringBuilder();
             string strSql = string.Format("select a.contract_id contract_Id,a.CardCode,  a.CardName, a.apply_dt Apply_dt,a.upd_dt ");
             strSql += string.Format(" FROM nsap_bone.sale_contract_review a");
-            strSql += string.Format(" WHERE a.sbo_id = {0} AND a.ItemCode='" + DocNum + "' AND a.CardCode = '" + CardCode + "' AND a.apply_dt > DATE_SUB(CURDATE(), INTERVAL 6 MONTH)", SboId);
+            strSql += string.Format(" WHERE a.sbo_id = {0} AND a.ItemCode='" + DocNum.Replace("'", "\\'") + "' AND a.CardCode = '" + CardCode + "' AND a.apply_dt > DATE_SUB(CURDATE(), INTERVAL 6 MONTH)", SboId);
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
             tableData.Data = dts.Tolist<ReturnContractReview>();
             return tableData;
@@ -302,7 +302,7 @@ namespace OpenAuth.WebApi.Controllers.Material
                 DataTable dts1 = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql1.ToString(), CommandType.Text, null);
                 advanceData.dt = dts1;
             }
-            string sql2 = "select * from manage_screening where DocEntry = '" + docentry + "' and ItemCode = '" + itemcode + "' ";
+            string sql2 = "select * from manage_screening where DocEntry = '" + docentry + "' and ItemCode = '" + itemcode.Replace("'", "\\'") + "' ";
             DataTable dts2 = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql2.ToString(), CommandType.Text, null);
             if (dts2 != null && dts2.Rows.Count > 0)
             {
@@ -446,9 +446,9 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
         [HttpGet]
-        public List<DataTable> DataViewOwner(string date, string name)
+        public List<DataTable> DataViewOwner(string date)
         {
-            return _app.DataViewOwner(date, name);
+            return _app.DataViewOwner(date);
 
         }
         #endregion

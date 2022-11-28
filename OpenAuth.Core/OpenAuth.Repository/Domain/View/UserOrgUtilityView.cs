@@ -66,6 +66,11 @@ namespace OpenAuth.Repository.Domain.View
         public string query { get; set; }
     }
 
+    public class LegitCheckRequest
+    {
+        public List<string> checkList { get; set; }
+    }
+
     public class BindUtilityUpdateRequest
     {
 

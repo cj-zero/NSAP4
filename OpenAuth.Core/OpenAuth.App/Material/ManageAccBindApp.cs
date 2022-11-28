@@ -185,6 +185,28 @@ namespace OpenAuth.App.Material
             return result;
         }
 
+        /// <summary>
+        /// 校验提交统计是否合法
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<List<string>> LegitCheckUtility(LegitCheckRequest req)
+        {
+            List<string> passport = new List<string>();
+            var queryBindUtility = UnitWork.Find<ManageAccountBind>(a => req.checkList.Contains(a.MName)  && a.IsDelete == 0 && a.DutyFlag == 1 ).ToList();
+            if (queryBindUtility != null)
+            {
+                foreach (var item in req.checkList)
+                {
+                    if (!queryBindUtility.Exists(a=>a.MName== item))
+                    {
+                        passport.Add(item);
+                    }
+                }
+            }
+            return passport;
+        }
+
 
         /// <summary>
         /// 考勤柱状图数据
@@ -287,7 +309,7 @@ namespace OpenAuth.App.Material
             StringBuilder strSql = new StringBuilder();
             string start = Convert.ToDateTime(req.Month + "-01").ToString("yyyy-MM-dd");
             string end = Convert.ToDateTime(req.Month + "-01").AddMonths(1).ToString("yyyy-MM-dd");
-            strSql.AppendFormat("SELECT Owner as Name,Number as PartNum, objNBS as Theme, StageName as TaskName, fld005506 as ProductModel, Complete as Completion,fld006314 as DiffcultDegree, Status as Status, DueDate as DueDate, DueDays, AssignedBy as Assigner,AssignedTo as Assignee, CreatedBy as Creator,TaskView5.[Created Date]   as CreateDateTime , Owner, AssignTime as AssignTime, StartDate as BeginTime,CompleteTime as EndTime from TaskView5 where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'   ORDER BY TaskView5.[Created Date] DESC  OFFSET  " + ((req.page - 1) * req.limit).ToString() + "   ROWS  FETCH NEXT  " + req.limit.ToString() + "  ROWS ONLY    ");
+            strSql.AppendFormat("SELECT Owner as Name,Number as PartNum, objNBS as Theme, StageName as TaskName, fld005506 as ProductModel, Complete as Completion,fld006314 as DiffcultDegree, Status as Status, DueDate as DueDate, DueDays, AssignedBy as Assigner,AssignedTo as Assignee, CreatedBy as Creator,CreatedDate   as CreateDateTime , Owner, AssignTime as AssignTime, StartDate as BeginTime,CompleteTime as EndTime from TaskView5 where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'   ORDER BY CreatedDate DESC  OFFSET  " + ((req.page - 1) * req.limit).ToString() + "   ROWS  FETCH NEXT  " + req.limit.ToString() + "  ROWS ONLY    ");
             // +" OFFSET " + ((query.page - 1) * query.limit).ToString() + " ROWS  FETCH NEXT " + query.limit.ToString() + " ROWS ONLY  ";
  
              var personalAssignList = UnitWork.ExcuteSql<DutyDetails>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
