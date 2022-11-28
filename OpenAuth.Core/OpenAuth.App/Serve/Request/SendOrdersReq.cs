@@ -10,7 +10,7 @@ namespace OpenAuth.App.Request
 
         public string ServiceOrderId { get; set; }
 
-        public List<string> QryMaterialTypes { get; set; }
+        public List<string> QryMaterialTypes { get; set; } =new List<string>();
 
         [Required]
         public int CurrentUserId { get; set; }

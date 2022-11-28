@@ -447,6 +447,17 @@ namespace OpenAuth.WebApi.Controllers
             await _serviceOrderApp.RePulish(internalContactId, serviceOrderId);
         }
         /// <summary>
+        /// 同步SAPId
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task RePulish_New()
+        {
+            await _serviceOrderApp.RePulish_New();
+        }
+
+        /// <summary>
         /// 获取服务单详情
         /// </summary>
         /// <param name="id"></param>
@@ -2481,5 +2492,72 @@ namespace OpenAuth.WebApi.Controllers
             await _serviceOrderApp.BatchModify();
         }
 
+
+        /// <summary>
+        /// 获取服务单完成数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetCompleteServiceOrder(List<QueryServiceOrderCompleteReq> req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetCompleteServiceOrder(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 获取技术员实操任务
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetPracticalTasks([FromQuery] QueryPracticalTaskReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetPracticalTasks(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取评价
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetEvaluate([FromQuery] QueryPracticalTaskReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetEvaluate(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }
