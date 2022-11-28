@@ -135,8 +135,10 @@ namespace OpenAuth.App
             List<string> user_ids = new List<string>();
             var query = await (from a in UnitWork.Find<AppUserMap>(null)
                                   join b in UnitWork.Find<User>(null) on a.UserID equals b.Id
-                                  where b.Status==0
-                                  select new { user_id = a.AppUserId, real_name=b.Name, entry_time=b.EntryTime==null?"":b.EntryTime.ToString("yyyy-MM-dd HH:mm:ss") })
+                                  join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
+                                  join d in UnitWork.Find<Repository.Domain.Org>(null) on c.SecondId equals d.Id
+                                  where b.Status == 0 && c.Key == "UserOrg"
+                                  select new { user_id = a.AppUserId, real_name=b.Name, entry_time=b.EntryTime==null?"":b.EntryTime.ToString("yyyy-MM-dd HH:mm:ss"), department_id = d.Id, department = d.Name })
                                   .WhereIf(model.user_ids.Count>0, c => model.user_ids.Contains(c.user_id.Value))
                                   .WhereIf(!string.IsNullOrWhiteSpace(model.key),c=>c.real_name.Contains(model.key))
                                   .ToListAsync();
@@ -170,7 +172,7 @@ namespace OpenAuth.App
                                join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
                                join d in UnitWork.Find<Repository.Domain.Org>(null) on c.SecondId equals d.Id
                                where b.Status == 0 && c.Key=="UserOrg"
-                               select new { user_id = a.AppUserId, user_name = b.Name, department_id=d.Id, department=d.Name })
+                               select new { user_id = a.AppUserId, user_name = b.Name, department_id=d.Id, department=d.Name})
                                   .WhereIf(model.user_ids!=null && model.user_ids.Count > 0, c => model.user_ids.Contains(c.user_id.Value))
                                   .WhereIf(!string.IsNullOrWhiteSpace(model.username), c => c.user_name.Contains(model.username))
                                   .WhereIf(!string.IsNullOrWhiteSpace(model.department), c => c.department.Contains(model.department))
