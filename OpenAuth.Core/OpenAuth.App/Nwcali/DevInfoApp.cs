@@ -407,31 +407,16 @@ namespace OpenAuth.App
         /// <param name="limit"></param>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<TableData> NoBindDeviceList(string GeneratorCode, string key, int page = 1, int limit = 10)
+        public TableData NoBindDeviceList(string GeneratorCode, string key, int page = 1, int limit = 10)
         {
             var result = new TableData();
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
             var OrderNo = Convert.ToInt64(GeneratorCode.Split("-")[1]);
             int count = Convert.ToInt32(GeneratorCode.Split("-")[2]);
-            var list = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo && c.BindType == 2).Select(c => c.GeneratorCode).Distinct().ToListAsync();
-            List<string> deviceList = new List<string>();
             List<string> noBindDeviceList = new List<string>();
             for (var i = 1; i <= count; i++)
             {
                 string code = $"WO-{OrderNo}-{count}-{i}";
-                deviceList.Add(code);
-            }
-            if (list.Any())
-            {
-                noBindDeviceList = deviceList.Except(list).ToList();
-            }
-            else
-            {
-                noBindDeviceList = deviceList;
+                noBindDeviceList.Add(code);
             }
             if (!string.IsNullOrWhiteSpace(key))
             {
