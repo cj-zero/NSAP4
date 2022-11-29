@@ -38,5 +38,13 @@ namespace OpenAuth.App.Nwcali.Request
         /// 烤机结果 0:全部 1:通过  2:失败
         /// </summary>
         public int State { get; set; }
+        /// <summary>
+        /// 部门名字
+        /// </summary>
+        public string OrgName { get; set; }
+        /// <summary>
+        /// 操作人
+        /// </summary>
+        public string Operator { get; set; }
     }
 }
