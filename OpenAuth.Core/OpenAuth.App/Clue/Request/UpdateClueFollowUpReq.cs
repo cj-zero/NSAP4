@@ -14,6 +14,10 @@ namespace OpenAuth.App.Clue.Request
         /// </summary>
         public int Id { get; set; }
         /// <summary>
+        ///线索ID
+        /// </summary>
+        public int ClueId { get; set; }
+        /// <summary>
         /// 联系人ID
         /// </summary>
         public int ContactsId { get; set; }
