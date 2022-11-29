@@ -1363,13 +1363,23 @@ namespace OpenAuth.App
                 try
                 {
 
-                     obj.IsSalesman = 0;
-                    if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
+                    obj.IsSalesman = 0;
+
+                    //查询所有销售部门
+                    List<string> SaleDepts = UnitWork.Find<OpenAuth.Repository.Domain.Org>(r => r.ParentName == "销售部").Select(r => r.Name).ToList();
+                    loginContext.Orgs.ForEach(r => 
                     {
-                        obj.IsSalesman = 1;
-                    }
+                        //当前登录人只要包含销售部
+                        if (SaleDepts.Contains(r.Name))
+                        {
+                            obj.IsSalesman = 1;
+                        }
+                    });
 
-
+                    //if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
+                    //{
+                    //    obj.IsSalesman = 1;
+                    //}
 
                     obj.UpdateTime = DateTime.Now;
                     obj.CreateTime = DateTime.Now;
@@ -1562,11 +1572,22 @@ namespace OpenAuth.App
                     }
        
                     obj.IsSalesman = 0;
-                    if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
+
+                    //查询所有销售部门
+                    List<string> SaleDepts = UnitWork.Find<OpenAuth.Repository.Domain.Org>(r => r.ParentName == "销售部").Select(r => r.Name).ToList();
+                    loginContext.Orgs.ForEach(r =>
                     {
-                        obj.IsSalesman = 1;
-                    }
-                
+                        //当前登录人只要包含销售部
+                        if (SaleDepts.Contains(r.Name))
+                        {
+                            obj.IsSalesman = 1;
+                        }
+                    });
+                    //if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
+                    //{
+                    //    obj.IsSalesman = 1;
+                    //}
+
                     if (!req.IsDraft)
                     {
                      
