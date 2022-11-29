@@ -709,7 +709,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "5" && !contract.IsUseCompanyTemplate)
@@ -724,7 +724,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if ((contract.ContractStatus == "6" || contract.ContractStatus == "7" || contract.ContractStatus == "-1") && !contract.IsUseCompanyTemplate)
@@ -739,7 +739,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "骆灵芝已审批";
+                    nodeZZReq.NodeUser = "骆灵芝/吴秋丽已审批";
                     nodeList.Add(nodeZZReq);
                 }
 
@@ -801,7 +801,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "8")
@@ -843,7 +843,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "9")
@@ -884,7 +884,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "5")
@@ -906,7 +906,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "6" || contract.ContractStatus == "7" || contract.ContractStatus == "-1")
@@ -928,7 +928,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "骆灵芝已审批";
+                    nodeZZReq.NodeUser = "骆灵芝/吴秋丽已审批";
                     nodeList.Add(nodeZZReq);
                 }
 
@@ -1043,7 +1043,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "5" && !contract.IsUseCompanyTemplate)
@@ -1058,7 +1058,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if ((contract.ContractStatus == "6" || contract.ContractStatus == "7" || contract.ContractStatus == "-1") && !contract.IsUseCompanyTemplate)
@@ -1073,7 +1073,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "骆灵芝已审批";
+                    nodeZZReq.NodeUser = "骆灵芝/吴秋丽已审批";
                     nodeList.Add(nodeZZReq);
                 }
 
