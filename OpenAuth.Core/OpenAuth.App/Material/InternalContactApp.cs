@@ -528,15 +528,25 @@ namespace OpenAuth.App.Material
             }
             var content = $"{style}{head}{bodys.ToString()}{bottom}{tfoot}{tablend}";
             obj.Content = $"{style}{content}";
-            userInfo.ForEach(async c =>
+            foreach (var c in userInfo)
             {
                 if (!string.IsNullOrWhiteSpace(c.Email))
                 {
                     var mailuser = new List<MailUser>();
                     mailuser.Add(new MailUser { Name = c.Account, Address = c.Email });
                     await SebdEmail(obj, title, mailuser);
+                    Thread.Sleep(1000);
                 }
-            });
+            }
+            //userInfo.ForEach(async c =>
+            //{
+            //    if (!string.IsNullOrWhiteSpace(c.Email))
+            //    {
+            //        var mailuser = new List<MailUser>();
+            //        mailuser.Add(new MailUser { Name = c.Account, Address = c.Email });
+            //        await SebdEmail(obj, title, mailuser);
+            //    }
+            //});
         }
 
         private async Task SebdEmail(InternalContact obj, string title, List<MailUser> mailUsers = null)
@@ -1435,7 +1445,7 @@ namespace OpenAuth.App.Material
 
                 //发送邮件 
                 //await SebdEmail(single, "<span style=\"font - size:larger\"><b>暂时停用以下联络单，请勿执行，等待通知</b></span><br><br>");
-                await SendEmail(single.Id, " < span style =\"font - size:larger\"><b>暂时停用以下联络单，请勿执行，等待通知</b></span><br><br>");
+                 SendEmail(single.Id, " < span style =\"font - size:larger\"><b>暂时停用以下联络单，请勿执行，等待通知</b></span><br><br>");
             }
             else if (handleType == 4)//启用
             {
@@ -1468,7 +1478,7 @@ namespace OpenAuth.App.Material
 
                 //发邮件
                 //await SebdEmail(single, "<span style=\"font - size:larger\"><b>重新启用以下联络单，请未完成的同事继续执行</b></span><br><br>");
-                await SendEmail(single.Id, " <span style=\"font - size:larger\"><b>重新启用以下联络单，请未完成的同事继续执行</b></span><br><br>");
+                 SendEmail(single.Id, " <span style=\"font - size:larger\"><b>重新启用以下联络单，请未完成的同事继续执行</b></span><br><br>");
             }
             await UnitWork.SaveAsync();
 
