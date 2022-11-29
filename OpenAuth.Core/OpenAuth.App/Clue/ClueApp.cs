@@ -1174,7 +1174,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            var clueFollowUp = await UnitWork.FindSingleAsync<ClueFollowUp>(q => q.Id == updateClueFollowUpReq.Id);
+            var clueFollowUp = await UnitWork.FindSingleAsync<ClueFollowUp>(q => q.ClueId == updateClueFollowUpReq.ClueId);
             clueFollowUp.ContactsId = updateClueFollowUpReq.ContactsId;
             if (updateClueFollowUpReq.FollowUpWay != clueFollowUp.FollowUpWay)
             {
