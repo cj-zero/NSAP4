@@ -390,13 +390,14 @@ namespace OpenAuth.WebApi.Controllers.Order
                 viewSales = powers.ViewSales;
                 viewCustom = powers.ViewCustom;
             }
+            bool limsFlag = false;
+            bool YanXuanFlag = false;
             #region 根据不同的单据类型获取不同的业务伙伴
             if (!string.IsNullOrEmpty(type))
             {
                 if (type == "SQO")//销售报价单\订单
                 {
-                    bool limsFlag = false;
-                    bool YanXuanFlag = false;
+                    
                     var erpLimsClient = new List<string>();
                     var erpYanXuanClient = new List<string>();
                     if (erpLims!=null)
@@ -413,7 +414,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     }
                     if (limsFlag&& !YanXuanFlag)
                     {
-                        filterLimsString += string.Format(" or  ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""));
+                        filterLimsString += string.Format("   ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""));
                     }
                     if (!limsFlag && YanXuanFlag)
                     {
@@ -423,7 +424,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     {
                         filterLimsString += string.Format("   ( CHARINDEX(a.CardCode , \'{0}\')  > 0  OR  CHARINDEX(a.CardCode , '{1}')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""), JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
                     }
-                    filterLimsString += string.Format("(a.CardType='C' OR a.CardType='L') ");
+                    filterLimsString += string.Format(" (a.CardType='C' OR a.CardType='L') ");
                 }
                 else if (type == "SDR")//销售交货\退货,应收发票\贷项凭证
                 {
@@ -521,7 +522,15 @@ namespace OpenAuth.WebApi.Controllers.Order
                 {
                     if (!string.IsNullOrEmpty(filterString))
                     {
-                        filterString += " or  ";
+                        if (!limsFlag || !YanXuanFlag)
+                        {
+                            filterString += " And  ";
+                        }
+                        else
+                        {
+                            filterString += " or  ";
+                        }
+                        
                     }
                     filterString += filterLimsString;
                 }
