@@ -796,7 +796,7 @@ namespace OpenAuth.App
                                        where a.department == departmen && a.status == 1
                                        select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid, b.low_no }).ToListAsync();
             var onlineLowGuid = onlineDevList.Select(c => c.low_guid).Distinct().ToList();
-            var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => onlineLowGuid.Contains(c.LowGuid)).ToListAsync();
+            var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo== OrderNo).ToListAsync();
             if (!bindDevList.Any() || !onlineDevList.Any())
             {
                 result.Data = new List<string> { };
@@ -804,10 +804,8 @@ namespace OpenAuth.App
             }
             if (FilterType == 1)
             {
-                //var hasTestCode= await UnitWork.Find<DeviceTestLog>(null).Where(c => c.OrderNo == OrderNo).Select(c=>c.GeneratorCode).Distinct().ToListAsync();
                 result.Data = (from a in bindDevList.AsEnumerable()
                                join b in onlineDevList.AsEnumerable() on a.LowGuid  equals b.low_guid 
-                               //where !hasTestCode.Contains(a.GeneratorCode)
                                select new { a.GeneratorCode })
                                .OrderBy(c => c.GeneratorCode)
                                .Distinct()
@@ -815,10 +813,8 @@ namespace OpenAuth.App
             }
             else
             {
-                //var hasTestLow = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.LowGuid).Distinct().ToListAsync();
                 result.Data = (from a in bindDevList.AsEnumerable()
                                join b in onlineDevList.AsEnumerable() on a.LowGuid  equals b.low_guid
-                               //where !hasTestLow.Contains(a.LowGuid)
                                select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
                                .OrderBy(c => c.GeneratorCode)
                                .ThenBy(c => c.DevUid)
@@ -852,7 +848,7 @@ namespace OpenAuth.App
                                        where a.department == departmen && a.status == 1
                                        select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid, b.low_no }).ToListAsync();
             var onlineLowGuid = onlineDevList.Select(c => c.low_guid).Distinct().ToList();
-            var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => onlineLowGuid.Contains(c.LowGuid)).ToListAsync();
+            var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).ToListAsync();
             if (!bindDevList.Any() || !onlineDevList.Any())
             {
                 result.Data = new List<string> { };

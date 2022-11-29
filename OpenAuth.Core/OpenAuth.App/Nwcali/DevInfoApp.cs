@@ -82,7 +82,10 @@ namespace OpenAuth.App
                 foreach (var mitem in mid_lists)
                 {
                     mid_list ml = new mid_list();
-                    ml.has_bind = binList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.BindType == 1).Any();
+                    var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c => c.low_no).Select(c => new low_list { unit_id = c.unit_id.Value, low_guid = c.low_guid, low_no = c.low_no }).Distinct().ToList();
+                    var mid_low_guid = low_Lists.Select(c => c.low_guid).Distinct().ToList();
+                    var midLowHasBindCount= binList.Where(c => mid_low_guid.Contains(c.LowGuid)).Count();
+                    ml.has_bind = midLowHasBindCount>=mid_low_guid.Count?true:false;
                     ml.dev_uid = mitem.dev_uid;
                     ml.mid_guid = mitem.mid_guid;
                     if (ml.has_bind)
@@ -90,7 +93,6 @@ namespace OpenAuth.App
                         ml.GeneratorCode = binList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.BindType == 1).Select(c => c.GeneratorCode).Distinct().FirstOrDefault(); ;
                     }
                     ml.low_Lists = new List<low_list>();
-                    var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c => c.low_no).Select(c => new low_list { unit_id = c.unit_id.Value, low_guid = c.low_guid, low_no = c.low_no }).Distinct().ToList();
                     foreach (var litem in low_Lists)
                     {
                         low_list low_List = new low_list();
