@@ -58,7 +58,7 @@ namespace OpenAuth.App.Nwcali.Response
         [ExporterHeader(DisplayName = "烤机结果")]
         public string result { get; set; }
 
-        [ExporterHeader(DisplayName = "耗电(mWh)")]
+        [ExporterHeader(DisplayName = "耗电(Wh)")]
         public string power { get; set; }
 
         [ExporterHeader(DisplayName = "二氧化碳(mg)")]
