@@ -738,7 +738,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             }
             if (!string.IsNullOrWhiteSpace(req.AssignedTo))
             {
-                sqlwhere += " and AssignedTo = N'" + req.AssignedTo + "'";
+                sqlwhere += " and AssignedTo like N'" + req.AssignedTo + "'";
             }
             if (!string.IsNullOrWhiteSpace(req.Number))
             {
