@@ -44,4 +44,12 @@ namespace OpenAuth.App.Request
         /// </summary>
         public DateTime? EndDate { get; set; }
     }
+
+    public class QuerySealHistoryReq : PageReq
+    {
+        /// <summary>
+        /// Id
+        /// </summary>
+        public string SealId { get; set; }
+    }
 }
