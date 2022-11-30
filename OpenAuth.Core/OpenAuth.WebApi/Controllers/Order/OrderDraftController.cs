@@ -560,11 +560,11 @@ namespace OpenAuth.WebApi.Controllers.Order
                     {
                         if (!limsFlag || !YanXuanFlag)
                         {
-                            filterString += " And  ";
+                            filterString += " or  ";
                         }
                         else
                         {
-                            filterString += " or  ";
+                            filterString += " AND  ";
                         }
                         
                     }
