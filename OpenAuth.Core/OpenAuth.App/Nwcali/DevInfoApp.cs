@@ -161,24 +161,18 @@ namespace OpenAuth.App
                 foreach (var mitem in mid_lists)
                 {
                     mid_list ml = new mid_list();
-                    ml.has_bind = binList.Where(c => c.EdgeGuid == item.EdgeGuid && c.SrvGuid == item.SrvGuid && c.Guid == mitem.Guid && c.BindType == 1).Any();
+                    ml.has_bind = false;
                     ml.has_test = false;
                     ml.dev_uid = mitem.DevUid;
                     ml.mid_guid = mitem.Guid;
-                    if (ml.has_bind)
-                    {
-                        ml.GeneratorCode = binList.Where(c => c.EdgeGuid == item.EdgeGuid && c.SrvGuid == item.SrvGuid && c.Guid == mitem.Guid && c.BindType == 1).Select(c => c.GeneratorCode).Distinct().FirstOrDefault();
-                    }
+                    ml.GeneratorCode = "";
                     ml.low_Lists = new List<low_list>();
                     var low_Lists = binList.Where(c => c.EdgeGuid == item.EdgeGuid && c.SrvGuid == item.SrvGuid && c.DevUid == mitem.DevUid && c.Guid == mitem.Guid).OrderBy(c => c.LowNo).Select(c => new low_list { unit_id = c.UnitId, low_guid = c.LowGuid, low_no = c.LowNo }).Distinct().ToList();
                     foreach (var litem in low_Lists)
                     {
                         low_list low_List = new low_list();
-                        low_List.has_bind = binList.Where(c => c.EdgeGuid == item.EdgeGuid && c.SrvGuid == item.SrvGuid && c.Guid == mitem.Guid && c.LowGuid == litem.low_guid).Any();
-                        if (low_List.has_bind)
-                        {
-                            low_List.GeneratorCode = binList.Where(c => c.EdgeGuid == item.EdgeGuid && c.SrvGuid == item.SrvGuid && c.Guid == mitem.Guid && c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
-                        }
+                        low_List.has_bind = true;
+                        low_List.GeneratorCode = binList.Where(c => c.EdgeGuid == item.EdgeGuid && c.SrvGuid == item.SrvGuid && c.Guid == mitem.Guid && c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                         low_List.unit_id = litem.unit_id;
                         low_List.low_no = litem.low_no;
                         low_List.low_guid = litem.low_guid;
