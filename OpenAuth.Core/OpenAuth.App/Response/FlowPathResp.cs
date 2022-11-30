@@ -22,6 +22,16 @@ namespace OpenAuth.App.Response
         public string IntervalTime { get; set; }
 
         /// <summary>
+        /// 用户部门
+        /// </summary>
+        public string UserDept { get; set; }
+
+        /// <summary>
+        /// 用户名称
+        /// </summary>
+        public string UserName { get; set; }
+
+        /// <summary>
         /// 是否当前节点
         /// </summary>
 

@@ -1026,6 +1026,29 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 印章使用历史记录
+        /// </summary>
+        /// <param name="request">印章历史记录查询实体</param>
+        /// <returns>返回印章使用历史记录列表信息</returns>
+        [HttpPost]
+        public async Task<TableData> GetSealOperationHistory(QuerySealHistoryReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _contractSealApp.GetSealOperationHistory(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 获取印章详情信息
         /// </summary>
         /// <param name="sealId">印章Id</param>

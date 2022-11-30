@@ -460,6 +460,10 @@ namespace OpenAuth.WebApi.Controllers.Order
                     {
                         filterLimsString += string.Format("   ( CHARINDEX(a.CardCode , \'{0}\')  > 0  OR  CHARINDEX(a.CardCode , '{1}')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""), JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
                     }
+                    if (!string.IsNullOrWhiteSpace(request.CardCode))
+                    {
+                        filterLimsString += string.Format("(a.CardCode  LIKE '%{0}%' OR a.CardName LIKE '%{0}%') AND ", request.CardCode);
+                    }
                     filterLimsString += string.Format(" (a.CardType='C' OR a.CardType='L') ");
                 }
                 else if (type == "SDR")//销售交货\退货,应收发票\贷项凭证
@@ -558,13 +562,13 @@ namespace OpenAuth.WebApi.Controllers.Order
                 {
                     if (!string.IsNullOrEmpty(filterString))
                     {
-                        if (!limsFlag || !YanXuanFlag)
+                        if (limsFlag || YanXuanFlag)
                         {
-                            filterString += " And  ";
+                            filterString += " or  ";
                         }
                         else
                         {
-                            filterString += " or  ";
+                            filterString += " AND  ";
                         }
                         
                     }

@@ -3760,7 +3760,8 @@ namespace OpenAuth.App.ContractManager
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.ItemName), r => r.ItemName.Contains(request.ItemName))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), r => r.CreateName.Contains(request.CreateName))
                                     .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
-                                    .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)).ToList();
+                                    .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
+                                    .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus)).ToList();
 
             //通过反射将字段作为参数传入
             contractApply = (request.SortOrder == "asc" ? contractApply.OrderBy(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : Regex.Replace(request.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null)) : contractApply.OrderByDescending(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : Regex.Replace(request.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null))).ToList();

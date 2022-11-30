@@ -130,7 +130,6 @@ namespace OpenAuth.App.ContractManager
             try
             {
                 var contractSealModel = UnitWork.Find<ContractSeal>(r => r.Id == sealId).ToList();
-                var contractSealOperationHistoryList = await UnitWork.Find<ContractSealOperationHistory>(r => r.ContractSealId == sealId).OrderByDescending(r => r.CreateTime).ToListAsync();
                 if (contractSealModel != null)
                 {
                     var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
@@ -173,8 +172,7 @@ namespace OpenAuth.App.ContractManager
 
                     result.Data = new 
                     {
-                        contractSeal = contractSealReq,
-                        ContractSealOperationHistoryList = contractSealOperationHistoryList
+                        contractSeal = contractSealReq
                     };
                 }
                 else
@@ -185,6 +183,42 @@ namespace OpenAuth.App.ContractManager
             catch (Exception ex)
             {
                 result.Message = ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 查询印章操作历史记录
+        /// </summary>
+        /// <param name="req">印章操作历史记录实体</param>
+        /// <returns>返回印章操作记录</returns>
+        public async Task<TableData> GetSealOperationHistory(QuerySealHistoryReq req)
+        {
+            var result = new TableData();
+            if(!string.IsNullOrEmpty(req.SealId))
+            {
+                //查询印章历史记录
+                var contractSealOperationHistoryList = await UnitWork.Find<ContractSealOperationHistory>(r => r.ContractSealId == req.SealId).OrderByDescending(r => r.CreateTime).ToListAsync();
+
+                //按照创建时间倒序排序
+                contractSealOperationHistoryList = contractSealOperationHistoryList.OrderByDescending(r => r.CreateTime).ToList();
+                result.Count = contractSealOperationHistoryList.Count();
+                contractSealOperationHistoryList = contractSealOperationHistoryList.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+                var contractSealOperationHistorys = contractSealOperationHistoryList.Select(r => new
+                {
+                    r.Id,
+                    r.ContractSealId,
+                    r.ContractNo,
+                    r.ContractFinalNum,
+                    r.CreateUserId,
+                    r.CreateTime,
+                    r.CreateUserName,
+                    CreateDeptName = _userDepartMsgHelp.GetUserOrgName(r.CreateUserId),
+                    r.OperationType
+                });
+
+                result.Data = contractSealOperationHistorys;
             }
 
             return result;
