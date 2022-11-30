@@ -3240,8 +3240,8 @@ namespace OpenAuth.App
             {
                 #region 提成
                 var CommissionInfos = from a in UnitWork.Find<CommissionOrder>(r => req.CreateUserId == r.CreateUserId && r.ApprovalStatus >= 3)
-                               .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
-                               .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
+                               .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.PayTime >= req.StartDate.Value)
+                               .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.PayTime <= req.EndDate.Value.AddDays(1).Date)
                                .WhereIf(req.PayStatus == 1, c => c.ApprovalStatus == 3)
                                .WhereIf(req.PayStatus == 2, c => c.ApprovalStatus == 4)
                                       select new HistoryDetailForUserResp
@@ -3266,8 +3266,8 @@ namespace OpenAuth.App
                 var ReimburseInfos = from a in UnitWork.Find<ReimburseInfo>(r => req.CreateUserId == r.CreateUserId && r.RemburseStatus >= 7 && r.RemburseStatus <= 9)
                                   .WhereIf(req.PayStatus == 1, c => c.RemburseStatus != 9)
                                   .WhereIf(req.PayStatus == 2, c => c.RemburseStatus == 9)
-                                  .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
-                                  .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
+                                  .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.PayTime >= req.StartDate.Value)
+                                  .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.PayTime <= req.EndDate.Value.AddDays(1).Date)
                                      select new HistoryDetailForUserResp
                                      {
                                          Id = a.MainId,
@@ -3291,8 +3291,8 @@ namespace OpenAuth.App
             {
                 #region 结算/代理
                 var OutsourcInfos = (from a in UnitWork.Find<Outsourc>(r => req.CreateUserId == r.CreateUserId)
-                                     .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
-                                     .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
+                                     .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.PayTime >= req.StartDate.Value)
+                                     .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.PayTime <= req.EndDate.Value.AddDays(1).Date)
                                      .Include(c => c.OutsourcExpenses)
                                      .Where(a => a.OutsourcExpenses.Count() > 0)
                                          //  join c in UnitWork.Find<FlowInstance>(c => c.CustomName == "个人代理结算单") on a.FlowInstanceId equals c.Id
