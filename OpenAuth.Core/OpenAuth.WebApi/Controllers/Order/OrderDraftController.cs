@@ -522,7 +522,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 {
                     if (!string.IsNullOrEmpty(filterString))
                     {
-                        if (!limsFlag || !YanXuanFlag)
+                        if (limsFlag || YanXuanFlag)
                         {
                             filterString += " or  ";
                         }
