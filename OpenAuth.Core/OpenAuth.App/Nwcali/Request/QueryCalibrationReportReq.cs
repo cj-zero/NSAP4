@@ -30,5 +30,10 @@ namespace OpenAuth.App.Nwcali.Request
         /// 销售单号
         /// </summary>
         public int SalesOrder { get; set; }
+        /// <summary>
+        /// 校准类型  0:全部  1:自动校准  2:手动校准
+        /// </summary>
+
+        public int? taskType { get; set; }
     }
 }
