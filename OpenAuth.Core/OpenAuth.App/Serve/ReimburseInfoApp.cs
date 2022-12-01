@@ -3308,7 +3308,7 @@ namespace OpenAuth.App
                                          //  c.ActivityType,
                                          //    c.ActivityName
                                      }).ToList();
-                var FlowInstInfos = UnitWork.Find<FlowInstance>(c => c.CustomName == "个人代理结算单" && (c.ActivityName == "总经理审批" || c.ActivityName == "结束"))
+                var FlowInstInfos = UnitWork.Find<FlowInstance>(c => c.CustomName == "个人代理结算单" && (c.ActivityName == "财务支付" || c.ActivityName == "结束"))
                                       .Select(a => new { a.Id, a.ActivityName })
                                       .ToList();
                 foreach (var item in OutsourcInfos)
@@ -3316,7 +3316,7 @@ namespace OpenAuth.App
                     var FlowInstInfo = FlowInstInfos.FirstOrDefault(a => a.Id == item.FlowInstanceId);
                     if (FlowInstInfo != null)
                     {
-                        item.StatusName = FlowInstInfo.ActivityName == "总经理审批" ? "待支付" : "已支付";
+                        item.StatusName = FlowInstInfo.ActivityName == "财务支付" ? "待支付" : "已支付";
                     }
                 }
                 if (req.PayStatus == 1)
