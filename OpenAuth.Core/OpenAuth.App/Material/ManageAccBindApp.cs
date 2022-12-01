@@ -220,28 +220,28 @@ namespace OpenAuth.App.Material
             StringBuilder strSql = new StringBuilder();
             string start = Convert.ToDateTime(req.Month + "-01").ToString("yyyy-MM-dd");
              string end = Convert.ToDateTime(req.Month + "-01").AddMonths(1).ToString("yyyy-MM-dd");
-            strSql.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by Owner  ORDER BY CompleteCount DESC ");
+            strSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by AssignedTo  ORDER BY CompleteCount DESC ");
             var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(),CommandType.Text);
             StringBuilder strFSql = new StringBuilder();
-            strFSql.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by Owner    ORDER BY CompleteCount DESC ");
+            strFSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by AssignedTo    ORDER BY CompleteCount DESC ");
             var personalFList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strFSql.ToString(), CommandType.Text);
             // get personals with their level for which the qualified line and excel line needed
-            var personalNames = personalAssignList.Select(u => u.Owner).ToList();
-            var personalFNames = personalFList.Select(u => u.Owner).ToList();
+            var personalNames = personalAssignList.Select(u => u.AssignedTo).ToList();
+            var personalFNames = personalFList.Select(u => u.AssignedTo).ToList();
             StringBuilder strSqlbind = new StringBuilder();
             StringBuilder strSqlFbind = new StringBuilder();
             strSqlbind.AppendFormat("select * from manageaccountbind u  where (LOCATE(u.MName , \"{0}\")  > 0  ||  LOCATE(u.MName , \"{1}\")  > 0  )and u.DutyFlag = 1 and  Level is not null ", JsonConvert.SerializeObject(personalNames).Replace(@"""", ""),JsonConvert.SerializeObject(personalFNames).Replace(@"""", ""));
             var erp4BindList = UnitWork.ExcuteSql<ManageAccountBind>(ContextType.DefaultContextType, strSqlbind.ToString(), CommandType.Text, null).ToList();
             var legitPersonalNameList = erp4BindList.Select(u => u.MName).ToList();
             var legitPersonalNameFList = erp4BindList.Select(u => u.MName).ToList();
-            var legitPersonals = personalAssignList.Where(u => legitPersonalNameList.Contains(u.Owner)).ToList();
-            var legitFPersonals = personalFList.Where(u => legitPersonalNameFList.Contains(u.Owner)).ToList();
+            var legitPersonals = personalAssignList.Where(u => legitPersonalNameList.Contains(u.AssignedTo)).ToList();
+            var legitFPersonals = personalFList.Where(u => legitPersonalNameFList.Contains(u.AssignedTo)).ToList();
             //concat data and order as the will
             var FinalPersonals = new List<SerieManageData>();
             FinalPersonals.AddRange(legitPersonals);
             FinalPersonals.AddRange(legitFPersonals);
            var FinalPersonalSort=  FinalPersonals.OrderByDescending(a => a.CompleteCount);
-            dcr.XData = FinalPersonalSort.Select(a => a.Owner).Distinct().ToList();
+            dcr.XData = FinalPersonalSort.Select(a => a.AssignedTo).Distinct().ToList();
             SerieData serieRuleQualified = new SerieData();
             serieRuleQualified.Name = "合格件数";
             SerieData serieRuleExcel = new SerieData();
@@ -271,20 +271,20 @@ namespace OpenAuth.App.Material
                         serieRuleExcel.SerieVal.Add(15);
                     }
 
-                    if (legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault() != null)
+                    if (legitPersonals.Where(u => u.AssignedTo == xitem).FirstOrDefault() != null)
                     {
-                        serieDataTotal.SerieVal.Add(legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault().Total);
+                        serieDataTotal.SerieVal.Add(legitPersonals.Where(u => u.AssignedTo == xitem).FirstOrDefault().Total);
                     }
-                    if (legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault() == null)
+                    if (legitPersonals.Where(u => u.AssignedTo == xitem).FirstOrDefault() == null)
                     {
                         serieDataTotal.SerieVal.Add(0);
                     }
                     //serieDataTotal.SerieVal.Add(legitPersonals.Where(u => u.Owner == xitem).FirstOrDefault().Total);
-                    if (legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault() != null)
+                    if (legitFPersonals.Where(u => u.AssignedTo == xitem).FirstOrDefault() != null)
                     {
-                        serieDataComplete.SerieVal.Add(legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault().CompleteCount);
+                        serieDataComplete.SerieVal.Add(legitFPersonals.Where(u => u.AssignedTo == xitem).FirstOrDefault().CompleteCount);
                     }
-                    if (legitFPersonals.Where(u => u.Owner == xitem).FirstOrDefault() == null)
+                    if (legitFPersonals.Where(u => u.AssignedTo == xitem).FirstOrDefault() == null)
                     {
                         serieDataComplete.SerieVal.Add(0);
                     }
@@ -295,6 +295,22 @@ namespace OpenAuth.App.Material
             dcr.YData.Add(serieRuleExcel);
             dcr.YData.Add(serieDataTotal);
             dcr.YData.Add(serieDataComplete);
+            //replace MNAME with LNAME
+            var mnameList  = FinalPersonalSort.Select(a => a.AssignedTo).Distinct().ToList();
+            dcr.XData = new List<string>();
+            foreach (var mitem in mnameList)
+            {
+                var bindLname = erp4BindList.Where(a => a.MName == mitem).FirstOrDefault();
+                if (bindLname!=null)
+                {
+                    dcr.XData.Add(bindLname.LName);
+                }
+                else
+                {
+                    dcr.XData.Add(mitem);
+                }
+            }
+
             return dcr;
         }
 
@@ -319,11 +335,11 @@ namespace OpenAuth.App.Material
             ddr.Total = countList.FirstOrDefault().count;
             // order by complete num and create time 
             StringBuilder strSqlOrder = new StringBuilder();
-            strSqlOrder.AppendFormat("select Owner,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by Owner  ORDER BY CompleteCount DESC ");
+            strSqlOrder.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  TaskView5 where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by AssignedTo  ORDER BY CompleteCount DESC ");
             var personalOrderList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSqlOrder.ToString(), CommandType.Text);
             foreach (var perOrder in personalOrderList)
             {
-                var perAssignList = personalAssignList.Where(u => u.Owner == perOrder.Owner).ToList();
+                var perAssignList = personalAssignList.Where(u => u.Owner == perOrder.AssignedTo).ToList();
                 if (perAssignList != null)
                 {
                     ddr.ddr.AddRange(perAssignList);

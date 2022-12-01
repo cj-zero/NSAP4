@@ -990,7 +990,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                                       ,count(case when t.fld006314 = N'超高' then 1 else null end)*3 as SuperDifficulty
                                       ,count(case when t.DueDays >= 0 then 1 else null end) as OnTime
                                       ,count(case when t.DueDays < 0 then 1 else null end) as Delayed
-                                     from(select Owner as name, fld006314, DueDays  from TaskView5 where 1 = 1 ");
+                                     from(select AssignedTo as name, fld006314, DueDays  from TaskView5 where 1 = 1 ");
             if (!string.IsNullOrWhiteSpace(str))
             {
                 strSql += string.Format(@"and Number in (" + str + ")");
@@ -1012,7 +1012,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                       select new
                       {
                           n.Level,
-                          m.name,
+                          name = n.LName,
                           m.LowDifficulty,
                           m.MediumDifficulty,
                           m.HighDifficulty,
