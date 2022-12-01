@@ -2411,6 +2411,7 @@ namespace OpenAuth.App
                 endTime = req.EndTime,
                 pageSize=req.limit,
                 page=req.page,
+                taskType=req.taskType==0?null:req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
             if (taskObj == null || taskObj["code"].ToString() != "1001")
@@ -2534,7 +2535,8 @@ namespace OpenAuth.App
                 sns=sns,
                 passportIDs = ids,
                 beginTime = req.StartTime,
-                endTime = req.EndTime
+                endTime = req.EndTime,
+                taskType = req.taskType == 0 ? null : req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
             if (taskObj == null || taskObj["code"].ToString() != "1001")
