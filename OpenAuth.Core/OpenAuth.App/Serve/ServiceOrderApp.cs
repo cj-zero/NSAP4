@@ -6067,16 +6067,7 @@ namespace OpenAuth.App
             var doorQty = (finishList
               .Where(s => s.ServiceWorkOrders.Any(a => a.ServiceMode == 1) && s.ServiceWorkOrders.All(a => a.Status >= 7))
               .ToList()).Count;
-
-            //获取技术员超过5天未完结工单数量
-            var serviceWorkOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId && (DateTime.Now).Subtract(Convert.ToDateTime(s.AcceptTime)).Days >= 5).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
-            var serviceOrders = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0 && w.Status == 2)
-               .Include(s => s.ServiceWorkOrders)
-               .WhereIf(TechType != 2, w => (w.VestInOrg == 1 || w.VestInOrg == 3))//普通技术员只查看呼叫中心数据
-               .ToListAsync();
-
-            var noFinshFiveDays = serviceOrders.Count();
-            result.Data = new { pendingQty, goingQty, finishQty, reimburseQty = doorQty - isReimburseQty, noFinshFiveDays };
+            result.Data = new { pendingQty, goingQty, finishQty, reimburseQty = doorQty - isReimburseQty };
             return result;
         }
 
@@ -6106,10 +6097,16 @@ namespace OpenAuth.App
 
             var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.AllowOrNot == 0 && serviceOrderIds.Contains(c.Id)).Select(c => c.VestInOrg).ToListAsync();
             var groupCount = serviceOrder.GroupBy(c => c).Select(c=>new {c.Key, Count=c.Count() }).ToList();
+
+            //获取技术员超过5天未完结工单数量
+            var serviceWorkOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId && s.FromType == 1 && (DateTime.Now).Subtract(Convert.ToDateTime(s.AcceptTime)).Days >= 5).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+            var serviceOrders = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0 && w.Status == 2).ToListAsync();
+            var noFinshFiveDays = serviceOrders.Count();
             result.Data = new { 
                 CusQty = groupCount.Where(w => w.Key == 1).FirstOrDefault()?.Count,
                 RepairQty = groupCount.Where(w => w.Key == 2).FirstOrDefault()?.Count,
                 XZQty = groupCount.Where(w => w.Key == 3).FirstOrDefault()?.Count,
+                NoFinshFiveDays = noFinshFiveDays
             };
             return result;
         }
