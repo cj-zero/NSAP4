@@ -2705,6 +2705,7 @@ namespace OpenAuth.App
                 HttpHelper httpHelper = new HttpHelper(url);
                 var guidSuccessCount = 0;
                 var err = 0;
+                List<int> dts = new List<int>();
                 foreach (var guid in guids)
                 {
                     List<string> taskId = new List<string>();
@@ -2770,6 +2771,7 @@ namespace OpenAuth.App
                         if (resObj["data"] != null)
                         {
                             var checkDto = JsonHelper.Instance.Deserialize<List<CheckResultDto>>(resObj["data"].ToString());
+                            dts.InsertRange(dts.Count(), checkDto.Select(r => (int)r.LastTime).ToList());
                             if (checkDto.Any(c => c.Status == 0))
                             {
 
@@ -2818,7 +2820,7 @@ namespace OpenAuth.App
                     var last = UnitWork.Find<DeviceTestLog>(c => guids.Contains(c.LowGuid)).OrderByDescending(c => c.CreateTime).FirstOrDefault();
                     u1 = last.CreateUserId;
                     u2 = last.CreateUser;
-                    date = DateTime.Now;
+                    date = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).AddSeconds((long)dts.Max());
                 }
                 else
                     result = 2;//烤机中
