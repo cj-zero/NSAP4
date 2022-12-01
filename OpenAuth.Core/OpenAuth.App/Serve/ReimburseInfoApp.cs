@@ -3319,7 +3319,7 @@ namespace OpenAuth.App
                         item.StatusName = FlowInstInfo.ActivityName == "财务支付" ? "待支付" : "已支付";
                     }
                 }
-                OutsourcInfos = OutsourcInfos.Where(a => a.StatusName == "待支付"|| a.StatusName == "待支付").ToList();
+                OutsourcInfos = OutsourcInfos.Where(a => a.StatusName == "待支付"|| a.StatusName == "已支付").ToList();
                  
                 if (req.PayStatus == 1)
                 {
