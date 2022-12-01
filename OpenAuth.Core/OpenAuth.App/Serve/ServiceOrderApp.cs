@@ -6099,8 +6099,10 @@ namespace OpenAuth.App
             var groupCount = serviceOrder.GroupBy(c => c).Select(c=>new {c.Key, Count=c.Count() }).ToList();
 
             //获取技术员超过5天未完结工单数量
-            var serviceWorkOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId && s.FromType == 1 && (DateTime.Now).Subtract(Convert.ToDateTime(s.AcceptTime)).Days >= 5).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
-            var serviceOrders = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0 && w.Status == 2).ToListAsync();
+            DateTime dt = DateTime.Now;
+            var serviceWorkOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId && s.FromType == 1).Select(r => new { r.ServiceOrderId , AcceptTime = Convert.ToDateTime(r.AcceptTime)}).Distinct().ToListAsync();
+            var serIds = serviceWorkOrderIds.Where(r => dt.Subtract(r.AcceptTime).Days >= 5).Select(r => r.ServiceOrderId).ToList(); 
+            var serviceOrders = await UnitWork.Find<ServiceOrder>(w => serIds.Contains(w.Id) && w.AllowOrNot == 0 && w.Status == 2).ToListAsync();
             var noFinshFiveDays = serviceOrders.Count();
             result.Data = new { 
                 CusQty = groupCount.Where(w => w.Key == 1).FirstOrDefault()?.Count,
