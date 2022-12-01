@@ -218,7 +218,7 @@ namespace OpenAuth.App
             }
             else
             {
-                var query = UnitWork.Find<AttendanceClock>(c => c.ClockDate == req.ClockDate && c.AppUserId == req.AppUserId)
+                var query = UnitWork.Find<AttendanceClock>(c => c.ClockDate <= req.ClockDate && c.AppUserId == req.AppUserId)
                     .Include(c => c.AttendanceClockPictures)
                     .WhereIf(req.ClockType != 0, c => c.ClockType == req.ClockType)
                     .OrderByDescending(c => c.ClockDate)
