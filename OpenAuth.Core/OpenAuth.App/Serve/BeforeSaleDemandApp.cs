@@ -197,6 +197,7 @@ namespace OpenAuth.App
                             .FirstOrDefaultAsync();
 
             var result = detail.MapTo<BeforeSaleDemandResp>();
+            List<FlowPathResp> FlowPathResp = new List<FlowPathResp>();
             //判断当前用户是否有查看金额信息的权限 默认否false
             result.IsShowAmount = false;
             if (result.CreateUserId == loginContext.User.Id || loginContext.User.Account == Define.SYSTEM_USERNAME || loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-销售总助")) || loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-研发总助")) || loginContext.Roles.Any(c => c.Name.Equal("总经理")))
@@ -295,6 +296,9 @@ namespace OpenAuth.App
                 //    result.IsHandle = false;
                 //}
                 #endregion
+
+                //获取审批生命周期
+                FlowPathResp = await _flowInstanceApp.FlowPathRespList(null, result.FlowInstanceId);
             }
             var beforesalefiles = detail.Beforesalefiles.Select(s => new { s.FileId, s.Type }).ToList();
             var beforesalefileIds = beforesalefiles.Select(s => s.FileId).ToList();
@@ -303,6 +307,7 @@ namespace OpenAuth.App
             result.Files.ForEach(f => f.PictureType = beforesalefiles.Where(p => f.Id.Equals(p.FileId)).Select(p => p.Type).FirstOrDefault());
             result.DevCost = String.Format("{0:N}", Convert.ToDouble(result.DevCost.ToDouble()));
             result.PredictDevCost = String.Format("{0:N}", Convert.ToDouble(result.PredictDevCost));
+            result.flowPathResps = FlowPathResp;
             return result;
         }
 

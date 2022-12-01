@@ -215,5 +215,10 @@ namespace OpenAuth.App.Reponse
         /// 项目排期表
         /// </summary>
         public List<BeforeSaleProScheduling> BeforeSaleProSchedulings { get; set; }
+
+        /// <summary>
+        /// 审批流程
+        /// </summary>
+        public List<FlowPathResp> flowPathResps { get; set; }
     }
 }

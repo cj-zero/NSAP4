@@ -903,5 +903,20 @@ namespace OpenAuth.App
                                     }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
             return petitioner;
         }
+
+
+        /// <summary>
+        /// 获取用户部门信息
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<List<UserResp>> GetUsersOrg(List<string> userId)
+        {
+
+            var userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
+                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                            select new UserResp { Id = a.FirstId ,OrgId = a.SecondId, OrgName =  c.Name }).ToList();
+            return userList;
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace OpenAuth.App.Request
 {
@@ -157,4 +158,32 @@ namespace OpenAuth.App.Request
         public int AppUserId { get; set; }
         public string GradeName { get; set; }
     }
+
+
+    public class ServiceOrderSkill
+    {
+        public int serviceOrder { get; set; }
+        public List<string> themeCode { get; set; } = new List<string>();
+    }
+    public class ServiceOrderSkillResp
+    {
+        public int serviceOrder { get; set; }
+        public string skillName { get; set; }
+    }
+
+    public class SendOrderTechnicianReq
+    {
+
+        public List<string> themeCode { get; set; } = new List<string>();
+        public List<int?> appUserId { get; set; } = new List<int?>();
+        public int pageIndex { get; set; }
+        public int pageSize { get; set; }
+    }
+    public class SendOrderTechnicianResp
+    {
+        public int appUserId { get; set; }
+        public string skillName { get; set; }
+        public string gradeName { get; set; }
+    }
+
 }

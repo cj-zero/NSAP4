@@ -221,5 +221,23 @@ namespace OpenAuth.WebApi.Controllers
         {
             _app = app;
         }
+        //获取详情
+        [HttpGet]
+        public async Task<TableData> GetTreeCallSubject()
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetTreeCallSubject();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，错误：{result.Message}");
+            }
+
+            return result;
+        }
     }
 }

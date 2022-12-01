@@ -3180,7 +3180,7 @@ namespace OpenAuth.App
                             double cvAcceptance = 0;
                             var cvAcceptanceStr = "";
                             var plcrmd = plcRepetitiveMeasurementGroupData.First(a => a.Key.Equals(cvData.PclNo));
-                            var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals(mode) && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
+                            var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals(mode) && d.VerifyType.Equals("Post-Calibration") && d.Scale.Equals(cvData.Scale)).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
                             double ror;
                             if (baseInfo.RepetitiveMeasurementsCount >= 6)//贝塞尔公式法
                             {
@@ -3371,7 +3371,7 @@ namespace OpenAuth.App
                             var AcceptanceStr = "";
 
                             var plcrmd = plcRepetitiveMeasurementGroupData.First(a => a.Key.Equals(cvData.PclNo));
-                            var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals(mode) && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
+                            var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals(mode) && d.VerifyType.Equals("Post-Calibration") && d.Scale.Equals(cvData.Scale)).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
                             double ror;
                             if (baseInfo.RepetitiveMeasurementsCount >= 6)//贝塞尔公式法
                             {

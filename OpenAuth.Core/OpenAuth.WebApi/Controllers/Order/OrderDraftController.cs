@@ -360,6 +360,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             string sboname = string.Empty;
             string sortString = string.Empty;
             string filterString = string.Empty;
+            string filterLimsString = string.Empty;
             string sortName = string.Empty;
 
             #region 获取已经冻结的客户
@@ -425,13 +426,14 @@ namespace OpenAuth.WebApi.Controllers.Order
                 viewSales = powers.ViewSales;
                 viewCustom = powers.ViewCustom;
             }
+            bool limsFlag = false;
+            bool YanXuanFlag = false;
             #region 根据不同的单据类型获取不同的业务伙伴
             if (!string.IsNullOrEmpty(type))
             {
                 if (type == "SQO")//销售报价单\订单
                 {
-                    bool limsFlag = false;
-                    bool YanXuanFlag = false;
+                    
                     var erpLimsClient = new List<string>();
                     var erpYanXuanClient = new List<string>();
                     if (erpLims != null)
@@ -448,17 +450,21 @@ namespace OpenAuth.WebApi.Controllers.Order
                     }
                     if (limsFlag && !YanXuanFlag)
                     {
-                        filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""));
+                        filterLimsString += string.Format("   ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""));
                     }
                     if (!limsFlag && YanXuanFlag)
                     {
-                        filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
+                        filterLimsString += string.Format("   ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
                     }
                     if (limsFlag && YanXuanFlag)
                     {
-                        filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0  OR  CHARINDEX(a.CardCode , '{1}')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""), JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
+                        filterLimsString += string.Format("   ( CHARINDEX(a.CardCode , \'{0}\')  > 0  OR  CHARINDEX(a.CardCode , '{1}')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""), JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
                     }
-                    filterString += string.Format("(a.CardType='C' OR a.CardType='L') AND ");
+                    if (!string.IsNullOrWhiteSpace(request.CardCode))
+                    {
+                        filterLimsString += string.Format("(a.CardCode  LIKE '%{0}%' OR a.CardName LIKE '%{0}%') AND ", request.CardCode);
+                    }
+                    filterLimsString += string.Format(" (a.CardType='C' OR a.CardType='L') ");
                 }
                 else if (type == "SDR")//销售交货\退货,应收发票\贷项凭证
                 {
@@ -540,6 +546,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     filterString += string.Format(" a.SlpCode =0  AND ");
                 }
             }
+            //
             if (!string.IsNullOrEmpty(filterString))
             {
                 filterString = filterString.Substring(0, filterString.Length - 5);
@@ -551,6 +558,22 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             else
             {
+                if (!string.IsNullOrEmpty(filterLimsString))
+                {
+                    if (!string.IsNullOrEmpty(filterString))
+                    {
+                        if (limsFlag || YanXuanFlag)
+                        {
+                            filterString += " or  ";
+                        }
+                        else
+                        {
+                            filterString += " AND  ";
+                        }
+                        
+                    }
+                    filterString += filterLimsString;
+                }
                 result = _serviceSaleOrderApp.SelectCardCodeInfo(request, sortString, filterString, sboname);
             }
             return result;

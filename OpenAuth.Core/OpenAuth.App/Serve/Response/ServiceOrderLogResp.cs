@@ -130,12 +130,23 @@ namespace OpenAuth.App.Serve.Response
         public int? FromId { get; set; }
         public List<ServiceWorkOrder> ServiceWorkOrders { get; set; }
         public List<string> MaterialTypes { get; set; }
-
+       
         /// <summary>
         /// 是否承包
         /// </summary>
         public int? IsContracting { get; set; }
-        
+        /// <summary>
+        /// 所需技能
+        /// </summary>
+        public string Skill { get; set; }
+        /// <summary>
+        /// 经度
+        /// </summary>
+        public decimal? Longitude { get; set; }
+        /// <summary>
+        /// 纬度
+        /// </summary>
+        public decimal? Latitude { get; set; }
 
     }
 }

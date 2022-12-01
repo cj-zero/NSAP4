@@ -7,6 +7,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
+using OpenAuth.App.CommonHelp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +27,7 @@ namespace OpenAuth.App
         private FormApp _formApp;
         private IHttpClientFactory _httpClientFactory;
         private IServiceProvider _serviceProvider;
+        private UserDepartMsgHelp _userDepartMsgHelp;
 
         #region 流程处理API
 
@@ -1142,8 +1144,10 @@ namespace OpenAuth.App
                             Number = f.Number,
                             CreateTime = operationHistorys?.CreateDate.ToString(),
                             IntervalTime = operationHistorys?.IntervalTime.ToString(),
+                            UserDept = operationHistorys == null ? "" : _userDepartMsgHelp.GetUserOrgName(operationHistorys.CreateUserId),
+                            UserName = operationHistorys == null ? "" : operationHistorys.CreateUserName,
                             IsNode = true
-                        });
+                        }); ;
                     }
                     else
                     {
@@ -1175,7 +1179,7 @@ namespace OpenAuth.App
         }
 
         public FlowInstanceApp(IUnitWork unitWork, IRepository<FlowInstance> repository
-        , RevelanceManagerApp app, FlowSchemeApp flowSchemeApp, FormApp formApp, IHttpClientFactory httpClientFactory, IAuth auth, IServiceProvider serviceProvider)
+        , RevelanceManagerApp app, FlowSchemeApp flowSchemeApp, UserDepartMsgHelp userDepartMsgHelp, FormApp formApp, IHttpClientFactory httpClientFactory, IAuth auth, IServiceProvider serviceProvider)
             : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
@@ -1183,6 +1187,7 @@ namespace OpenAuth.App
             _formApp = formApp;
             _httpClientFactory = httpClientFactory;
             _serviceProvider = serviceProvider;
+            _userDepartMsgHelp = userDepartMsgHelp;
         }
 
     }

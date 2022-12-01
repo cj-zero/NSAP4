@@ -331,5 +331,28 @@ namespace OpenAuth.App
         {
             _revelanceApp = app;
         }
+        public async Task<TableData> GetTreeCallSubject()
+        {
+            var result = new TableData();
+            var objs = UnitWork.Find<KnowledgeBase>(a => a.Rank == 2).ToList();
+            var childrenObjs = UnitWork.Find<KnowledgeBase>(a => a.Rank == 3);
+
+            result.Data = objs.Select(a => new {
+
+                a.Id,
+                a.Code,
+                a.Name,
+                children = childrenObjs.Where(b => b.ParentId == a.Id)
+                          .Select(c => new {
+                              c.Id,
+                              c.Code,
+                              c.Name
+                          }).ToList(),
+
+            }).ToList();
+            return result;
+        }
+
+
     }
 }

@@ -709,7 +709,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "5" && !contract.IsUseCompanyTemplate)
@@ -724,7 +724,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if ((contract.ContractStatus == "6" || contract.ContractStatus == "7" || contract.ContractStatus == "-1") && !contract.IsUseCompanyTemplate)
@@ -739,7 +739,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "骆灵芝已审批";
+                    nodeZZReq.NodeUser = "骆灵芝/吴秋丽已审批";
                     nodeList.Add(nodeZZReq);
                 }
 
@@ -801,7 +801,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "8")
@@ -843,7 +843,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "9")
@@ -884,7 +884,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "5")
@@ -906,7 +906,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "6" || contract.ContractStatus == "7" || contract.ContractStatus == "-1")
@@ -928,7 +928,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "骆灵芝已审批";
+                    nodeZZReq.NodeUser = "骆灵芝/吴秋丽已审批";
                     nodeList.Add(nodeZZReq);
                 }
 
@@ -1043,7 +1043,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if (contract.ContractStatus == "5" && !contract.IsUseCompanyTemplate)
@@ -1058,7 +1058,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeZZReq.NodeUser = "等待骆灵芝/吴秋丽审批";
                     nodeList.Add(nodeZZReq);
                 }
                 else if ((contract.ContractStatus == "6" || contract.ContractStatus == "7" || contract.ContractStatus == "-1") && !contract.IsUseCompanyTemplate)
@@ -1073,7 +1073,7 @@ namespace OpenAuth.App.ContractManager
                     ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
                     nodeZZReq.NodeName = "总助审批";
                     nodeZZReq.NodeStatus = "5";
-                    nodeZZReq.NodeUser = "骆灵芝已审批";
+                    nodeZZReq.NodeUser = "骆灵芝/吴秋丽已审批";
                     nodeList.Add(nodeZZReq);
                 }
 
@@ -3760,7 +3760,8 @@ namespace OpenAuth.App.ContractManager
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.ItemName), r => r.ItemName.Contains(request.ItemName))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), r => r.CreateName.Contains(request.CreateName))
                                     .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
-                                    .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)).ToList();
+                                    .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
+                                    .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus)).ToList();
 
             //通过反射将字段作为参数传入
             contractApply = (request.SortOrder == "asc" ? contractApply.OrderBy(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : Regex.Replace(request.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null)) : contractApply.OrderByDescending(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : Regex.Replace(request.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null))).ToList();
