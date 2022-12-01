@@ -6100,9 +6100,9 @@ namespace OpenAuth.App
 
             //获取技术员超过5天未完结工单数量
             DateTime dt = DateTime.Now;
-            var serviceWorkOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId && s.FromType == 1).Select(r => new { r.ServiceOrderId , AcceptTime = Convert.ToDateTime(r.AcceptTime)}).Distinct().ToListAsync();
+            var serviceWorkOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId && s.FromType == 1 && s.Status == 2 && s.AcceptTime != null).Select(r => new { r.ServiceOrderId , AcceptTime = Convert.ToDateTime(r.AcceptTime)}).Distinct().ToListAsync();
             var serIds = serviceWorkOrderIds.Where(r => dt.Subtract(r.AcceptTime).Days >= 5).Select(r => r.ServiceOrderId).ToList(); 
-            var serviceOrders = await UnitWork.Find<ServiceOrder>(w => serIds.Contains(w.Id) && w.AllowOrNot == 0 && w.Status == 2).ToListAsync();
+            var serviceOrders = await UnitWork.Find<ServiceOrder>(w => serIds.Contains(w.Id) && w.AllowOrNot == 0).ToListAsync();
             var noFinshFiveDays = serviceOrders.Count();
             result.Data = new { 
                 CusQty = groupCount.Where(w => w.Key == 1).FirstOrDefault()?.Count,
