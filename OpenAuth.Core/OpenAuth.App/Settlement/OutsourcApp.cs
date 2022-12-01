@@ -53,23 +53,39 @@ namespace OpenAuth.App
             }
             //List<int?> outsourcIds = new List<int?>();
             List<int> serviceOrderId = new List<int>();
+            bool flag = false;
             if (!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()) || !string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()))
             {
-                //var completion = await UnitWork.Find<CompletionReport>(c => c.IsReimburse == 4)
-                //    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), c => c.EndDate > request.CompletionStartTime)
-                //    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), c => c.EndDate < Convert.ToDateTime(request.CompletionEndTime).AddDays(1))
-                //    .Select(c => c.ServiceOrderId)
-                //    .ToListAsync();
+      
                 var serviceOrder=await UnitWork.Find<ServiceWorkOrder>(null)
                     .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), c => c.CompleteDate > request.CompletionStartTime)
                     .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), c => c.CompleteDate < Convert.ToDateTime(request.CompletionEndTime).AddDays(1))
                     .Select(c => c.ServiceOrderId)
                     .ToListAsync();
                 serviceOrderId.AddRange(serviceOrder);
+                flag = true;
             }
 
+
+            if (!string.IsNullOrWhiteSpace(request.StartTime.ToString()) || !string.IsNullOrWhiteSpace(request.EndTime.ToString()))
+            {
+                    var serviceOrder = await UnitWork.Find<ServiceOrder>(null)
+                                       .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), c => c.CreateTime > request.StartTime)
+                                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), c => c.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
+                                       .Select(c => c.Id)
+                                       .ToListAsync();
+                    if (serviceOrderId.Count() > 0)
+                    {
+                        serviceOrderId = serviceOrderId.Intersect(serviceOrder).ToList();
+                    }
+                    else
+                    {
+                        serviceOrderId.AddRange(serviceOrder);
+                    }
+                flag = true;
+            }
             var outsourcIds = await UnitWork.Find<OutsourcExpenses>(null)
-                .WhereIf(serviceOrderId.Count > 0, o => serviceOrderId.Contains(o.ServiceOrderId.Value))
+                .WhereIf(flag, o => serviceOrderId.Contains(o.ServiceOrderId.Value))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId), o => o.ServiceOrderSapId == int.Parse(request.ServiceOrderSapId))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), o => o.TerminalCustomer.Contains(request.Customer) || o.TerminalCustomerId.Contains(request.Customer))
                 .Select(c => c.OutsourcId)
@@ -80,8 +96,8 @@ namespace OpenAuth.App
             var query = UnitWork.Find<Outsourc>(null).Include(c => c.OutsourcExpenses)
                         .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.OutsourcId), q => q.Id == int.Parse(request.OutsourcId))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
+                       //.WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
+                       //.WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
                        .Where(o => outsourcIds.Contains(o.Id));
 
             //主页报表跳转用
@@ -187,6 +203,7 @@ namespace OpenAuth.App
 
             var outsourcList = await query.OrderByDescending(o => o.UpdateTime).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
             var serviceOrderIds = outsourcList.Select(o => o.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId).ToList();
+            List<ServiceOrder> listServiceOrder = await UnitWork.Find<ServiceOrder>(s => serviceOrderIds.Contains(s.Id)).ToListAsync();
             var serviceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(s => serviceOrderIds.Contains(s.ServiceOrderId)).ToListAsync();
             var flowInstanceList = await UnitWork.Find<FlowInstance>(f => outsourcList.Select(o => o.FlowInstanceId).ToList().Contains(f.Id)).ToListAsync();
             result.Count = await query.CountAsync();
@@ -199,17 +216,23 @@ namespace OpenAuth.App
 
             List<dynamic> outsourcs = new List<dynamic>();
             var independentOrg = new string[] { "CS7", "CS12", "CS14", "CS17", "CS20", "CS29", "CS32", "CS34", "CS36", "CS37", "CS38", "CS9", "CS50", "CSYH" };
+
+
             outsourcList.ForEach(o =>
             {
                 var orgName = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(o.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
                 var outsourcexpensesObj = o.OutsourcExpenses.FirstOrDefault();
                 var serviceWorkOrderObj = serviceWorkOrder.Where(s => s.ServiceOrderId == outsourcexpensesObj?.ServiceOrderId && s.CurrentUserNsapId.Equals(o.CreateUserId)).FirstOrDefault();
+                var serviceOrderObj = listServiceOrder.Where(s => s.Id == outsourcexpensesObj?.ServiceOrderId).FirstOrDefault();
+                var EndTime = serviceWorkOrder.Where(s => s.ServiceOrderId == outsourcexpensesObj?.ServiceOrderId && s.CurrentUserNsapId.Equals(o.CreateUserId)).Max(a => a.CompleteDate);
                 outsourcs.Add(new
                 {
                     o.Id,
                     o.ServiceMode,
                     UpdateTime = Convert.ToDateTime(o.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
-                    CreateTime = Convert.ToDateTime(o.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                    //CreateTime = Convert.ToDateTime(o.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                    CreateTime = serviceOrderObj?.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                    EndTime = EndTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                     outsourcexpensesObj?.ServiceOrderSapId,
                     outsourcexpensesObj?.TerminalCustomer,
                     outsourcexpensesObj?.TerminalCustomerId,
