@@ -1992,9 +1992,11 @@ namespace OpenAuth.App
                        .WhereIf(req.OriginAbs != 0, c => productionOrder.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid));
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid))
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Operator),c=>c.CreateUser.Contains(req.Operator))
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName),c=>c.Department.ToUpper()==req.OrgName.ToUpper());
             result.Count = query.Count();
-            var taskList = req.State == 0 ? query.OrderBy(c => c.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToList() : query.OrderBy(c => c.Id).ToList();
+            var taskList = req.State == 0 ? query.OrderByDescending(c => c.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToList() : query.OrderByDescending(c => c.Id).ToList();
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
             var taskIds = taskList.Where(c => !string.IsNullOrWhiteSpace(c.TaskId)).Select(c => c.TaskId).Distinct().ToList();
             var orderList = await UnitWork.Find<product_owor>(null).Where(c => orderIds.Contains(c.DocEntry)).Select(c => new { c.DocEntry, c.OriginAbs, c.ItemCode }).ToListAsync();
@@ -2078,7 +2080,7 @@ namespace OpenAuth.App
                     begin = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["begin"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
                     end = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["end"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
                     result = records == null ? "" : (records["result"].ToString().Equal("OK") ? "通过" : "失败"),
-                    power = records == null ? 0 : records["power"],
+                    power = records == null ? 0 : Math.Round((Convert.ToDecimal(records["power"]) / 1000), 6),
                     carbon = records == null ? 0 : records["carbon"],
                     duration = records == null ? 0 : records["duration"],
                     sn = snInfo == null ? "" : snInfo.sn
@@ -2171,7 +2173,10 @@ namespace OpenAuth.App
                        .WhereIf(req.OriginAbs != 0, c => productionOrder.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid)).OrderBy(c => c.Id);
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid))
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Operator), c => c.CreateUser.Contains(req.Operator))
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName), c => c.Department.ToUpper() == req.OrgName.ToUpper())
+                       .OrderByDescending(c => c.Id);
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
             var taskIds = taskList.Where(c => !string.IsNullOrWhiteSpace(c.TaskId)).Select(c => c.TaskId).Distinct().ToList();
             var orderList = await UnitWork.Find<product_owor>(null).Where(c => orderIds.Contains(c.DocEntry)).Select(c => new { c.DocEntry, c.OriginAbs, c.ItemCode }).ToListAsync();
@@ -2242,7 +2247,7 @@ namespace OpenAuth.App
                     begin = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["begin"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
                     end = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["end"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
                     result = records == null ? "" : (records["result"].ToString().Equal("OK") ? "通过" : "失败"),
-                    power = records == null ? "" : records["power"].ToString(),
+                    power = records == null ? "" : Math.Round((Convert.ToDecimal(records["power"])/1000),6).ToString(),
                     carbon = records == null ? "" : records["carbon"].ToString(),
                     duration = records == null ? "" : records["duration"].ToString(),
                     sn = snInfo == null ? "" : snInfo.sn
@@ -2409,6 +2414,7 @@ namespace OpenAuth.App
                 endTime = req.EndTime,
                 pageSize=req.limit,
                 page=req.page,
+                taskType=req.taskType==0?null:req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
             if (taskObj == null || taskObj["code"].ToString() != "1001")
@@ -2532,7 +2538,8 @@ namespace OpenAuth.App
                 sns=sns,
                 passportIDs = ids,
                 beginTime = req.StartTime,
-                endTime = req.EndTime
+                endTime = req.EndTime,
+                taskType = req.taskType == 0 ? null : req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
             if (taskObj == null || taskObj["code"].ToString() != "1001")

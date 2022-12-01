@@ -625,7 +625,6 @@ namespace OpenAuth.App
             List<edge_mid> midList = new List<edge_mid>();
             List<edge_low> lowList = new List<edge_low>();
             List<edge_channel> channelList = new List<edge_channel>();
-            List<DeviceBindMap> deviceBindMaps = new List<DeviceBindMap>();
             foreach (var item in list)
             {
                 var host = hostList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).Any();
@@ -796,7 +795,8 @@ namespace OpenAuth.App
                                        join b in UnitWork.Find<edge_low>(null) on a.edge_guid equals b.edge_guid
                                        where a.department == departmen && a.status == 1
                                        select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid, b.low_no }).ToListAsync();
-            var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).ToListAsync();
+            var onlineLowGuid = onlineDevList.Select(c => c.low_guid).Distinct().ToList();
+            var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo== OrderNo).ToListAsync();
             if (!bindDevList.Any() || !onlineDevList.Any())
             {
                 result.Data = new List<string> { };
@@ -804,10 +804,8 @@ namespace OpenAuth.App
             }
             if (FilterType == 1)
             {
-                var hasTestCode= await UnitWork.Find<DeviceTestLog>(null).Where(c => c.OrderNo == OrderNo).Select(c=>c.GeneratorCode).Distinct().ToListAsync();
                 result.Data = (from a in bindDevList.AsEnumerable()
-                               join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
-                               where !hasTestCode.Contains(a.GeneratorCode)
+                               join b in onlineDevList.AsEnumerable() on a.LowGuid  equals b.low_guid 
                                select new { a.GeneratorCode })
                                .OrderBy(c => c.GeneratorCode)
                                .Distinct()
@@ -815,10 +813,8 @@ namespace OpenAuth.App
             }
             else
             {
-                var hasTestLow = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.LowGuid).Distinct().ToListAsync();
                 result.Data = (from a in bindDevList.AsEnumerable()
-                               join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
-                               where !hasTestLow.Contains(a.LowGuid)
+                               join b in onlineDevList.AsEnumerable() on a.LowGuid  equals b.low_guid
                                select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
                                .OrderBy(c => c.GeneratorCode)
                                .ThenBy(c => c.DevUid)
@@ -851,6 +847,7 @@ namespace OpenAuth.App
                                        join b in UnitWork.Find<edge_low>(null) on a.edge_guid equals b.edge_guid
                                        where a.department == departmen && a.status == 1
                                        select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid, b.low_no }).ToListAsync();
+            var onlineLowGuid = onlineDevList.Select(c => c.low_guid).Distinct().ToList();
             var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).ToListAsync();
             if (!bindDevList.Any() || !onlineDevList.Any())
             {
@@ -860,7 +857,7 @@ namespace OpenAuth.App
             if (FilterType == 1)
             {
                 result.Data = (from a in bindDevList.AsEnumerable()
-                               join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
+                               join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid 
                                select new { a.GeneratorCode })
                                .OrderBy(c => c.GeneratorCode)
                                .Distinct()
@@ -869,8 +866,8 @@ namespace OpenAuth.App
             else
             {
                 result.Data = (from a in bindDevList.AsEnumerable()
-                               join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
-                               select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
+                               join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
+                               select new { a.GeneratorCode, DevUid=b.dev_uid, b.low_no, EdgeGuid= b.edge_guid, SrvGuid=b.srv_guid, a.BtsServerIp, Guid=b.mid_guid, LowGuid= b.low_guid, UnitId=b.unit_id })
                                .OrderBy(c => c.GeneratorCode)
                                .ThenBy(c => c.DevUid)
                                .ThenBy(c => c.low_no)
@@ -889,10 +886,17 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<List<StartDeviceListResp>> DeviceListByCode(List<string> list)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var departmen = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
             return await (from a in UnitWork.Find<DeviceBindMap>(null)
-                          join c in UnitWork.Find<edge_low>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = c.edge_guid, SrvGuid = c.srv_guid, DevUid = c.dev_uid, LowGuid = c.low_guid }
+                          join c in UnitWork.Find<edge_low>(null) on a.LowGuid  equals c.low_guid 
                           join b in UnitWork.Find<edge_channel>(null) on new { c.edge_guid, c.srv_guid, c.dev_uid, c.low_guid } equals new { b.edge_guid, b.srv_guid, b.dev_uid, b.low_guid }
-                          where list.Contains(a.GeneratorCode)
+                          join d in UnitWork.Find<edge>(null) on c.edge_guid equals d.edge_guid
+                          where list.Contains(a.GeneratorCode) && d.department==departmen && d.status==1
                           select new StartDeviceListResp { EdgeGuid = b.edge_guid, GeneratorCode = a.GeneratorCode, BtsServerIp = a.BtsServerIp, SrvGuid = a.SrvGuid, MidGuid = a.Guid, RangeCurrArray = c.range_curr_array, dev_uid = b.dev_uid, unit_id = b.unit_id, bts_id = b.bts_id, LowGuid = b.low_guid }).ToListAsync();
         }
 
@@ -903,14 +907,22 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<List<StartDeviceListResp>> DeviceListByLow(List<LowDeviceList> list)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var departmen = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
             var edgeList = list.Select(c => c.EdgeGuid).ToList();
             var srvGuidList = list.Select(c => c.SrvGuid).ToList();
             var devuidList = list.Select(c => c.DevUid).ToList();
             var lowList = list.Select(c => c.LowGuid).ToList();
             return await (from a in UnitWork.Find<DeviceBindMap>(null)
-                          join c in UnitWork.Find<edge_low>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = c.edge_guid, SrvGuid = c.srv_guid, DevUid = c.dev_uid, LowGuid = c.low_guid }
+                          join c in UnitWork.Find<edge_low>(null) on a.LowGuid  equals c.low_guid 
                           join b in UnitWork.Find<edge_channel>(null) on new { c.edge_guid,c.srv_guid, c.dev_uid, c.low_guid } equals new { b.edge_guid, b.srv_guid,  b.dev_uid, b.low_guid }
+                          join d in UnitWork.Find<edge>(null) on c.edge_guid equals d.edge_guid
                           where edgeList.Contains(b.edge_guid) && srvGuidList.Contains(b.srv_guid) && devuidList.Contains(b.dev_uid) && lowList.Contains(b.low_guid)
+                          && d.department == departmen && d.status == 1
                           select new StartDeviceListResp { EdgeGuid = b.edge_guid, GeneratorCode = a.GeneratorCode, BtsServerIp = a.BtsServerIp, SrvGuid = a.SrvGuid, MidGuid = a.Guid, RangeCurrArray = c.range_curr_array, dev_uid = b.dev_uid, unit_id = b.unit_id, bts_id = b.bts_id, LowGuid = b.low_guid }).ToListAsync();
         }
 

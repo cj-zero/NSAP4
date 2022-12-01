@@ -125,14 +125,14 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="limit"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> NoBindDeviceList(string GeneratorCode,string key="",int page=1,int limit=10)
+        public TableData NoBindDeviceList(string GeneratorCode,string key="",int page=1,int limit=10)
         {
             var result = new TableData();
             try
             {
                 page = page <= 0 ? 1 : page;
                 limit = limit <= 0 ? 10 : limit;
-                return await _app.NoBindDeviceList(GeneratorCode, key, page, limit);
+                return  _app.NoBindDeviceList(GeneratorCode, key, page, limit);
             }
             catch (Exception e)
             {

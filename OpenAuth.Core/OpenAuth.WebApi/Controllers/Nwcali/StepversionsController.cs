@@ -464,6 +464,27 @@ namespace OpenAuth.WebApi.Controllers
                 }
                 #endregion
 
+                #region 停止测试
+                var canStopList = _app.CanStopTestList(deviceList);
+                if (canStopList.Data != null)
+                {
+                    foreach (var item in canStopList.Data)
+                    {
+                        var testJson = JsonConvert.SerializeObject(item);
+                        var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(testJson) };
+                        var testRes = _dataServiceClient.ControlCmd(request);
+                        string testData = Encoding.UTF8.GetString(testRes.Msg.Memory.ToArray());
+                        if (!testRes.Success)
+                        {
+                            Log.Logger.Error($"停止测试异常{testData}");
+                            result.Code = 500;
+                            result.Message = testData;
+                            return result;
+                        }
+                    }
+                }
+                #endregion
+
                 #region 启动数据
                 if (model.SeriesName == "6" || model.SeriesName == "7")
                 {
