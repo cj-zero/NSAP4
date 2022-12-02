@@ -93,13 +93,27 @@ namespace OpenAuth.App
                 .ToListAsync();
 
             var result = new TableData();
+            bool userFlag = false;
+            List<string> Users = new List<string>();
+            if (!string.IsNullOrWhiteSpace(request.CreateName))
+            {
+                Users = (from a in UnitWork.Find<User>(null)
+                         join b in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on a.Id equals b.FirstId
+                         join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id
+                         where a.Name.Contains(request.CreateName) || c.Name.Contains(request.CreateName)
+                         select a.Id).ToList();
+                userFlag = true;
+            }
             var query = UnitWork.Find<Outsourc>(null).Include(c => c.OutsourcExpenses)
-                        .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
+                        .WhereIf(userFlag, q => Users.Contains(q.CreateUserId))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.OutsourcId), q => q.Id == int.Parse(request.OutsourcId))
+                       .WhereIf(request.MinMoney >0, q => q.TotalMoney>= request.MinMoney)
+                       .WhereIf(request.MaxMoney >0, q => q.TotalMoney<= request.MaxMoney)
                        //.WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
                        //.WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
                        .Where(o => outsourcIds.Contains(o.Id));
-
+         
+          
             //主页报表跳转用
             if (!string.IsNullOrWhiteSpace(request.StatusType))
             {
@@ -136,6 +150,10 @@ namespace OpenAuth.App
                     if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
                     {
                         lineId = schemeJson.Nodes.Where(n => n.name.Equals("客服主管审批")).FirstOrDefault()?.id;
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
+                    {
+                        lineId = schemeJson.Nodes.Where(n => n.name.Equals("财务审核")).FirstOrDefault()?.id;
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
                     {
@@ -222,9 +240,9 @@ namespace OpenAuth.App
             {
                 var orgName = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(o.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
                 var outsourcexpensesObj = o.OutsourcExpenses.FirstOrDefault();
-                var serviceWorkOrderObj = serviceWorkOrder.Where(s => s.ServiceOrderId == outsourcexpensesObj?.ServiceOrderId && s.CurrentUserNsapId.Equals(o.CreateUserId)).FirstOrDefault();
+                var serviceWorkOrderObj = serviceWorkOrder.Where(s => s.ServiceOrderId == outsourcexpensesObj?.ServiceOrderId && s.CurrentUserNsapId == o.CreateUserId).FirstOrDefault();
                 var serviceOrderObj = listServiceOrder.Where(s => s.Id == outsourcexpensesObj?.ServiceOrderId).FirstOrDefault();
-                var EndTime = serviceWorkOrder.Where(s => s.ServiceOrderId == outsourcexpensesObj?.ServiceOrderId && s.CurrentUserNsapId.Equals(o.CreateUserId)).Max(a => a.CompleteDate);
+                var EndTime = serviceWorkOrder.Where(s => s.ServiceOrderId == outsourcexpensesObj?.ServiceOrderId && s.CurrentUserNsapId ==o.CreateUserId).Max(a => a.CompleteDate);
                 outsourcs.Add(new
                 {
                     o.Id,
@@ -1173,8 +1191,8 @@ namespace OpenAuth.App
                         CreateUser = outsourcObj.CreateUser,
                         CreateUserId = outsourcObj.CreateUserId,
                         InvoiceCompany = "",
-                        CollectionAddress = Address.BillingAddress,
-                        ShippingAddress = Address.DeliveryAddress,
+                        CollectionAddress = Address?.BillingAddress,
+                        ShippingAddress = Address?.DeliveryAddress,
                         IsDraft = false,
                         DeliveryMethod = "1",
                         ErpOrApp = 1,

@@ -99,5 +99,8 @@ namespace OpenAuth.App.Request
         public int? ReportId { get; set; }
 
         public string OrgName { get; set; }
+        public decimal MinMoney { get; set; }
+        public decimal MaxMoney { get; set; }
+
     }
 }
