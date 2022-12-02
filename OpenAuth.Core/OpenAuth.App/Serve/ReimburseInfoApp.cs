@@ -3106,31 +3106,31 @@ namespace OpenAuth.App
                 throw new CommonException("当前用户未绑定App", Define.INVALID_TOKEN);
             }
             TableData result = new TableData();
-            switch (req.TimeType)
-            {
-                case 2://近7日
-                    req.StartDate = DateTime.Now.AddDays(-7).Date;
-                    req.EndDate = DateTime.Now.Date;
-                    break;
-                case 3://近30日
-                    req.StartDate = DateTime.Now.AddDays(-30).Date;
-                    req.EndDate = DateTime.Now.Date;
-                    break;
-                case 4://近60日
-                    req.StartDate = DateTime.Now.AddDays(-60).Date;
-                    req.EndDate = DateTime.Now.Date;
-                    break;
-                case 5://近90日
-                    req.StartDate = DateTime.Now.AddDays(-90).Date;
-                    req.EndDate = DateTime.Now.Date;
-                    break;
-                case 6://近1年
-                    req.StartDate = DateTime.Now.AddDays(-365).Date;
-                    req.EndDate = DateTime.Now.Date;
-                    break;
-                default:
-                    break;
-            }
+            //switch (req.TimeType)
+            //{
+            //    case 2://近7日
+            //        req.StartDate = DateTime.Now.AddDays(-7).Date;
+            //        req.EndDate = DateTime.Now.Date;
+            //        break;
+            //    case 3://近30日
+            //        req.StartDate = DateTime.Now.AddDays(-30).Date;
+            //        req.EndDate = DateTime.Now.Date;
+            //        break;
+            //    case 4://近60日
+            //        req.StartDate = DateTime.Now.AddDays(-60).Date;
+            //        req.EndDate = DateTime.Now.Date;
+            //        break;
+            //    case 5://近90日
+            //        req.StartDate = DateTime.Now.AddDays(-90).Date;
+            //        req.EndDate = DateTime.Now.Date;
+            //        break;
+            //    case 6://近1年
+            //        req.StartDate = DateTime.Now.AddDays(-365).Date;
+            //        req.EndDate = DateTime.Now.Date;
+            //        break;
+            //    default:
+            //        break;
+            //}
 
             #region 个人信息
             var userinfo = await _userManagerApp.GetUserOrgInfo(req.CreateUserId);
