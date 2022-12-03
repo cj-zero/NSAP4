@@ -134,6 +134,19 @@ namespace OpenAuth.WebApi.Controllers
         {
             return await _app.Load(request);
         }
+         /// <summary>
+         /// 导出待支付Excel
+         /// </summary>
+         /// <param name="req"></param>
+         /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> Export([FromQuery] QueryoutsourcListReq req)
+        {
+            var data = await _app.Export(req);
+
+
+            return File(data, "application/vnd.ms-excel");
+        }
 
         /// <summary>
         /// 结算费用归属

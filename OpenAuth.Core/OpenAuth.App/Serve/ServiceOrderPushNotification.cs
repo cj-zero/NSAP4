@@ -212,6 +212,29 @@ namespace OpenAuth.App.Serve
             }
             #endregion
 
+            #region 结算单
+
+            var  flowInstanceInfos = await UnitWork.Find<FlowInstance>(f => f.CustomName == "个人代理结算单").GroupBy(a => a.ActivityName).Select(s => new { status = s.Key ,count = s.Count  ()}).ToListAsync();
+            foreach (var item in flowInstanceInfos)
+            {
+                switch (item.status)
+                {
+                    case "客服主管":
+                        await _hubContext.Clients.Groups("客服主管").SendAsync("OutsourcCount", "系统", item.count);
+                        break;
+                    case "财务审核":
+                        await _hubContext.Clients.Groups("财务初审").SendAsync("OutsourcCount", "系统", item.count);
+                        break;
+                    case "总经理审批":
+                        await _hubContext.Clients.Groups("总经理").SendAsync("OutsourcCount", "系统", item.count);
+                        break;
+                    case "财务支付":
+                        await _hubContext.Clients.Groups("出纳").SendAsync("OutsourcCount", "系统", item.count);
+                        break;
+                }
+            }
+
+            #endregion
             //推送版本号
             await _hubContext.Clients.All.SendAsync("Version", "系统", _appConfiguration.Value.Version);
         }
