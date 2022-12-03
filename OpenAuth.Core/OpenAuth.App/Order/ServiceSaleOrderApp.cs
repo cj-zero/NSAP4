@@ -11044,8 +11044,11 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 foreach (var datarow in dt.AsEnumerable())
                 {
                     StringBuilder strSql = new StringBuilder();
-                    strSql.AppendFormat("select * from saleorderutility u where u.fld005506 =  '{0}'", datarow["ItemCode"]);
-
+                    strSql.AppendFormat("select * from saleorderutility u where u.fld005506 =  N'{0}'", datarow["ItemCode"]);
+                    if (datarow["ItemCode"].ToString().Contains("'"))
+                    {
+                        continue;
+                    }
                     var specJob = UnitWork.ExcuteSql<SaleOrderUtilityView>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text, null);
                     if (specJob.FirstOrDefault() != null)
                     {
