@@ -6763,7 +6763,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 strSql.Append(" WHERE " + filterQuery + "");
             }
 
-            strSql.Append(" ) A WHERE A.rn BETWEEN  " + ((pageIndex - 1) * pageSize) + " AND " + pageSize + " ");
+            strSql.Append(" ) A WHERE A.rn BETWEEN  " + (((pageIndex - 1) * pageSize) + 1)+ " AND " + (pageIndex * pageSize) + " ");
             DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
             rowCounts = Convert.ToInt32(dt.Rows[0][1]);
             //filedName.Append(" a.UpdateDate,a.DocEntry,a.CardCode,CASE WHEN 1 = " + Custom + " THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Sales + " THEN a.DocTotal ELSE 0 END AS DocTotal,CASE WHEN 1 = " + Sales + " THEN (a.DocTotal-a.PaidToDate) ELSE 0 END AS OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.PymntGroup,'' as billID,'' AS ActualDocDueDate ");
