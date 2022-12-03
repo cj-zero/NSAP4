@@ -95,10 +95,11 @@ namespace OpenAuth.WebApi.Controllers.Order
                 {
                     DataTable dts = _serviceSaleOrderApp.SelectBillListInfo_ORDR(out rowCount, docEntrys, model, type, rata, true, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, true, true, sqlcont, sboname);
                     List<SaleOrderDeptDto>  saleOrderDeptDtos = dts.Tolist<SaleOrderDeptDto>();
+                    var contracts = UnitWork.Find<ContractApply>(r => r.ContractStatus == "-1").Select(r => r.SaleNo).ToList();
                     foreach (SaleOrderDeptDto item in saleOrderDeptDtos)
                     {
                         item.DeptName = _userDepartMsgHelp.GetUserDepart(item.SlpCode);
-                        var contracts = UnitWork.Find<ContractApply>(r => r.SaleNo.Contains(item.DocEntry.ToString()) && r.ContractStatus == "-1").Select(r => r.Id).ToList();
+                        contracts = contracts.Where(r => r.Contains(item.DocEntry.ToString())).ToList();
                         item.ContractFlag = contracts != null && contracts.Count() > 0 ? true : false;
                     }
 
