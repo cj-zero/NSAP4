@@ -815,7 +815,8 @@ namespace OpenAuth.App
             {
                 result.Data = (from a in bindDevList.AsEnumerable()
                                join b in onlineDevList.AsEnumerable() on a.LowGuid  equals b.low_guid
-                               select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
+                               join e in UnitWork.Find<edge_host>(null) on b.edge_guid equals e.edge_guid
+                               select new { a.GeneratorCode, DevUid= b.dev_uid, b.low_no, EdgeGuid=b.edge_guid, SrvGuid=b.srv_guid, BtsServerIp=e.bts_server_ip, Guid=b.mid_guid, LowGuid=b.low_guid, UnitId=b.unit_id })
                                .OrderBy(c => c.GeneratorCode)
                                .ThenBy(c => c.DevUid)
                                .ThenBy(c => c.low_no)
