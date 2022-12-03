@@ -45,6 +45,7 @@ using Serilog.Context;
 using OpenAuth.App.ClientRelation.Response;
 using System.Reactive.Joins;
 using OpenAuth.App.Clue.ModelDto;
+using OpenAuth.Repository.Domain.View;
 
 namespace OpenAuth.App.Order
 {
@@ -11088,6 +11089,32 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             #endregion
             if (!string.IsNullOrEmpty(filterString))
                 filterString = filterString.Substring(0, filterString.Length - 5);
+            //get material  process and progressNo
+            if (type == "sale_ordr")
+            {
+                var dt = SelectBillViewDetails(out rowCount, pageSize, pageIndex, filterString, sortString, type, line, ViewCustom, ViewSales);
+                dt.Columns.Add("Progress", typeof(String));
+                dt.Columns.Add("ProjectNo", typeof(String));
+                var materialNoList = dt.AsEnumerable().Select(row => row.Field<string>("ItemCode")).ToList();  //CardCode
+                //StringBuilder strSql = new StringBuilder();
+                //strSql.AppendFormat("select * from saleorderutility u where CONTAINS(u.fld005506, \"{0}\")  > 0 ", JsonConvert.SerializeObject(materialNoList).Replace(@"""", ""));
+                //var materialList = UnitWork.ExcuteSql<SaleOrderUtilityView>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text, null);
+                foreach (var datarow in dt.AsEnumerable())
+                {
+                    StringBuilder strSql = new StringBuilder();
+                    strSql.AppendFormat("select * from saleorderutility u where u.fld005506 =  '{0}'", datarow["ItemCode"]);
+
+                    var specJob = UnitWork.ExcuteSql<SaleOrderUtilityView>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text, null);
+                    if (specJob.FirstOrDefault() != null)
+                    {
+                        datarow["Progress"] = specJob.FirstOrDefault()._System_Progress;
+                        datarow["ProjectNo"] = specJob.FirstOrDefault()._System_objNBS;
+                    }
+
+                }
+
+                return dt;
+            }
             return SelectBillViewDetails(out rowCount, pageSize, pageIndex, filterString, sortString, type, line, ViewCustom, ViewSales);
 
         }

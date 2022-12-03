@@ -23,6 +23,25 @@ namespace OpenAuth.Repository.Domain.View
 
     }
 
+    public class SaleOrderUtilityView
+    {
+
+        public string _System_objNBS { get; set; }
+
+        public string fld005506 { get; set; }
+
+        public string fld006314 { get; set; }
+
+        public string RecordGuid { get; set; }
+
+        public int deleted { get; set; }
+
+        public string _System_Progress { get; set; }
+
+    }
+
+
+
     public class UserManageUtilityRsp
     {
         public int Count { get; set; }
