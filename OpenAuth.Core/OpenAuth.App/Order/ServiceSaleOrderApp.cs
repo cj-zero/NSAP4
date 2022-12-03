@@ -953,6 +953,15 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         /// <returns></returns>
         public CardInfoDto CardInfo(string CardCode, int SboID, bool isSql, bool ViewSelf, bool ViewSelfDepartment, bool ViewFull, int UserId, int DepId)
         {
+            //judge the current user is marketing staff or not , if is ,then get rid of the filter
+            var currentUser = _auth.GetCurrentUser();
+            var erpLims = UnitWork.Find<LimsInfo>(u => u.UserId == currentUser.User.Id).FirstOrDefault();
+            var limsFlag = false;
+            if (erpLims != null)
+            {
+                limsFlag = true;
+            }
+
             var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={SboID}", CommandType.Text, null);
             string dRowData = string.Empty;
             string isOpen = "0";
@@ -1029,7 +1038,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 strSql += string.Format(" LEFT JOIN " + sboname + "OCRY d ON a.MailCountr=d.Code");
                 strSql += string.Format(" LEFT JOIN " + sboname + "OCST e ON a.State2=e.Code");
                 strSql += string.Format(" WHERE CardCode='{0}'", CardCode);
-                if (!string.IsNullOrEmpty(filterString))
+                if (!string.IsNullOrEmpty(filterString) && !limsFlag)
                 {
                     strSql += string.Format("{0}", filterString);
                 }
@@ -1049,7 +1058,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 strSql += string.Format(" LEFT JOIN {0}.store_ocst e ON a.State2=e.Code", "nsap_bone");
 
                 strSql += string.Format(" WHERE CardCode='{0}'", CardCode);
-                if (!string.IsNullOrEmpty(filterString))
+                if (!string.IsNullOrEmpty(filterString) && !limsFlag)
                 {
                     strSql += string.Format("{0}", filterString);
                 }

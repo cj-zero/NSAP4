@@ -313,7 +313,7 @@ namespace OpenAuth.Repository.Domain.View
 
     public class SerieManageData
     {
-        public string Owner { get; set; }
+        public string AssignedTo { get; set; }
 
         public int Total { get; set; }
 
