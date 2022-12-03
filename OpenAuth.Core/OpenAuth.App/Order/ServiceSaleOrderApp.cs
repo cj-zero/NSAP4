@@ -6554,6 +6554,45 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             //    List<int> docEntrys = _orderDraftServiceApp.GetDocEntrys(model.NewDocEntry);
             //    filterString += string.Format("a.DocEntry in ({0}) AND ", string.Join(",", docEntrys, 0, docEntrys.Count()));
             //}
+
+            if (!string.IsNullOrWhiteSpace(model.IsContract))
+            {
+                if (model.IsContract == "Y")
+                {
+                    var ordrs = UnitWork.Find<ORDR>(null).Select(r => r.DocEntry.ToString()).ToList();
+                    var contracts = UnitWork.Find<ContractApply>(r => r.SaleNo != null).Select(r => r.SaleNo).ToList();
+                    List<string> docs = new List<string>();
+                    foreach (string item in ordrs)
+                    {
+                        List<string> strs = contracts.Where(r => r.Contains(item)).ToList();
+                        if (strs.Count() > 0)
+                        {
+                            docs.Add("'" + item + "'");
+                        }
+                    }
+
+                    string doc = string.Join(",", docs);
+                    filterString += string.Format("a.DocEntry in ({0}) AND ", doc);
+                }
+                else
+                {
+                    var ordrs = UnitWork.Find<ORDR>(null).Select(r => r.DocEntry.ToString()).ToList();
+                    var contracts = UnitWork.Find<ContractApply>(r => r.SaleNo != null).Select(r => r.SaleNo).ToList();
+                    List<string> docs = new List<string>();
+                    foreach (string item in ordrs)
+                    {
+                        List<string> strs = contracts.Where(r => r.Contains(item)).ToList();
+                        if (strs.Count() == 0)
+                        {
+                            docs.Add("'" + item + "'");
+                        }
+                    }
+
+                    string doc = string.Join(",", docs);
+                    filterString += string.Format("a.DocEntry in ({0}) AND ", doc);
+                }
+            }
+
             if (model.ReceiptStatus == "K")
             {
                 
