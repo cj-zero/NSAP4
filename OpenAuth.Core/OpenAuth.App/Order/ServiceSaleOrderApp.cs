@@ -11035,7 +11035,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             if (type == "sale_ordr")
             {
                 var dt = SelectBillViewDetails(out rowCount, pageSize, pageIndex, filterString, sortString, type, line, ViewCustom, ViewSales);
-                dt.Columns.Add("Progress", typeof(String));
+                dt.Columns.Add("Process", typeof(String));
                 dt.Columns.Add("ProjectNo", typeof(String));
                 var materialNoList = dt.AsEnumerable().Select(row => row.Field<string>("ItemCode")).ToList();  //CardCode
                 //StringBuilder strSql = new StringBuilder();
@@ -11052,7 +11052,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     var specJob = UnitWork.ExcuteSql<SaleOrderUtilityView>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text, null);
                     if (specJob.FirstOrDefault() != null)
                     {
-                        datarow["Progress"] = specJob.FirstOrDefault()._System_Progress;
+                        datarow["Process"] = specJob.FirstOrDefault()._System_Progress;
                         datarow["ProjectNo"] = specJob.FirstOrDefault()._System_objNBS;
                     }
 
