@@ -6562,35 +6562,75 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 {
                     var ordrs = UnitWork.Find<ORDR>(null).Select(r => r.DocEntry.ToString()).ToList();
                     var contracts = UnitWork.Find<ContractApply>(r => r.SaleNo != null).Select(r => r.SaleNo).ToList();
-                    List<string> docs = new List<string>();
-                    foreach (string item in ordrs)
+                    int totalPage = Convert.ToInt32((ordrs.Count() / 500)) + 1;
+
+                    for (int i = 0; i < totalPage; i++)
                     {
-                        List<string> strs = contracts.Where(r => r.Contains(item)).ToList();
-                        if (strs.Count() > 0)
+                        List<string> docs = new List<string>();
+                        var ordrDocs = ordrs.Skip(i * 500).Take(500).ToList();
+                        foreach (string item in ordrDocs)
                         {
-                            docs.Add("'" + item + "'");
+                            List<string> strs = contracts.Where(r => r.Contains(item)).ToList();
+                            if (strs.Count() > 0)
+                            {
+                                docs.Add("'" + item + "'");
+                            }
+                        }
+
+                        if (docs.Count() > 0)
+                        {
+                            string doc = string.Join(",", docs);
+                            if (i == totalPage - 1)
+                            {
+                                filterString += string.Format("a.DocEntry in ({0})) AND ", doc);
+                            }
+                            else if (i == 0)
+                            {
+                                filterString += string.Format("(a.DocEntry in ({0}) OR ", doc);
+                            }
+                            else
+                            {
+                                filterString += string.Format("a.DocEntry in ({0}) OR ", doc);
+                            }
                         }
                     }
-
-                    string doc = string.Join(",", docs);
-                    filterString += string.Format("a.DocEntry in ({0}) AND ", doc);
                 }
                 else
                 {
                     var ordrs = UnitWork.Find<ORDR>(null).Select(r => r.DocEntry.ToString()).ToList();
                     var contracts = UnitWork.Find<ContractApply>(r => r.SaleNo != null).Select(r => r.SaleNo).ToList();
-                    List<string> docs = new List<string>();
-                    foreach (string item in ordrs)
+                    int totalPage = Convert.ToInt32((ordrs.Count() / 500)) + 1;
+                    for (int i = 0; i < 15; i++)
                     {
-                        List<string> strs = contracts.Where(r => r.Contains(item)).ToList();
-                        if (strs.Count() == 0)
+                        List<string> docs = new List<string>();
+                        var ordrDocs = ordrs.Skip(i * 500).Take(500).ToList();
+                        foreach (string item in ordrDocs)
                         {
-                            docs.Add("'" + item + "'");
+                            List<string> strs = contracts.Where(r => r.Contains(item)).ToList();
+                            if (strs.Count() == 0)
+                            {
+                                docs.Add("'" + item + "'");
+                            }
                         }
-                    }
 
-                    string doc = string.Join(",", docs);
-                    filterString += string.Format("a.DocEntry in ({0}) AND ", doc);
+                        if (docs.Count() > 0)
+                        {
+                            string doc = string.Join(",", docs);
+                            if (i == 14)
+                            {
+                                filterString += string.Format("a.DocEntry in ({0})) AND ", doc);
+                            }
+                            else if (i == 0)
+                            {
+                                filterString += string.Format("(a.DocEntry in ({0}) OR ", doc);
+                            }
+                            else
+                            {
+                                filterString += string.Format("a.DocEntry in ({0}) OR ", doc);
+                            }
+                        }
+
+                    }
                 }
             }
 
@@ -6706,16 +6746,37 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             if (ViewCustom) { Custom = 1; }
             if (ViewSales) { Sales = 1; }
             if (string.IsNullOrEmpty(sboname)) { sboname = ""; } else { sboname = sboname + ".dbo."; }
-            filedName.Append(" a.UpdateDate,a.DocEntry,a.CardCode,CASE WHEN 1 = " + Custom + " THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Sales + " THEN a.DocTotal ELSE 0 END AS DocTotal,CASE WHEN 1 = " + Sales + " THEN (a.DocTotal-a.PaidToDate) ELSE 0 END AS OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.PymntGroup,'' as billID,'' AS ActualDocDueDate ");
-            filedName.Append(",'10011111-28a9-4767-854f-77246e36d24d1111111111111111111' as PrintNo,'00' as PrintNumIndex,'' as billStatus,'' as bonusStatus,'' as proStatus,n.Name as IndicatorName,'*********************************' as EmpAcctWarn,'' as AttachFlag,a.U_DocRCTAmount");
-            filedName.Append(", '0000000000000' as TransFee,a.DocCur");
-            tableName.AppendFormat("" + sboname + "ORDR a ");
-            tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP c ON a.SlpCode = c.SlpCode");
-            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRD d ON a.CardCode = d.CardCode");
-            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCTG e ON a.GroupNum = e.GroupNum");
-            tableName.AppendFormat(" LEFT JOIN " + sboname + "OIDC  n ON a.Indicator=n.Code");
-            //tableName.AppendFormat(" LEFT JOIN " + sboname + "OWOR w on w.Status!='C' AND a.docentry=w.originAbs");
-            DataTable dt = SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
+
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("SELECT * FROM (");
+            strSql.Append("SELECT ROW_NUMBER() OVER(ORDER BY " + orderName + " ) rn,  COUNT(1) OVER() AS TotalCount, ");
+            strSql.Append(" a.UpdateDate,a.DocEntry,a.CardCode,CASE WHEN 1 = " + Custom + " THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Sales + " THEN a.DocTotal ELSE 0 END AS DocTotal,CASE WHEN 1 = " + Sales + " THEN (a.DocTotal-a.PaidToDate) ELSE 0 END AS OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.PymntGroup,'' as billID,'' AS ActualDocDueDate ");
+            strSql.Append(",'10011111-28a9-4767-854f-77246e36d24d1111111111111111111' as PrintNo,'00' as PrintNumIndex,'' as billStatus,'' as bonusStatus,'' as proStatus,n.Name as IndicatorName,'*********************************' as EmpAcctWarn,'' as AttachFlag,a.U_DocRCTAmount");
+            strSql.Append(", '0000000000000' as TransFee,a.DocCur FROM ");
+            strSql.AppendFormat("" + sboname + "ORDR a ");
+            strSql.AppendFormat(" LEFT JOIN " + sboname + "OSLP c ON a.SlpCode = c.SlpCode");
+            strSql.AppendFormat(" LEFT JOIN " + sboname + "OCRD d ON a.CardCode = d.CardCode");
+            strSql.AppendFormat(" LEFT JOIN " + sboname + "OCTG e ON a.GroupNum = e.GroupNum");
+            strSql.AppendFormat(" LEFT JOIN " + sboname + "OIDC  n ON a.Indicator=n.Code");
+            if (!string.IsNullOrEmpty(filterQuery))
+            {
+                strSql.Append(" WHERE " + filterQuery + "");
+            }
+
+            strSql.Append(" ) A WHERE A.rn BETWEEN  " + ((pageIndex - 1) * pageSize) + " AND " + pageSize + " ");
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+            rowCounts = Convert.ToInt32(dt.Rows[0][1]);
+            //filedName.Append(" a.UpdateDate,a.DocEntry,a.CardCode,CASE WHEN 1 = " + Custom + " THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Sales + " THEN a.DocTotal ELSE 0 END AS DocTotal,CASE WHEN 1 = " + Sales + " THEN (a.DocTotal-a.PaidToDate) ELSE 0 END AS OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.PymntGroup,'' as billID,'' AS ActualDocDueDate ");
+            //filedName.Append(",'10011111-28a9-4767-854f-77246e36d24d1111111111111111111' as PrintNo,'00' as PrintNumIndex,'' as billStatus,'' as bonusStatus,'' as proStatus,n.Name as IndicatorName,'*********************************' as EmpAcctWarn,'' as AttachFlag,a.U_DocRCTAmount");
+            //filedName.Append(", '0000000000000' as TransFee,a.DocCur");
+            //tableName.AppendFormat("" + sboname + "ORDR a ");
+            //tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP c ON a.SlpCode = c.SlpCode");
+            //tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRD d ON a.CardCode = d.CardCode");
+            //tableName.AppendFormat(" LEFT JOIN " + sboname + "OCTG e ON a.GroupNum = e.GroupNum");
+            //tableName.AppendFormat(" LEFT JOIN " + sboname + "OIDC  n ON a.Indicator=n.Code");
+
+
+            //DataTable dt = SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
 
             #region 给特定字段赋值（只能取自外挂）
             string bonustypeid = GetJobTypeByUrl("sales/SalesBonus.aspx");
