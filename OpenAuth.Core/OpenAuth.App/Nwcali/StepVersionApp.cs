@@ -896,8 +896,9 @@ namespace OpenAuth.App
                           join c in UnitWork.Find<edge_low>(null) on a.LowGuid  equals c.low_guid 
                           join b in UnitWork.Find<edge_channel>(null) on new { c.edge_guid, c.srv_guid, c.dev_uid, c.low_guid } equals new { b.edge_guid, b.srv_guid, b.dev_uid, b.low_guid }
                           join d in UnitWork.Find<edge>(null) on c.edge_guid equals d.edge_guid
+                          join e in UnitWork.Find<edge_host>(null) on d.edge_guid equals e.edge_guid
                           where list.Contains(a.GeneratorCode) && d.department==departmen && d.status==1
-                          select new StartDeviceListResp { EdgeGuid = b.edge_guid, GeneratorCode = a.GeneratorCode, BtsServerIp = a.BtsServerIp, SrvGuid = a.SrvGuid, MidGuid = a.Guid, RangeCurrArray = c.range_curr_array, dev_uid = b.dev_uid, unit_id = b.unit_id, bts_id = b.bts_id, LowGuid = b.low_guid }).ToListAsync();
+                          select new StartDeviceListResp { EdgeGuid = b.edge_guid, GeneratorCode = a.GeneratorCode, BtsServerIp = e.bts_server_ip, SrvGuid = e.srv_guid, MidGuid = c.mid_guid, RangeCurrArray = c.range_curr_array, dev_uid = b.dev_uid, unit_id = b.unit_id, bts_id = b.bts_id, LowGuid = b.low_guid }).ToListAsync();
         }
 
         /// <summary>
@@ -921,9 +922,10 @@ namespace OpenAuth.App
                           join c in UnitWork.Find<edge_low>(null) on a.LowGuid  equals c.low_guid 
                           join b in UnitWork.Find<edge_channel>(null) on new { c.edge_guid,c.srv_guid, c.dev_uid, c.low_guid } equals new { b.edge_guid, b.srv_guid,  b.dev_uid, b.low_guid }
                           join d in UnitWork.Find<edge>(null) on c.edge_guid equals d.edge_guid
+                          join e in UnitWork.Find<edge_host>(null) on d.edge_guid equals e.edge_guid
                           where edgeList.Contains(b.edge_guid) && srvGuidList.Contains(b.srv_guid) && devuidList.Contains(b.dev_uid) && lowList.Contains(b.low_guid)
                           && d.department == departmen && d.status == 1
-                          select new StartDeviceListResp { EdgeGuid = b.edge_guid, GeneratorCode = a.GeneratorCode, BtsServerIp = a.BtsServerIp, SrvGuid = a.SrvGuid, MidGuid = a.Guid, RangeCurrArray = c.range_curr_array, dev_uid = b.dev_uid, unit_id = b.unit_id, bts_id = b.bts_id, LowGuid = b.low_guid }).ToListAsync();
+                          select new StartDeviceListResp { EdgeGuid = b.edge_guid, GeneratorCode = a.GeneratorCode, BtsServerIp = e.bts_server_ip, SrvGuid = e.srv_guid, MidGuid = c.mid_guid, RangeCurrArray = c.range_curr_array, dev_uid = b.dev_uid, unit_id = b.unit_id, bts_id = b.bts_id, LowGuid = b.low_guid }).ToListAsync();
         }
 
         /// <summary>

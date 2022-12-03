@@ -144,7 +144,8 @@ namespace OpenAuth.App
             }
             var departmentList = loginContext.Orgs.Select(c => c.Name).ToList();
             long.TryParse(GeneratorCode.Split('-')[1], out long OrderNo);
-            var binList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).ToListAsync();
+            var binList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo)
+                .WhereIf(!string.IsNullOrWhiteSpace(GeneratorCode),c=>c.GeneratorCode.Contains(GeneratorCode)).ToListAsync();
             var bindLowGuid = binList.Select(c => c.LowGuid).Distinct().ToList();
             var hasTestGuidList = await UnitWork.Find<DeviceTestLog>(null).Where(c => bindLowGuid.Contains(c.LowGuid)).Select(c => c.LowGuid).Distinct().ToListAsync();
             var host_list = binList.Select(c => new { c.EdgeGuid, c.SrvGuid, c.BtsServerIp }).Distinct().Skip((page - 1) * limit).Take(limit).ToList();
