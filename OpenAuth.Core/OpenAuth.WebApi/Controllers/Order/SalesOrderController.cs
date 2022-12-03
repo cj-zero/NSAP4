@@ -98,6 +98,8 @@ namespace OpenAuth.WebApi.Controllers.Order
                     foreach (SaleOrderDeptDto item in saleOrderDeptDtos)
                     {
                         item.DeptName = _userDepartMsgHelp.GetUserDepart(item.SlpCode);
+                        var contracts = UnitWork.Find<ContractApply>(r => r.SaleNo.Contains(item.DocEntry.ToString()) && r.ContractStatus == "-1").Select(r => r.Id).ToList();
+                        item.ContractFlag = contracts != null && contracts.Count() > 0 ? true : false;
                     }
 
                     result.Data = saleOrderDeptDtos;

@@ -151,6 +151,8 @@ namespace OpenAuth.App.Order
         public string TransFee { get; set; }
 
         public string DocCur { get; set; }
+
+        public bool ContractFlag { get; set; }
     }
 
     /// <summary>
