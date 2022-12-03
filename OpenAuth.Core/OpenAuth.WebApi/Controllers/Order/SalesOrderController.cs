@@ -471,8 +471,8 @@ namespace OpenAuth.WebApi.Controllers.Order
                 var data = _serviceSaleOrderApp.SelectBillView(model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount);
 
 
-                List<SaleOrderDetail> saleOrderDetails = data.Tolist<SaleOrderDetail>();
-                foreach (SaleOrderDetail dataRow in saleOrderDetails)
+                List<SaleOrderDetailT> saleOrderDetails = data.Tolist<SaleOrderDetailT>();
+                foreach (SaleOrderDetailT dataRow in saleOrderDetails)
                 {
                     dataRow.DeptName = _userDepartMsgHelp.GetUserDepart(dataRow.SlpCode);
                 }

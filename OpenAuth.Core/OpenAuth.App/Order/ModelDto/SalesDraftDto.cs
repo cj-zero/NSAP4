@@ -286,6 +286,142 @@ namespace OpenAuth.App.Order
         /// 
         /// </summary>
         public string U_RelDoc { get; set; }
+
+    }
+
+
+    public class SaleOrderDetailT
+    {
+        public string Column1 { get; set; }
+
+        /// <summary>
+        /// 修改时间
+        /// </summary>
+        public DateTime? UpdateDate { get; set; }
+
+        /// <summary>
+        /// 单据编号
+        /// </summary>
+        public int DocEntry { get; set; }
+
+        /// <summary>
+        /// 客户编码
+        /// </summary>
+        public string CardCode { get; set; }
+
+        /// <summary>
+        /// 客户名称
+        /// </summary>
+        public string CardName { get; set; }
+
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string ItemCode { get; set; }
+
+        /// <summary>
+        /// 描述
+        /// </summary>
+        public string Dscription { get; set; }
+
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public decimal? Quantity { get; set; }
+
+        /// <summary>
+        /// 单价
+        /// </summary>
+        public string Price { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string LineTotal { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string DocTotal { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string OpenDocTotal { get; set; }
+
+        /// <summary>
+        /// 创建日期
+        /// </summary>
+        public DateTime? CreateDate { get; set; }
+
+        /// <summary>
+        /// 编码
+        /// </summary>
+        public int SlpCode { get; set; }
+
+        /// <summary>
+        /// 部门
+        /// </summary>
+        public string DeptName { get; set; }
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Comments { get; set; }
+
+        /// <summary>
+        /// 状态
+        /// </summary>
+        public string DocStatus { get; set; }
+
+        /// <summary>
+        /// 打印
+        /// </summary>
+        public string Printed { get; set; }
+
+        /// <summary>
+        /// 业务员
+        /// </summary>
+        public string SlpName { get; set; }
+
+        /// <summary>
+        /// 取消
+        /// </summary>
+        public string CANCELED { get; set; }
+
+        /// <summary>
+        /// 标识
+        /// </summary>
+        public string Indicator { get; set; }
+
+        /// <summary>
+        /// 日期
+        /// </summary>
+        public DateTime? DocDueDate { get; set; }
+
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public decimal? eQuantity { get; set; }
+
+        /// <summary>
+        /// 系统操作者
+        /// </summary>
+        public string U_YGMD { get; set; }
+
+        /// <summary>
+        /// 编号
+        /// </summary>
+        public int LineNum { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string U_RelDoc { get; set; }
+
+        public string Process { get; set; }
+
+        public string ProjectNo { get; set; }
     }
 
     public class SaleMyCreates
