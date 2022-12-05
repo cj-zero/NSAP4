@@ -11185,9 +11185,10 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                         continue;
                     }
                     var specJob = UnitWork.ExcuteSql<SaleOrderUtilityView>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text, null);
+     
                     if (specJob.FirstOrDefault() != null)
                     {
-                        datarow["Process"] = specJob.FirstOrDefault()._System_Progress;
+                        datarow["Process"] = specJob.FirstOrDefault()._System_Progress.ToString();
                         datarow["ProjectNo"] = specJob.FirstOrDefault()._System_objNBS;
                     }
 
