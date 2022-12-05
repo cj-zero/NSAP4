@@ -187,7 +187,7 @@ namespace OpenAuth.App
         public async Task<TableData> AppGetClockHistory(AppGetClockHistoryReq req)
         {
             var result = new TableData();
-            if (req.Types==1)
+            if (req.Types == 1)
             {
                 var userInfo = await (from a in UnitWork.Find<AppUserMap>(null)
                                       join c in UnitWork.Find<Relevance>(null) on a.UserID equals c.FirstId
@@ -205,7 +205,7 @@ namespace OpenAuth.App
                     .OrderByDescending(c => c.ClockDate)
                     .ThenByDescending(c => c.ClockTime).Skip((req.page - 1) * req.limit).Take(req.limit)
                     .ToListAsync();
-                if (req.page==1)
+                if (req.page == 1)
                 {
                     query.AddRange(query1);
                     result.Data = query;

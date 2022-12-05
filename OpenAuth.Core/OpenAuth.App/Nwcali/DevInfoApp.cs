@@ -131,9 +131,10 @@ namespace OpenAuth.App
         /// <param name="GeneratorCode"></param>
         /// <param name="page"></param>
         /// <param name="limit"></param>
+        ///  <param name="key"></param>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<TableData> OnlineDeviceBindList(string GeneratorCode, int page, int limit)
+        public async Task<TableData> OnlineDeviceBindList(string GeneratorCode, int page, int limit,string key)
         {
             //已绑定,需要显示此订单所有的设备(不过滤离线设备)
             var result = new TableData();
@@ -144,7 +145,8 @@ namespace OpenAuth.App
             }
             var departmentList = loginContext.Orgs.Select(c => c.Name).ToList();
             long.TryParse(GeneratorCode.Split('-')[1], out long OrderNo);
-            var binList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).ToListAsync();
+            var binList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo)
+                .WhereIf(!string.IsNullOrWhiteSpace(key),c=>c.GeneratorCode.Contains(key)).ToListAsync();
             var bindLowGuid = binList.Select(c => c.LowGuid).Distinct().ToList();
             var hasTestGuidList = await UnitWork.Find<DeviceTestLog>(null).Where(c => bindLowGuid.Contains(c.LowGuid)).Select(c => c.LowGuid).Distinct().ToListAsync();
             var host_list = binList.Select(c => new { c.EdgeGuid, c.SrvGuid, c.BtsServerIp }).Distinct().Skip((page - 1) * limit).Take(limit).ToList();
