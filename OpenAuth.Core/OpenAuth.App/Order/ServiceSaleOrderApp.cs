@@ -6600,7 +6600,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     var ordrs = UnitWork.Find<ORDR>(null).Select(r => r.DocEntry.ToString()).ToList();
                     var contracts = UnitWork.Find<ContractApply>(r => r.SaleNo != null).Select(r => r.SaleNo).ToList();
                     int totalPage = Convert.ToInt32((ordrs.Count() / 500)) + 1;
-                    for (int i = 0; i < 50; i++)
+                    for (int i = 0; i < 40; i++)
                     {
                         List<string> docs = new List<string>();
                         var ordrDocs = ordrs.Skip(i * 500).Take(500).ToList();
@@ -6616,7 +6616,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                         if (docs.Count() > 0)
                         {
                             string doc = string.Join(",", docs);
-                            if (i == 49)
+                            if (i == 39)
                             {
                                 filterString += string.Format("a.DocEntry in ({0})) AND ", doc);
                             }
@@ -6765,7 +6765,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
 
             strSql.Append(" ) A WHERE A.rn BETWEEN  " + (((pageIndex - 1) * pageSize) + 1)+ " AND " + (pageIndex * pageSize) + " ");
             DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
-            rowCounts = Convert.ToInt32(dt.Rows[0][1]);
+            rowCounts = Convert.ToInt32(dt.Rows.Count == 0 ? 0 : (dt.Rows[0][1]));
             //filedName.Append(" a.UpdateDate,a.DocEntry,a.CardCode,CASE WHEN 1 = " + Custom + " THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Sales + " THEN a.DocTotal ELSE 0 END AS DocTotal,CASE WHEN 1 = " + Sales + " THEN (a.DocTotal-a.PaidToDate) ELSE 0 END AS OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.PymntGroup,'' as billID,'' AS ActualDocDueDate ");
             //filedName.Append(",'10011111-28a9-4767-854f-77246e36d24d1111111111111111111' as PrintNo,'00' as PrintNumIndex,'' as billStatus,'' as bonusStatus,'' as proStatus,n.Name as IndicatorName,'*********************************' as EmpAcctWarn,'' as AttachFlag,a.U_DocRCTAmount");
             //filedName.Append(", '0000000000000' as TransFee,a.DocCur");
