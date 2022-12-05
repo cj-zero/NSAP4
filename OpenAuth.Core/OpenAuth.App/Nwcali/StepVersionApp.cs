@@ -779,9 +779,10 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="GeneratorCode"></param>
         /// <param name="FilterType">过滤类型 1:生产码  2:下位机</param>
+        /// <param name="dataType">数据类型 1:未启动  2:已启动</param>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<TableData> CanStartTestList(string GeneratorCode, int FilterType)
+        public async Task<TableData> CanStartTestList(string GeneratorCode, int FilterType,int dataType)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
