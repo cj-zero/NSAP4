@@ -54,12 +54,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 边缘计算已绑定设备列表
         /// </summary>
-        /// <param name="GeneratorCode"></param>
         /// <param name="page"></param>
         /// <param name="limit"></param>
+        /// <param name="GeneratorCode"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> OnlineDeviceBindList(string GeneratorCode,int page, int limit)
+        public async Task<TableData> OnlineDeviceBindList(int page, int limit, string GeneratorCode="")
         {
             var result = new TableData();
             try
