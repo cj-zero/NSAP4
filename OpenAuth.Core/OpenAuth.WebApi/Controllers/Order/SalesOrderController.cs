@@ -103,7 +103,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                         item.ContractFlag = contracts != null && contracts.Count() > 0 ? true : false;
                     }
 
-                    result.Data = saleOrderDeptDtos;
+                    result.Data = saleOrderDeptDtos == null ? (new List<SaleOrderDeptDto>()) : saleOrderDeptDtos;
                     result.Count = rowCount;
                 }
                 else
