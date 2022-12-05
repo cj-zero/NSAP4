@@ -18,6 +18,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using OpenAuth.App.PayTerm;
+using OpenAuth.Repository.Extensions;
 
 namespace OpenAuth.WebApi.Controllers.Order
 {
@@ -501,10 +502,10 @@ namespace OpenAuth.WebApi.Controllers.Order
 
 
                 List<SaleOrderDetailT> saleOrderDetails = data.Tolist<SaleOrderDetailT>();
-                foreach (SaleOrderDetailT dataRow in saleOrderDetails)
-                {
-                    dataRow.DeptName = _userDepartMsgHelp.GetUserDepart(dataRow.SlpCode);
-                }
+                //foreach (SaleOrderDetailT dataRow in saleOrderDetails)
+                //{
+                //    dataRow.DeptName = _userDepartMsgHelp.GetUserDepart(dataRow.SlpCode);
+                //}
 
                 result.Count = rowCount;
                 //}
