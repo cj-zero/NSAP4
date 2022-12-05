@@ -46,5 +46,9 @@ namespace OpenAuth.App.Nwcali.Request
         /// 操作人
         /// </summary>
         public string Operator { get; set; }
+        /// <summary>
+        /// 中位机/下位机guid
+        /// </summary>
+        public string Guid { get; set; }
     }
 }

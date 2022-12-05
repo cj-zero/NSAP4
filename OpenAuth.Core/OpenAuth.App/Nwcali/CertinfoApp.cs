@@ -2213,8 +2213,9 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid))
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.Operator),c=>c.CreateUser.Contains(req.Operator))
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName),c=>c.Department.ToUpper()==req.OrgName.ToUpper());
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Operator), c => c.CreateUser.Contains(req.Operator))
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName), c => c.Department.ToUpper() == req.OrgName.ToUpper())
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Guid), c => c.LowGuid.Contains(req.Guid) || c.MidGuid.Contains(req.Guid));
             result.Count = query.Count();
             var taskList = req.State == 0 ? query.OrderByDescending(c => c.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToList() : query.OrderByDescending(c => c.Id).ToList();
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
@@ -2396,6 +2397,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Operator), c => c.CreateUser.Contains(req.Operator))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName), c => c.Department.ToUpper() == req.OrgName.ToUpper())
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Guid), c => c.LowGuid.Contains(req.Guid) || c.MidGuid.Contains(req.Guid))
                        .OrderByDescending(c => c.Id);
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
             var taskIds = taskList.Where(c => !string.IsNullOrWhiteSpace(c.TaskId)).Select(c => c.TaskId).Distinct().ToList();
@@ -2491,8 +2493,8 @@ namespace OpenAuth.App
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 pageSize = req.limit,
                 page = req.page
             }, url, "", "");
@@ -2550,8 +2552,8 @@ namespace OpenAuth.App
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 pageSize = 500,
                 page =1
             }, url, "", "");
@@ -2630,8 +2632,8 @@ namespace OpenAuth.App
             {
                 sns=sns,
                 passportIDs = ids,
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 pageSize=req.limit,
                 page=req.page,
                 taskType=req.taskType==0?null:req.taskType
@@ -2695,8 +2697,8 @@ namespace OpenAuth.App
                     userId = item["userId"].ToString(),
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
-                    beginTime = item["beginTime"].ToString(),
-                    endTime = item["endTime"].ToString(),
+                    beginTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["beginTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//Convert.ToUInt64(item["BeginTimeSpan"]).GetTimeSpmpToDate().ToString()
+                    endTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["endTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//item["endTime"].ToString(),
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     midGuid = item["lowVer"].ToString(),
@@ -2757,8 +2759,8 @@ namespace OpenAuth.App
             {
                 sns=sns,
                 passportIDs = ids,
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 taskType = req.taskType == 0 ? null : req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
@@ -2813,8 +2815,10 @@ namespace OpenAuth.App
                 {
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
-                    beginTime = item["beginTime"].ToString(),
-                    endTime = item["endTime"].ToString(),
+                    //beginTime = item["beginTime"].ToString(),
+                    //endTime = item["endTime"].ToString(),
+                    beginTime =TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["beginTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//Convert.ToUInt64(item["BeginTimeSpan"]).GetTimeSpmpToDate().ToString()
+                    endTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["endTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//item["endTime"].ToString(),
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     conclusion = item["conclusion"].ToString(),
