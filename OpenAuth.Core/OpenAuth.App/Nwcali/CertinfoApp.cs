@@ -2268,14 +2268,10 @@ namespace OpenAuth.App
             List<object> list = new List<object>();
             string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-report2";
             HttpHelper helper = new HttpHelper(url);
-
-            //TimeSpan ts = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value) - new DateTime(1970, 1, 1, 0, 0, 0, 0);
-            //var s= Convert.ToInt64(ts.TotalSeconds).ToString();
-
             var taskData = helper.Post(new
             {
-                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),//req.StartTime,
-                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(), //Convert.ToDateTime(req.EndTime),
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 pageSize = req.limit,
                 page = req.page
             }, url, "", "");
@@ -2333,8 +2329,8 @@ namespace OpenAuth.App
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 pageSize = 500,
                 page =1
             }, url, "", "");
@@ -2413,8 +2409,8 @@ namespace OpenAuth.App
             {
                 sns=sns,
                 passportIDs = ids,
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 pageSize=req.limit,
                 page=req.page,
                 taskType=req.taskType==0?null:req.taskType
@@ -2540,8 +2536,8 @@ namespace OpenAuth.App
             {
                 sns=sns,
                 passportIDs = ids,
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 taskType = req.taskType == 0 ? null : req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
@@ -2596,8 +2592,10 @@ namespace OpenAuth.App
                 {
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
-                    beginTime = item["beginTime"].ToString(),
-                    endTime = item["endTime"].ToString(),
+                    //beginTime = item["beginTime"].ToString(),
+                    //endTime = item["endTime"].ToString(),
+                    beginTime =TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["BeginTimeSpan"])).ToString("yyyy-MM-dd HH:mm:ss"),//Convert.ToUInt64(item["BeginTimeSpan"]).GetTimeSpmpToDate().ToString()
+                    endTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["EndTimeSpan"])).ToString("yyyy-MM-dd HH:mm:ss"),//item["endTime"].ToString(),
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     conclusion = item["conclusion"].ToString(),
