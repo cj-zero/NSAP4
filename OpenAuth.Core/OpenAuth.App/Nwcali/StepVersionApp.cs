@@ -805,23 +805,55 @@ namespace OpenAuth.App
             }
             if (FilterType == 1)
             {
-                result.Data = (from a in bindDevList.AsEnumerable()
-                               join b in onlineDevList.AsEnumerable() on a.LowGuid  equals b.low_guid 
-                               select new { a.GeneratorCode })
-                               .OrderBy(c => c.GeneratorCode)
-                               .Distinct()
-                               .ToList();
+                var hasTestCode = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.Department.Equals(departmen) && c.OrderNo == OrderNo).Select(c => c.GeneratorCode).Distinct().ToListAsync();
+                if (dataType == 1)
+                {
+                    result.Data = (from a in bindDevList.AsEnumerable()
+                                   join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
+                                   where !hasTestCode.Contains(a.GeneratorCode)
+                                   select new { a.GeneratorCode })
+                                   .OrderBy(c => c.GeneratorCode)
+                                   .Distinct()
+                                   .ToList();
+                }
+                else
+                {
+                    result.Data = (from a in bindDevList.AsEnumerable()
+                                   join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
+                                   where hasTestCode.Contains(a.GeneratorCode)
+                                   select new { a.GeneratorCode })
+                                   .OrderBy(c => c.GeneratorCode)
+                                   .Distinct()
+                                   .ToList();
+                }
             }
             else
             {
-                result.Data = (from a in bindDevList.AsEnumerable()
-                               join b in onlineDevList.AsEnumerable() on a.LowGuid  equals b.low_guid
-                               select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
+                var hasTestList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.Department.Equals(departmen) && c.OrderNo == OrderNo && onlineLowGuid.Contains(c.LowGuid)).Select(c => c.LowGuid).Distinct().ToListAsync();
+                if (dataType == 1)
+                {
+                    result.Data = (from a in bindDevList.AsEnumerable()
+                                   join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
+                                   where !hasTestList.Contains(b.low_guid)
+                                   select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
+                                   .OrderBy(c => c.GeneratorCode)
+                                   .ThenBy(c => c.DevUid)
+                                   .ThenBy(c => c.low_no)
+                                   .Distinct()
+                                   .ToList();
+                }
+                else
+                {
+                    result.Data = (from a in bindDevList.AsEnumerable()
+                                   join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
+                                   where hasTestList.Contains(b.low_guid)
+                                   select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
                                .OrderBy(c => c.GeneratorCode)
                                .ThenBy(c => c.DevUid)
                                .ThenBy(c => c.low_no)
                                .Distinct()
                                .ToList();
+                }
 
             }
             return result;
