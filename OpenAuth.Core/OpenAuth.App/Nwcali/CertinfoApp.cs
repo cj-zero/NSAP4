@@ -2474,8 +2474,8 @@ namespace OpenAuth.App
                     userId = item["userId"].ToString(),
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
-                    beginTime = item["beginTime"].ToString(),
-                    endTime = item["endTime"].ToString(),
+                    beginTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["beginTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//Convert.ToUInt64(item["BeginTimeSpan"]).GetTimeSpmpToDate().ToString()
+                    endTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["endTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//item["endTime"].ToString(),
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     midGuid = item["lowVer"].ToString(),
@@ -2594,8 +2594,8 @@ namespace OpenAuth.App
                     chlId = item["chlId"].ToString(),
                     //beginTime = item["beginTime"].ToString(),
                     //endTime = item["endTime"].ToString(),
-                    beginTime =TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["BeginTimeSpan"])).ToString("yyyy-MM-dd HH:mm:ss"),//Convert.ToUInt64(item["BeginTimeSpan"]).GetTimeSpmpToDate().ToString()
-                    endTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["EndTimeSpan"])).ToString("yyyy-MM-dd HH:mm:ss"),//item["endTime"].ToString(),
+                    beginTime =TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["beginTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//Convert.ToUInt64(item["BeginTimeSpan"]).GetTimeSpmpToDate().ToString()
+                    endTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["endTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//item["endTime"].ToString(),
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     conclusion = item["conclusion"].ToString(),
