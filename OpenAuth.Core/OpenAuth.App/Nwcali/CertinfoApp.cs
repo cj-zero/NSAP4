@@ -1990,8 +1990,9 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid))
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.Operator),c=>c.CreateUser.Contains(req.Operator))
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName),c=>c.Department.ToUpper()==req.OrgName.ToUpper());
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Operator), c => c.CreateUser.Contains(req.Operator))
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName), c => c.Department.ToUpper() == req.OrgName.ToUpper())
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Guid), c => c.LowGuid.Contains(req.Guid) || c.MidGuid.Contains(req.Guid));
             result.Count = query.Count();
             var taskList = req.State == 0 ? query.OrderByDescending(c => c.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToList() : query.OrderByDescending(c => c.Id).ToList();
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
@@ -2173,6 +2174,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Operator), c => c.CreateUser.Contains(req.Operator))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName), c => c.Department.ToUpper() == req.OrgName.ToUpper())
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Guid), c => c.LowGuid.Contains(req.Guid) || c.MidGuid.Contains(req.Guid))
                        .OrderByDescending(c => c.Id);
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
             var taskIds = taskList.Where(c => !string.IsNullOrWhiteSpace(c.TaskId)).Select(c => c.TaskId).Distinct().ToList();
@@ -2266,10 +2268,14 @@ namespace OpenAuth.App
             List<object> list = new List<object>();
             string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-report2";
             HttpHelper helper = new HttpHelper(url);
+
+            //TimeSpan ts = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value) - new DateTime(1970, 1, 1, 0, 0, 0, 0);
+            //var s= Convert.ToInt64(ts.TotalSeconds).ToString();
+
             var taskData = helper.Post(new
             {
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),//req.StartTime,
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(), //Convert.ToDateTime(req.EndTime),
                 pageSize = req.limit,
                 page = req.page
             }, url, "", "");
