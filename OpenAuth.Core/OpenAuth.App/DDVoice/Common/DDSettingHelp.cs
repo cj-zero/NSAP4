@@ -34,5 +34,15 @@ namespace OpenAuth.App.DDVoice.Common
         {
             return _configuration.GetValue<string>(string.Format("DD:{0}", key));
         }
+
+        /// <summary>
+        /// 获取配置文件中委托单token
+        /// </summary>
+        /// <param name="key">配置属性</param>
+        /// <returns>返回配置文件中委托单token</returns>
+        public string GetCalibrationKey(string key)
+        {
+            return _configuration.GetValue<string>(string.Format("Calibration:{0}", key));
+        }
     }
 }
