@@ -45,6 +45,7 @@ using Serilog.Context;
 using OpenAuth.App.ClientRelation.Response;
 using System.Reactive.Joins;
 using OpenAuth.App.Clue.ModelDto;
+using OpenAuth.App.SaleBusiness.Common;
 using OpenAuth.Repository.Domain.View;
 
 namespace OpenAuth.App.Order
@@ -60,6 +61,7 @@ namespace OpenAuth.App.Order
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
         private readonly ServiceOrderLogApp _ServiceOrderLogApp;
         //private OrderDraftServiceApp _orderDraftServiceApp;
+        private SaleBusinessMethodHelp _saleBusinessMethodHelp;
         private IOptions<AppSetting> _appConfiguration;
         private ICapPublisher _capBus;
         private readonly ServiceFlowApp _serviceFlowApp;
@@ -70,7 +72,7 @@ namespace OpenAuth.App.Order
         private const string DGNewareName = "东莞新威";
         private const string WBName = "外币";
 
-        public ServiceSaleOrderApp(IUnitWork unitWork, ILogger<ServiceSaleOrderApp> logger, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp, ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
+        public ServiceSaleOrderApp(IUnitWork unitWork, ILogger<ServiceSaleOrderApp> logger, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp,SaleBusinessMethodHelp saleBusinessMethodHelp, ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
         {
             _logger = logger;
             //_orderDraftServiceApp = orderDraftServiceApp;
@@ -81,6 +83,7 @@ namespace OpenAuth.App.Order
             _ServiceOrderLogApp = ServiceOrderLogApp;
             _serviceFlowApp = serviceFlowApp;
             _serviceBaseApp = serviceBaseApp;
+            _saleBusinessMethodHelp = saleBusinessMethodHelp;
         }
 
 
@@ -6558,12 +6561,12 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
 
             if (!string.IsNullOrWhiteSpace(model.IsContract))
             {
+                User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
                 if (model.IsContract == "Y")
                 {
-                    var ordrs = UnitWork.Find<ORDR>(null).Select(r => r.DocEntry.ToString()).ToList();
+                    var ordrs = UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => r.DocEntry.ToString()).ToList();
                     var contracts = UnitWork.Find<ContractApply>(r => r.SaleNo != null).Select(r => r.SaleNo).ToList();
                     int totalPage = Convert.ToInt32((ordrs.Count() / 500)) + 1;
-
                     for (int i = 0; i < totalPage; i++)
                     {
                         List<string> docs = new List<string>();
@@ -6580,27 +6583,34 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                         if (docs.Count() > 0)
                         {
                             string doc = string.Join(",", docs);
-                            if (i == totalPage - 1)
+                            if (totalPage == 1)
                             {
-                                filterString += string.Format("a.DocEntry in ({0})) AND ", doc);
-                            }
-                            else if (i == 0)
-                            {
-                                filterString += string.Format("(a.DocEntry in ({0}) OR ", doc);
+                                filterString += string.Format("a.DocEntry in ({0}) AND ", doc);
                             }
                             else
                             {
-                                filterString += string.Format("a.DocEntry in ({0}) OR ", doc);
+                                if (i == totalPage - 1)
+                                {
+                                    filterString += string.Format("a.DocEntry in ({0})) AND ", doc);
+                                }
+                                else if (i == 0)
+                                {
+                                    filterString += string.Format("(a.DocEntry in ({0}) OR ", doc);
+                                }
+                                else
+                                {
+                                    filterString += string.Format("a.DocEntry in ({0}) OR ", doc);
+                                }
                             }
                         }
                     }
                 }
                 else
                 {
-                    var ordrs = UnitWork.Find<ORDR>(null).Select(r => r.DocEntry.ToString()).ToList();
+                    var ordrs = UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => r.DocEntry.ToString()).ToList();
                     var contracts = UnitWork.Find<ContractApply>(r => r.SaleNo != null).Select(r => r.SaleNo).ToList();
                     int totalPage = Convert.ToInt32((ordrs.Count() / 500)) + 1;
-                    for (int i = 0; i < 40; i++)
+                    for (int i = 0; i < (totalPage < 40 ? totalPage : 40); i++)
                     {
                         List<string> docs = new List<string>();
                         var ordrDocs = ordrs.Skip(i * 500).Take(500).ToList();
@@ -6616,20 +6626,26 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                         if (docs.Count() > 0)
                         {
                             string doc = string.Join(",", docs);
-                            if (i == 39)
+                            if (totalPage == 1)
                             {
-                                filterString += string.Format("a.DocEntry in ({0})) AND ", doc);
-                            }
-                            else if (i == 0)
-                            {
-                                filterString += string.Format("(a.DocEntry in ({0}) OR ", doc);
+                                filterString += string.Format("a.DocEntry in ({0}) AND ", doc);
                             }
                             else
                             {
-                                filterString += string.Format("a.DocEntry in ({0}) OR ", doc);
+                                if (i == 39)
+                                {
+                                    filterString += string.Format("a.DocEntry in ({0})) AND ", doc);
+                                }
+                                else if (i == 0)
+                                {
+                                    filterString += string.Format("(a.DocEntry in ({0}) OR ", doc);
+                                }
+                                else
+                                {
+                                    filterString += string.Format("a.DocEntry in ({0}) OR ", doc);
+                                }
                             }
-                        }
-
+                        }                      
                     }
                 }
             }
