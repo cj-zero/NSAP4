@@ -986,8 +986,8 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                                      name
                                      ,count(case when t.fld006314 = N'一般' then 1 else null end)*0.5 as LowDifficulty
                                       ,count(case when t.fld006314 = N'中等' then 1 else null end) as MediumDifficulty
-                                      ,count(case when t.fld006314 = N'特级' then 1 else null end)*2 as HighDifficulty
-                                      ,count(case when t.fld006314 = N'高级' then 1 else null end)*3 as SuperDifficulty
+                                      ,count(case when t.fld006314 = N'高级' then 1 else null end)*2 as HighDifficulty
+                                      ,count(case when t.fld006314 = N'特级' then 1 else null end)*3 as SuperDifficulty
                                       ,count(case when t.DueDays >= 0 then 1 else null end) as OnTime
                                       ,count(case when t.DueDays < 0 then 1 else null end) as Delayed
                                      from(select AssignedTo as name, fld006314, DueDays  from TaskView5 where 1 = 1 ");
