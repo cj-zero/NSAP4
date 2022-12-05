@@ -75,6 +75,444 @@ namespace OpenAuth.App.Order
         /// </summary>
         public string Terminals { get; set; }
     }
+
+    /// <summary>
+    /// 订单
+    /// </summary>
+    public class SaleOrderDeptDto
+    {
+        public DateTime? UpdateDate { get; set; }
+
+        public int DocEntry { get; set; }
+
+        public string CardCode { get; set; }
+
+        public string CardName { get; set; }
+
+        public decimal? DocTotal { get; set; }
+
+        public decimal? OpenDocTotal { get; set; }
+
+        public DateTime? CreateDate { get; set; }
+
+        public int SlpCode { get; set; }
+
+        public string DeptName { get; set; }
+
+        public string Comments { get; set; }
+
+        public string DocStatus { get; set; }
+
+        public string Printed { get; set; }
+
+        public string SlpName { get; set; }
+
+        public string CANCELED { get; set; }
+
+        public string Indicator { get; set; }
+
+        public DateTime? DocDueDate { get; set; }
+
+        public string PymntGroup { get; set; }
+
+        public string billID { get; set; }
+
+        public string ActualDocDueDate { get; set; }
+
+        public string PrintNo { get; set; }
+
+        public string PrintNumIndex { get; set; }
+
+        public string billStatus { get; set; }
+
+        public string bonusStatus { get; set; }
+
+        public string proStatus { get; set; }
+
+        public string IndicatorName { get; set; }
+
+        public string EmpAcctWarn { get; set; }
+
+        public string AttachFlag { get; set; }
+
+        public decimal? U_DocRCTAmount { get; set; }
+
+        public string TransFee { get; set; }
+
+        public string DocCur { get; set; }
+
+        public bool ContractFlag { get; set; }
+    }
+
+    /// <summary>
+    /// 订单详情
+    /// </summary>
+    public class SaleOrderDetail
+    {
+        public string Column1 { get; set; }
+
+        /// <summary>
+        /// 修改时间
+        /// </summary>
+        public DateTime? UpdateDate { get; set; }
+
+        /// <summary>
+        /// 单据编号
+        /// </summary>
+        public int DocEntry { get; set; }
+
+        /// <summary>
+        /// 客户编码
+        /// </summary>
+        public string CardCode { get; set; }
+
+        /// <summary>
+        /// 客户名称
+        /// </summary>
+        public string CardName { get; set; }
+
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string ItemCode { get; set; }
+
+        /// <summary>
+        /// 描述
+        /// </summary>
+        public string Dscription { get; set; }
+
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public decimal? Quantity { get; set; }
+
+        /// <summary>
+        /// 单价
+        /// </summary>
+        public string Price { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string LineTotal { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string DocTotal { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string OpenDocTotal { get; set; }
+
+        /// <summary>
+        /// 创建日期
+        /// </summary>
+        public DateTime? CreateDate { get; set; }
+
+        /// <summary>
+        /// 编码
+        /// </summary>
+        public int SlpCode { get; set; }
+
+        /// <summary>
+        /// 部门
+        /// </summary>
+        public string DeptName { get; set; }
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Comments { get; set; }
+
+        /// <summary>
+        /// 状态
+        /// </summary>
+        public string DocStatus { get; set; }
+
+        /// <summary>
+        /// 打印
+        /// </summary>
+        public string Printed { get; set; }
+
+        /// <summary>
+        /// 业务员
+        /// </summary>
+        public string SlpName { get; set; }
+
+        /// <summary>
+        /// 取消
+        /// </summary>
+        public string CANCELED { get; set; }
+
+        /// <summary>
+        /// 标识
+        /// </summary>
+        public string Indicator { get; set; }
+
+        /// <summary>
+        /// 日期
+        /// </summary>
+        public DateTime? DocDueDate { get; set; }
+
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public decimal? eQuantity { get; set; }
+
+        /// <summary>
+        /// 系统操作者
+        /// </summary>
+        public string U_YGMD { get; set; }
+
+        /// <summary>
+        /// 编号
+        /// </summary>
+        public int LineNum { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string U_RelDoc { get; set; }
+
+    }
+
+
+    public class SaleOrderDetailT
+    {
+        public string Column1 { get; set; }
+
+        /// <summary>
+        /// 修改时间
+        /// </summary>
+        public DateTime? UpdateDate { get; set; }
+
+        /// <summary>
+        /// 单据编号
+        /// </summary>
+        public int DocEntry { get; set; }
+
+        /// <summary>
+        /// 客户编码
+        /// </summary>
+        public string CardCode { get; set; }
+
+        /// <summary>
+        /// 客户名称
+        /// </summary>
+        public string CardName { get; set; }
+
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string ItemCode { get; set; }
+
+        /// <summary>
+        /// 描述
+        /// </summary>
+        public string Dscription { get; set; }
+
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public decimal? Quantity { get; set; }
+
+        /// <summary>
+        /// 单价
+        /// </summary>
+        public string Price { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string LineTotal { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string DocTotal { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string OpenDocTotal { get; set; }
+
+        /// <summary>
+        /// 创建日期
+        /// </summary>
+        public DateTime? CreateDate { get; set; }
+
+        /// <summary>
+        /// 编码
+        /// </summary>
+        public int SlpCode { get; set; }
+
+        /// <summary>
+        /// 部门
+        /// </summary>
+        public string DeptName { get; set; }
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Comments { get; set; }
+
+        /// <summary>
+        /// 状态
+        /// </summary>
+        public string DocStatus { get; set; }
+
+        /// <summary>
+        /// 打印
+        /// </summary>
+        public string Printed { get; set; }
+
+        /// <summary>
+        /// 业务员
+        /// </summary>
+        public string SlpName { get; set; }
+
+        /// <summary>
+        /// 取消
+        /// </summary>
+        public string CANCELED { get; set; }
+
+        /// <summary>
+        /// 标识
+        /// </summary>
+        public string Indicator { get; set; }
+
+        /// <summary>
+        /// 日期
+        /// </summary>
+        public DateTime? DocDueDate { get; set; }
+
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public decimal? eQuantity { get; set; }
+
+        /// <summary>
+        /// 系统操作者
+        /// </summary>
+        public string U_YGMD { get; set; }
+
+        /// <summary>
+        /// 编号
+        /// </summary>
+        public int LineNum { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string U_RelDoc { get; set; }
+
+        public string Process { get; set; }
+
+        public string ProjectNo { get; set; }
+    }
+
+    public class SaleMyCreates
+    {
+        public string Column1 { get; set; }
+
+        public int job_id { get; set; }
+
+        public string job_type_nm { get; set; }
+
+        public string job_nm { get; set; }
+
+        public string DeptName { get; set; }
+
+        public int user_id { get; set; }
+
+        public string user_nm { get; set; }
+
+        public int job_state { get; set; }
+
+        public System.DateTime? upd_dt { get; set; }
+
+        public string remarks { get; set; }
+
+        public int job_type_id { get; set; }
+
+        public string card_code { get; set; }
+
+        public string CardName { get; set; }
+
+        public string DocTotal { get; set; }
+
+        public int base_type { get; set; }
+
+        public int base_entry { get; set; }
+
+        public string step_nm { get; set; }
+
+        public int sbo_id { get; set; }
+
+        public string page_url { get; set; }
+
+        public int sbo_itf_return { get; set; }
+
+        public string sbo_nm { get; set; }
+
+        public int sync_start { get; set; }
+
+        public int sync_stat { get; set; }
+
+        public int sync_sap { get; set; }
+    }
+
+    public class SaleDeptSubToMe 
+    {
+        public int RowNum { get; set; }
+
+        public string Column1 { get; set; }
+
+        public int job_id { get; set; }
+
+        public string job_type_nm { get; set; }
+
+        public string job_nm { get; set; }
+
+        public string DeptName { get; set; }
+
+        public int user_id { get; set; }
+
+        public string user_nm { get; set; }
+
+        public int job_state { get; set; }
+
+        public System.DateTime? upd_dt { get; set; }
+
+        public string remarks { get; set; }
+
+        public int job_type_id { get; set; }
+
+        public int step_id { get; set; }
+
+        public string card_code { get; set; }
+
+        public string CardName { get; set; }
+
+        public string DocTotal { get; set; }
+
+        public int base_type { get; set; }
+
+        public int base_entry { get; set; }
+
+        public string step_nm { get; set; }
+
+        public int sbo_id { get; set; }
+
+        public string page_url { get; set; }
+
+        public int audit_level { get; set; }
+
+        public string sbo_nm { get; set; }
+    }
+
     public class SboInfoDto
     {
         /// <summary>

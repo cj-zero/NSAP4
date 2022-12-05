@@ -500,7 +500,11 @@ namespace OpenAuth.WebApi.Controllers.Order
                 //          };
 
 
-                result.Data = data;
+                List<SaleOrderDetailT> saleOrderDetails = data.Tolist<SaleOrderDetailT>();
+                foreach (SaleOrderDetailT dataRow in saleOrderDetails)
+                {
+                    dataRow.DeptName = _userDepartMsgHelp.GetUserDepart(dataRow.SlpCode);
+                }
 
                 result.Count = rowCount;
                 //}
