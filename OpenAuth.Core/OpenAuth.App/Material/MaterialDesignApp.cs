@@ -50,12 +50,12 @@ namespace OpenAuth.App.Material
             DateTime nowTime = DateTime.Now;
             var result = new TableData();
 
-            string sql = string.Format(@"select TO_DAYS(NOW())-TO_DAYS(n.SubmitTime) as SubmitDay,IFNULL(TO_DAYS(NOW())-TO_DAYS(n.UrlUpdate),0)  as UrlDay, n.Id,n.DocEntry,n.U_ZS,n.CardCode,n.CardName,n.ItemCode,n.ItemDesc,n.SlpName,n.ContractReviewCode,n.custom_req,n.ItemTypeName,n.ItemName,n.SubmitTime, n.VersionNo,n.FileUrl,
-                                         n.DemoUpdate, n.UrlUpdate, n.Quantity, n.IsDemo, m.Id SubmitNo, s.DocEntry ProductNo
+            string sql = string.Format(@" select  *   from   (select TO_DAYS(NOW())-TO_DAYS(n.SubmitTime) as SubmitDay,IFNULL(TO_DAYS(NOW())-TO_DAYS(n.UrlUpdate),0)  as UrlDay, n.Id,n.DocEntry,n.U_ZS,n.CardCode,n.CardName,n.ItemCode,n.ItemDesc,n.SlpName,n.ContractReviewCode,n.custom_req,n.ItemTypeName,n.ItemName,n.SubmitTime, n.VersionNo,n.FileUrl,
+                                         n.DemoUpdate, n.UrlUpdate, n.Quantity, n.IsDemo, m.Id SubmitNo, s.DocEntry ProductNo,row_number() OVER(PARTITION BY n.itemCode,n.CardCode,n.SlpName, n.itemTypeName) AS rn
                                          from erp4_serve.manage_screening n
                                          left
                                          join erp4_serve.manage_screening_history m on n.DocEntry = m.DocEntry and n.U_ZS = m.U_ZS and n.ItemCode = m.ItemCode and n.Quantity = m.Quantity
-                                         left join nsap_bone.product_owor s on n.DocEntry = s.OriginNum and n.ItemCode = s.ItemCode where 1 = 1");
+                                         left join nsap_bone.product_owor s on n.DocEntry = s.OriginNum and n.ItemCode = s.ItemCode )  as n  where rn = 1 ");
             if (!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()))
             {
                 sql += " and n.DocEntry =" + req.SalesOrderId;
@@ -86,7 +86,7 @@ namespace OpenAuth.App.Material
             }
             if (!string.IsNullOrWhiteSpace(req.SubmitNo))
             {
-                sql += " and m.Id = " + req.SubmitNo;
+                sql += " and n.SubmitNo = " + req.SubmitNo;
             }
             var modeldata = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null).AsEnumerable();
             var manageData = GetProgressAll().AsEnumerable(); // new DataTable().AsEnumerable();
@@ -118,10 +118,10 @@ namespace OpenAuth.App.Material
                                 UrlUpdate = n.Field<DateTime?>("UrlUpdate"),
                                 Quantity = n.Field<decimal?>("Quantity"),
                                 IsDemo = n.Field<string>("IsDemo"),
-                                type = (n.Field<Int64>("SubmitDay") < 2) ? "-1"
-                                : ((n.Field<Int64>("SubmitDay") >= 2 && t == null) ? "0"
-                                : ((n.Field<Int64>("SubmitDay") >= 9 && string.IsNullOrEmpty(n.Field<string>("FileUrl"))) ? "1"
-                                : ((n.Field<Int64>("UrlDay") >= 10 && n.Field<string>("IsDemo") != "批量") ? "2"
+                                type = (n.Field<Int32?>("SubmitDay") < 2) ? "-1"
+                                : ((n.Field<Int32?>("SubmitDay") >= 2 && t == null) ? "0"
+                                : ((n.Field<Int32?>("SubmitDay") >= 9 && string.IsNullOrEmpty(n.Field<string>("FileUrl"))) ? "1"
+                                : ((n.Field<Int32?>("UrlDay") >= 10 && n.Field<string>("IsDemo") != "批量") ? "2"
                                 : "3"))),
                                 SubmitNo = n.Field<Int64?>("SubmitNo"),
                                 ProjectNo = t == null ? "" : t.Field<string>("_System_objNBS"),
