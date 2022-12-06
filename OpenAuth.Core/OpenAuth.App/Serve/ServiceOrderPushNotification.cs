@@ -219,7 +219,7 @@ namespace OpenAuth.App.Serve
             {
                 switch (item.status)
                 {
-                    case "客服主管":
+                    case "客服主管审批":
                         await _hubContext.Clients.Groups("客服主管").SendAsync("OutsourcCount", "系统", item.count);
                         break;
                     case "财务审核":
