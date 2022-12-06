@@ -1631,6 +1631,10 @@ namespace OpenAuth.App
                                 submitDatas.Add(submitData);
                             }
                         }
+                        else
+                        {
+                            _logger.LogError("物料明细为空");
+                        }
 
                         ControlDataList controlDataList = new ControlDataList();
                         controlDataList.controls_data_list = submitDatas;
@@ -1640,10 +1644,14 @@ namespace OpenAuth.App
                             ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
                             if (returnResult.status != 200)
                             {
-                                _logger.LogError("调用接口失败：" + returnResult.message);
+                                _logger.LogError("调用2接口失败：" + returnResult.message);
                             }
                         }
                     }
+                }
+                else 
+                {
+                    _logger.LogError("调用1接口失败：" + calibrations.message);
                 }
             }
             catch (Exception ex)
