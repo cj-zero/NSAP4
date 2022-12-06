@@ -3316,7 +3316,7 @@ namespace OpenAuth.App
             }
             var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
             var tUsers = await UnitWork.Find<AppUserMap>(null).WhereIf(!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"),
-                w => (w.AppUserRole == 2 || w.AppUserRole == 3 || w.AppUserRole == 6)).ToListAsync();
+                w => (w.AppUserRole == 1 || w.AppUserRole == 2 || w.AppUserRole == 3 || w.AppUserRole == 6)).ToListAsync();
             var ids = tUsers.Select(u => u.UserID);
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             if (!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"))
