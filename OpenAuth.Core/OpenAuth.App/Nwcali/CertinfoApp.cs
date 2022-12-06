@@ -1990,8 +1990,9 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid))
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.Operator),c=>c.CreateUser.Contains(req.Operator))
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName),c=>c.Department.ToUpper()==req.OrgName.ToUpper());
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Operator), c => c.CreateUser.Contains(req.Operator))
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName), c => c.Department.ToUpper() == req.OrgName.ToUpper())
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Guid), c => c.LowGuid.Contains(req.Guid) || c.MidGuid.Contains(req.Guid));
             result.Count = query.Count();
             var taskList = req.State == 0 ? query.OrderByDescending(c => c.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToList() : query.OrderByDescending(c => c.Id).ToList();
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
@@ -2173,6 +2174,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Operator), c => c.CreateUser.Contains(req.Operator))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName), c => c.Department.ToUpper() == req.OrgName.ToUpper())
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Guid), c => c.LowGuid.Contains(req.Guid) || c.MidGuid.Contains(req.Guid))
                        .OrderByDescending(c => c.Id);
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
             var taskIds = taskList.Where(c => !string.IsNullOrWhiteSpace(c.TaskId)).Select(c => c.TaskId).Distinct().ToList();
@@ -2268,8 +2270,8 @@ namespace OpenAuth.App
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = req.StartTime.Value.GetTimeStamp()- 28800,
+                endTime = req.EndTime.Value.GetTimeStamp()- 28800,
                 pageSize = req.limit,
                 page = req.page
             }, url, "", "");
@@ -2327,8 +2329,8 @@ namespace OpenAuth.App
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = req.StartTime.Value.GetTimeStamp() - 28800,
+                endTime = req.EndTime.Value.GetTimeStamp() - 28800,
                 pageSize = 500,
                 page =1
             }, url, "", "");
@@ -2407,9 +2409,9 @@ namespace OpenAuth.App
             {
                 sns=sns,
                 passportIDs = ids,
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
-                pageSize=req.limit,
+                beginTime = req.StartTime.Value.GetTimeStamp() - 28800,
+                endTime = req.EndTime.Value.GetTimeStamp() - 28800,
+                pageSize =req.limit,
                 page=req.page,
                 taskType=req.taskType==0?null:req.taskType
             }, url, "", "");
@@ -2472,8 +2474,10 @@ namespace OpenAuth.App
                     userId = item["userId"].ToString(),
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
-                    beginTime = item["beginTime"].ToString(),
-                    endTime = item["endTime"].ToString(),
+                    beginTime = (Convert.ToInt64(item["beginTime"]) + 28800).GetTimeSpmpToDate().ToString("yyyy-MM-dd HH:mm:ss"),
+                    endTime = (Convert.ToInt64(item["endTime"]) + 28800).GetTimeSpmpToDate().ToString("yyyy-MM-dd HH:mm:ss"),
+                    beginTimeStamp= Convert.ToInt64(item["beginTime"]),
+                    endTimeStamp = Convert.ToInt64(item["endTime"]),
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     midGuid = item["lowVer"].ToString(),
@@ -2534,8 +2538,8 @@ namespace OpenAuth.App
             {
                 sns=sns,
                 passportIDs = ids,
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = req.StartTime.Value.GetTimeStamp() - 28800,
+                endTime = req.EndTime.Value.GetTimeStamp() - 28800,
                 taskType = req.taskType == 0 ? null : req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
@@ -2590,8 +2594,8 @@ namespace OpenAuth.App
                 {
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
-                    beginTime = item["beginTime"].ToString(),
-                    endTime = item["endTime"].ToString(),
+                    beginTime =(Convert.ToInt64(item["beginTime"])+ 28800).GetTimeSpmpToDate().ToString("yyyy-MM-dd HH:mm:ss"),
+                    endTime = (Convert.ToInt64(item["endTime"]) + 28800).GetTimeSpmpToDate().ToString("yyyy-MM-dd HH:mm:ss"), 
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     conclusion = item["conclusion"].ToString(),
