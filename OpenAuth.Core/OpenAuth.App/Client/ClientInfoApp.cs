@@ -2129,13 +2129,13 @@ namespace OpenAuth.App.Client
             if (IsOpenSap)
             {
 
-                strSql.AppendFormat("SELECT COUNT(*) FROM OCRD WHERE ({0} LIKE '%{1}%' OR '{1}' LIKE ('%'+{0}+'%')) AND LEN({0})>0 ", FieldName, CardName);
+                strSql.AppendFormat("SELECT COUNT(*) FROM OCRD WHERE (CONVERT({0} USING utf8) LIKE '%{1}%' OR '{1}' LIKE ('%'+CONVERT({0} USING utf8)+'%')) AND LEN({0})>0 ", FieldName, CardName);
                 if (IsEdit) { strSql.AppendFormat(" AND CardCode<>{0} ", CardCode); }
                 return UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null).ToString();
             }
             else
             {
-                strSql.AppendFormat("SELECT COUNT(*) FROM {0}.crm_OCRD WHERE sbo_id=?sbo_id AND ({1} LIKE '%{2}%' OR '{2}' LIKE CONCAT('%',{1},'%') AND LENGTH({1})>0) ", "nsap_bone", FieldName, CardName);
+                strSql.AppendFormat("SELECT COUNT(*) FROM {0}.crm_OCRD WHERE sbo_id=?sbo_id AND (CONVERT({1} USING utf8) LIKE '%{2}%' OR '{2}' LIKE CONCAT('%',CONVERT({1} USING utf8),'%') AND LENGTH({1})>0) ", "nsap_bone", FieldName, CardName);
                 if (IsEdit) { strSql.Append(" AND CardCode<>?CardCode "); }
 
                 List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
