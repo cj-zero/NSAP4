@@ -2493,8 +2493,8 @@ namespace OpenAuth.App
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
-                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
+                beginTime = req.StartTime.Value.GetTimeStamp()- 28800,
+                endTime = req.EndTime.Value.GetTimeStamp()- 28800,
                 pageSize = req.limit,
                 page = req.page
             }, url, "", "");
@@ -2552,8 +2552,8 @@ namespace OpenAuth.App
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
-                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
+                beginTime = req.StartTime.Value.GetTimeStamp() - 28800,
+                endTime = req.EndTime.Value.GetTimeStamp() - 28800,
                 pageSize = 500,
                 page =1
             }, url, "", "");
@@ -2632,9 +2632,9 @@ namespace OpenAuth.App
             {
                 sns=sns,
                 passportIDs = ids,
-                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
-                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
-                pageSize=req.limit,
+                beginTime = req.StartTime.Value.GetTimeStamp() - 28800,
+                endTime = req.EndTime.Value.GetTimeStamp() - 28800,
+                pageSize =req.limit,
                 page=req.page,
                 taskType=req.taskType==0?null:req.taskType
             }, url, "", "");
@@ -2697,8 +2697,10 @@ namespace OpenAuth.App
                     userId = item["userId"].ToString(),
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
-                    beginTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["beginTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//Convert.ToUInt64(item["BeginTimeSpan"]).GetTimeSpmpToDate().ToString()
-                    endTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["endTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//item["endTime"].ToString(),
+                    beginTime = (Convert.ToInt64(item["beginTime"]) + 28800).GetTimeSpmpToDate().ToString("yyyy-MM-dd HH:mm:ss"),
+                    endTime = (Convert.ToInt64(item["endTime"]) + 28800).GetTimeSpmpToDate().ToString("yyyy-MM-dd HH:mm:ss"),
+                    beginTimeStamp= Convert.ToInt64(item["beginTime"]),
+                    endTimeStamp = Convert.ToInt64(item["endTime"]),
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     midGuid = item["lowVer"].ToString(),
@@ -2759,8 +2761,8 @@ namespace OpenAuth.App
             {
                 sns=sns,
                 passportIDs = ids,
-                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
-                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
+                beginTime = req.StartTime.Value.GetTimeStamp() - 28800,
+                endTime = req.EndTime.Value.GetTimeStamp() - 28800,
                 taskType = req.taskType == 0 ? null : req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
@@ -2815,10 +2817,8 @@ namespace OpenAuth.App
                 {
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
-                    //beginTime = item["beginTime"].ToString(),
-                    //endTime = item["endTime"].ToString(),
-                    beginTime =TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["beginTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//Convert.ToUInt64(item["BeginTimeSpan"]).GetTimeSpmpToDate().ToString()
-                    endTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["endTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//item["endTime"].ToString(),
+                    beginTime =(Convert.ToInt64(item["beginTime"])+ 28800).GetTimeSpmpToDate().ToString("yyyy-MM-dd HH:mm:ss"),
+                    endTime = (Convert.ToInt64(item["endTime"]) + 28800).GetTimeSpmpToDate().ToString("yyyy-MM-dd HH:mm:ss"), 
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     conclusion = item["conclusion"].ToString(),
