@@ -1339,9 +1339,19 @@ namespace OpenAuth.App
             }
 
             var loginUser = loginContext.User;
+            List<OpenAuth.Repository.Domain.Org> listOrg = loginContext.Orgs;
             if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = GetUserId(Convert.ToInt32(req.AppId)).ConfigureAwait(false).GetAwaiter().GetResult();
+                try
+                {
+                    var orgids = UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToList();
+                    listOrg = UnitWork.Find<OpenAuth.Repository.Domain.Org>(a => orgids.Contains(a.Id)).ToList();
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
          
             #region 报销单唯一
@@ -1366,15 +1376,20 @@ namespace OpenAuth.App
                     obj.IsSalesman = 0;
 
                     //查询所有销售部门
-                    List<string> SaleDepts = UnitWork.Find<OpenAuth.Repository.Domain.Org>(r => r.ParentName == "销售部").Select(r => r.Name).ToList();
-                    loginContext.Orgs.ForEach(r => 
+                    if (listOrg.Where(a => a.ParentId == "销售部").Count() > 0)
                     {
-                        //当前登录人只要包含销售部
-                        if (SaleDepts.Contains(r.Name))
-                        {
-                            obj.IsSalesman = 1;
-                        }
-                    });
+                        obj.IsSalesman = 1;
+                    }
+                    //List<string> SaleDepts = UnitWork.Find<OpenAuth.Repository.Domain.Org>(r => r.ParentName == "销售部").Select(r => r.Name).ToList();
+
+                    //loginContext.Orgs.ForEach(r => 
+                    //{
+                    //    //当前登录人只要包含销售部
+                    //    if (SaleDepts.Contains(r.Name))
+                    //    {
+                    //        obj.IsSalesman = 1;
+                    //    }
+                    //});
 
                     //if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
                     //{
@@ -1390,9 +1405,10 @@ namespace OpenAuth.App
                     {
                         var maxmainid = UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r => r.MainId).FirstOrDefault();
                         //创建报销流程
-                        var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("报销"));
+                        //var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("报销"));
+                        var mf = UnitWork.Find<FlowScheme>(a => a.SchemeName == "报销").FirstOrDefault();
                         var afir = new AddFlowInstanceReq();
-                        afir.SchemeId = mf.FlowSchemeId;
+                        afir.SchemeId = mf.Id;
                         afir.FrmType = 2;
                         afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
                         afir.CustomName = $"报销" + DateTime.Now;
@@ -1552,9 +1568,19 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
+            List<OpenAuth.Repository.Domain.Org> listOrg = loginContext.Orgs;
             if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = GetUserId(Convert.ToInt32(req.AppId)).ConfigureAwait(false).GetAwaiter().GetResult();
+                try
+                {
+                    var orgids = UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToList();
+                    listOrg = UnitWork.Find<OpenAuth.Repository.Domain.Org>(a => orgids.Contains(a.Id)).ToList();
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
 
             var dbContext = UnitWork.GetDbContext<ReimburseInfo>();
@@ -1574,15 +1600,19 @@ namespace OpenAuth.App
                     obj.IsSalesman = 0;
 
                     //查询所有销售部门
-                    List<string> SaleDepts = UnitWork.Find<OpenAuth.Repository.Domain.Org>(r => r.ParentName == "销售部").Select(r => r.Name).ToList();
-                    loginContext.Orgs.ForEach(r =>
+                    if (listOrg.Where(a => a.ParentId == "销售部").Count() >0)
                     {
-                        //当前登录人只要包含销售部
-                        if (SaleDepts.Contains(r.Name))
-                        {
-                            obj.IsSalesman = 1;
-                        }
-                    });
+                        obj.IsSalesman = 1;
+                    }
+                    //List<string> SaleDepts = UnitWork.Find<OpenAuth.Repository.Domain.Org>(r => r.ParentName == "销售部").Select(r => r.Name).ToList();
+                    //loginContext.Orgs.ForEach(r =>
+                    //{
+                    //    //当前登录人只要包含销售部
+                    //    if (SaleDepts.Contains(r.Name))
+                    //    {
+                    //        obj.IsSalesman = 1;
+                    //    }
+                    //});
                     //if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
                     //{
                     //    obj.IsSalesman = 1;
@@ -1594,9 +1624,10 @@ namespace OpenAuth.App
                         if (string.IsNullOrWhiteSpace(req.FlowInstanceId))
                         {
                             //添加流程
-                            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("报销"));
+                            //var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("报销"));
+                            var mf = UnitWork.Find<FlowScheme>(a => a.SchemeName == "报销").FirstOrDefault();
                             var afir = new AddFlowInstanceReq();
-                            afir.SchemeId = mf.FlowSchemeId;
+                            afir.SchemeId = mf.Id;
                             afir.FrmType = 2;
                             afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
                             afir.CustomName = $"报销";
