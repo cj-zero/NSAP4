@@ -36,7 +36,7 @@ namespace OpenAuth.Repository.Domain.View
 
         public int deleted { get; set; }
 
-        public string _System_Progress { get; set; }
+        public double _System_Progress { get; set; }
 
     }
 

@@ -40,6 +40,8 @@ using Serilog;
 using Microsoft.Extensions.Options;
 using Magicodes.ExporterAndImporter.Core;
 using Magicodes.ExporterAndImporter.Excel;
+using OpenAuth.App.DDVoice.Common;
+using Microsoft.Extensions.Logging;
 
 namespace OpenAuth.App
 {
@@ -57,6 +59,8 @@ namespace OpenAuth.App
         private readonly IOptions<AppSetting> _appConfiguration;
         private static readonly string BaseCertDir = Path.Combine(Directory.GetCurrentDirectory(), "certs");
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
+        private ILogger<CertinfoApp> _logger;
+        private DDSettingHelp _ddSettingHelp;
         private static readonly Dictionary<int, double> PoorCoefficients = new Dictionary<int, double>()
         {
             { 2, 1.13 },
@@ -1233,15 +1237,15 @@ namespace OpenAuth.App
         /// 拉取销售交货生成备料单
         /// </summary>
         /// <returns></returns>
-        public async Task SynSalesDelivery()
+         public async Task SynSalesDelivery()
         {
             //销售交货流程 并处于序列号选择环节
             //var deliveryJob = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货" ).ToListAsync(); 
             var entrusted = await UnitWork.Find<Entrustment>(c => c.Status != 5).ToListAsync();
             var jobIds = entrusted.Select(c => c.JodId).ToList();//已经生成过的流程ID
-
             var deliveryList = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货").Select(c => new { c.sbo_id, c.base_entry, c.base_type, c.job_data, c.job_id, c.step_id, c.job_state, c.sync_stat, c.sbo_itf_return }).ToListAsync();
             var deliveryJob = deliveryList.Where(c => !jobIds.Contains(c.job_id) && c.step_id == 455).ToList();//在选择序列号环节
+            List<Entrustment> entrustments = new List<Entrustment>();
             #region 生成备料单
             if (deliveryJob.Count > 0)
             {
@@ -1323,8 +1327,52 @@ namespace OpenAuth.App
                             }
                         }
 
+                        entrustments.Add(single);
                         single = await UnitWork.AddAsync<Entrustment, int>(single);
                         await UnitWork.SaveAsync();
+                    }
+                }
+            }
+            #endregion
+
+            #region 物料重置
+            var finlishJobs = deliveryList.Where(c => c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToList();//选择了序列号/结束的交货流程并且同步完成
+            entrustments = entrustments.Where(c => finlishJobs.Contains(c.JodId) && c.Status == 1).ToList();
+            for (int i = 0; i < entrustments.Count; i++)
+            {
+                var item1 = entrustments[i];
+                var job = deliveryList.Where(c => c.job_id == item1.JodId).FirstOrDefault();
+
+                var serialNumber = await (from a in UnitWork.Find<OITL>(null)
+                                          join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
+                                          from b in ab.DefaultIfEmpty()
+                                          join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
+                                          from c in bc.DefaultIfEmpty()
+                                          where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
+                                          select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
+
+                int line = 0, sort = 0;
+                foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
+                {
+                    int line2 = 0;
+                    if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
+                    {
+                        ++line;
+                        foreach (var items in groupItem)
+                        {
+                            ++line2; ++sort;
+                            foreach (EntrustmentDetail entrustmentDetail in item1.EntrustmentDetails)
+                            {
+                                entrustmentDetail.EntrustmentId = item1.Id;
+                                entrustmentDetail.ItemCode = groupItem.Key;
+                                entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
+                                entrustmentDetail.SerialNumber = items.MnfSerial;
+                                entrustmentDetail.Quantity = 1;
+                                entrustmentDetail.LineNum = line + "-" + line2;
+                                entrustmentDetail.Sort = sort;
+                            }
+                        }
+
                     }
                 }
             }
@@ -1346,7 +1394,6 @@ namespace OpenAuth.App
                                           where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
                                           select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
 
-                //var aa = serialNumber.GroupBy(c => c.ItemCode).ToList();
                 int line = 0, sort = 0;
                 List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
                 foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
@@ -1366,12 +1413,6 @@ namespace OpenAuth.App
                             throw new Exception("数据删除异常", ex);
                         }
                     }
-                    //var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
-                    //await UnitWork.DeleteAsync<EntrustmentDetail>(c => c.EntrustmentId == item.Id);
-                    //await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deletedt.ToArray());
-
-                    //var deleteSql = $"DELETE FROM entrustmentdetail WHERE EntrustmentId={item.Id}";
-                    //UnitWork.ExecuteSql(deleteSql, ContextType.Nsap4NwcaliDbContextType);
 
                     if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
                     {
@@ -1432,6 +1473,184 @@ namespace OpenAuth.App
                 }
             }
             #endregion
+
+            #region 调用接口
+            string tokens = System.Web.HttpUtility.UrlEncode(_ddSettingHelp.GetCalibrationKey("Token"));
+            try
+            {
+                //获取校准委托单组件信息
+                CalibrationResult calibrations = JsonConvert.DeserializeObject<CalibrationResult>(HttpHelpers.Get($"http://121.37.222.129:1666/api/Calibration/GetCalibrationFields?Token={tokens}"));
+
+                //校准委托单数据提交
+                if (calibrations.status == 200)
+                {
+                    foreach (Entrustment entrustment in entrustments)
+                    {
+                        List<SubmitData> submitDatas = new List<SubmitData>();
+                        if (entrustment.EntrustmentDetails != null && entrustment.EntrustmentDetails.Count() > 0)
+                        {
+                            foreach (CalibrationGroups item in calibrations.data)
+                            {
+                                SubmitData submitData = new SubmitData();
+                                switch (item.field_tag)
+                                {
+                                    case "EntOrderNo":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "";
+                                        break;
+                                    case "EntOrderDate":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.EntrustedDate == null ? DateTime.Now : entrustment.EntrustedDate;
+                                        break;
+                                    case "SaleOrderDate":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.SaleId == null ? 0 : entrustment.SaleId;
+                                        break;
+                                    case "Submitter":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.Contacts;
+                                        break;
+                                    case "SubmittingUnit":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.EntrustedUnit;
+                                        break;
+                                    case "SubmittingUnitTel":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.Phone;
+                                        break;
+                                    case "SubmittingUnitAdd":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.ECountry + entrustment.EAddress;
+                                        break;
+                                    case "CertificationUnit":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.CertUnit;
+                                        break;
+                                    case "CertificationUnitTel":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.Phone;
+                                        break;
+                                    case "CertificationUnitAdd":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.CertCountry + entrustment.CertProvince + entrustment.CertCity + entrustment.CertAddress;
+                                        break;
+                                    case "Remarks":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.Remark;
+                                        break;
+                                    case "TimeReq":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "普通服务（五个工作日）";
+                                        break;
+                                    case "LabelNo":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "出厂编号";
+                                        break;
+                                    case "CertificateNo":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "出场编号";
+                                        break;
+                                    case "NextCalibrationDate":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "需要下次校准时间";
+                                        break;
+                                    case "ConclusionJud":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "无结论判定";
+                                        break;
+                                    case "HandlingMethod":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "不同意代送";
+                                        break;
+                                    case "CollectionMethod":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "自取";
+                                        break;
+                                    case "MeasurementUnit":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "国家法定计量单位";
+                                        break;
+                                    case "CalibrationStaff":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "";
+                                        break;
+                                    default:
+                                        if (item.child_list != null && item.child_list.Count() > 0)
+                                        {
+                                            SubmitDataContainChild submirDataContainChild = new SubmitDataContainChild();
+                                            submirDataContainChild.key = item.field_id;
+                                            List<SubmitDataChild> submitDataChildren = new List<SubmitDataChild>();
+                                            foreach (CalibrationGroups itemChild in item.child_list)
+                                            {
+                                                SubmitDataChild submitDataChild = new SubmitDataChild();
+                                                foreach (EntrustmentDetail entrustmentDetail in entrustment.EntrustmentDetails)
+                                                {
+                                                    switch (itemChild.field_tag)
+                                                    {
+                                                        case "InstrumentName":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add(entrustmentDetail.ItemName);
+                                                            break;
+                                                        case "SpecificatModel":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add(entrustmentDetail.ItemCode);
+                                                            break;
+                                                        case "SN":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add(entrustmentDetail.SerialNumber);
+                                                            break;
+                                                        case "Attachment":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add("");
+                                                            break;
+                                                        case "AppearanceDes":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add("正常");
+                                                            break;
+                                                        case "CalibrationReq":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add("");
+                                                            break;
+                                                        case "CertificateSta":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add(entrustmentDetail.Status.ToString());
+                                                            break;
+                                                    }
+                                                }
+
+                                                submitDataChildren.Add(submitDataChild);
+                                            }
+
+                                            submirDataContainChild.value = submitDataChildren;
+                                            submitData.key = submirDataContainChild.key;
+                                            submitData.value = submirDataContainChild.value;
+                                        }
+                                        break;
+                                }
+
+                                submitDatas.Add(submitData);
+                            }
+                        }
+
+                        ControlDataList controlDataList = new ControlDataList();
+                        controlDataList.controls_data_list = submitDatas;
+                        if (controlDataList.controls_data_list.Count() > 0)
+                        {
+                            //调用校准委托单数据提交接口
+                            ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
+                            if (returnResult.status != 200)
+                            {
+                                _logger.LogError(returnResult.message);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message.ToString());
+            }
+            #endregion
         }
 
         private void SetStatus(ref List<EntrustmentDetail> detail, List<NwcaliBaseInfo> nwcert)
@@ -1480,7 +1699,7 @@ namespace OpenAuth.App
                         from c in ac.DefaultIfEmpty()
                         where d.sbo_id == sboid && a.CardCode == cardcode // && a.AdresType=="B" && a.Address== "开票到"
                         select new { d.CardCode, d.CardName, a.LineNum, Active = a.U_Active, a.AdresType, a.Address, Country = b.Name, State = c.Name, a.City, a.Building };
-            return query.FirstOrDefault();
+            return query.Where(r => r.CardCode != null).FirstOrDefault();
         }
         public void Add(AddOrUpdateCertinfoReq req)
         {
@@ -1994,8 +2213,9 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid))
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.Operator),c=>c.CreateUser.Contains(req.Operator))
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName),c=>c.Department.ToUpper()==req.OrgName.ToUpper());
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Operator), c => c.CreateUser.Contains(req.Operator))
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName), c => c.Department.ToUpper() == req.OrgName.ToUpper())
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Guid), c => c.LowGuid.Contains(req.Guid) || c.MidGuid.Contains(req.Guid));
             result.Count = query.Count();
             var taskList = req.State == 0 ? query.OrderByDescending(c => c.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToList() : query.OrderByDescending(c => c.Id).ToList();
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
@@ -2177,6 +2397,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Operator), c => c.CreateUser.Contains(req.Operator))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.OrgName), c => c.Department.ToUpper() == req.OrgName.ToUpper())
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Guid), c => c.LowGuid.Contains(req.Guid) || c.MidGuid.Contains(req.Guid))
                        .OrderByDescending(c => c.Id);
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
             var taskIds = taskList.Where(c => !string.IsNullOrWhiteSpace(c.TaskId)).Select(c => c.TaskId).Distinct().ToList();
@@ -2272,8 +2493,8 @@ namespace OpenAuth.App
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 pageSize = req.limit,
                 page = req.page
             }, url, "", "");
@@ -2331,8 +2552,8 @@ namespace OpenAuth.App
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 pageSize = 500,
                 page =1
             }, url, "", "");
@@ -2411,8 +2632,8 @@ namespace OpenAuth.App
             {
                 sns=sns,
                 passportIDs = ids,
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 pageSize=req.limit,
                 page=req.page,
                 taskType=req.taskType==0?null:req.taskType
@@ -2476,8 +2697,8 @@ namespace OpenAuth.App
                     userId = item["userId"].ToString(),
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
-                    beginTime = item["beginTime"].ToString(),
-                    endTime = item["endTime"].ToString(),
+                    beginTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["beginTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//Convert.ToUInt64(item["BeginTimeSpan"]).GetTimeSpmpToDate().ToString()
+                    endTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["endTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//item["endTime"].ToString(),
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     midGuid = item["lowVer"].ToString(),
@@ -2538,8 +2759,8 @@ namespace OpenAuth.App
             {
                 sns=sns,
                 passportIDs = ids,
-                beginTime = req.StartTime,
-                endTime = req.EndTime,
+                beginTime = TimeZoneInfo.ConvertTimeToUtc(req.StartTime.Value).GetTimeStamp(),
+                endTime = TimeZoneInfo.ConvertTimeToUtc(req.EndTime.Value).GetTimeStamp(),
                 taskType = req.taskType == 0 ? null : req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
@@ -2594,8 +2815,10 @@ namespace OpenAuth.App
                 {
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
-                    beginTime = item["beginTime"].ToString(),
-                    endTime = item["endTime"].ToString(),
+                    //beginTime = item["beginTime"].ToString(),
+                    //endTime = item["endTime"].ToString(),
+                    beginTime =TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["beginTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//Convert.ToUInt64(item["BeginTimeSpan"]).GetTimeSpmpToDate().ToString()
+                    endTime = TimeZone.CurrentTimeZone.ToLocalTime(new System.DateTime(1970, 1, 1)).AddSeconds(Convert.ToInt64(item["endTime"])).ToString("yyyy-MM-dd HH:mm:ss"),//item["endTime"].ToString(),
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     conclusion = item["conclusion"].ToString(),
@@ -3684,7 +3907,7 @@ namespace OpenAuth.App
         }
 
 
-        public CertinfoApp(IUnitWork unitWork, IRepository<Certinfo> repository,
+        public CertinfoApp(IUnitWork unitWork, IRepository<Certinfo> repository, ILogger<CertinfoApp> logger, DDSettingHelp dDSettingHelp,
             RevelanceManagerApp app, IAuth auth, FlowInstanceApp flowInstanceApp, CertOperationHistoryApp certOperationHistoryApp, ModuleFlowSchemeApp moduleFlowSchemeApp, NwcaliCertApp nwcaliCertApp, FileApp fileApp, UserSignApp userSignApp, ServiceOrderApp serviceOrderApp, StepVersionApp stepVersionApp, IOptions<AppSetting> appConfiguration) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
@@ -3697,6 +3920,8 @@ namespace OpenAuth.App
             _serviceOrderApp = serviceOrderApp;
             _stepVersionApp = stepVersionApp;
             _appConfiguration = appConfiguration;
+            _ddSettingHelp = dDSettingHelp;
+            _logger = logger;
         }
     }
 }
