@@ -779,10 +779,10 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="GeneratorCode"></param>
         /// <param name="FilterType">过滤类型 1:生产码  2:下位机</param>
-        /// <param name="dataType">数据类型 1:未启动  2:已启动</param>
+        /// <param name="dataType">数据类型 1:未启动  2:已启动 3.当前生产码</param>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<TableData> CanStartTestList(string GeneratorCode, int FilterType,int dataType)
+        public async Task<TableData> CanStartTestList(string GeneratorCode, int FilterType, int dataType)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
@@ -793,11 +793,12 @@ namespace OpenAuth.App
             var departmen = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
             long.TryParse(GeneratorCode.Split('-')[1], out long OrderNo);
             var onlineDevList = await (from a in UnitWork.Find<edge>(null)
-                                       join b in UnitWork.Find<edge_low>(null) on a.edge_guid equals b.edge_guid
+                                       join c in UnitWork.Find<edge_host>(null) on a.edge_guid equals c.edge_guid
+                                       join b in UnitWork.Find<edge_low>(null) on c.edge_guid equals b.edge_guid
                                        where a.department == departmen && a.status == 1
-                                       select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid, b.low_no }).ToListAsync();
+                                       select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid, b.low_no,c.bts_server_ip }).ToListAsync();
             var onlineLowGuid = onlineDevList.Select(c => c.low_guid).Distinct().ToList();
-            var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo== OrderNo).ToListAsync();
+            var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).ToListAsync();
             if (!bindDevList.Any() || !onlineDevList.Any())
             {
                 result.Data = new List<string> { };
@@ -806,55 +807,54 @@ namespace OpenAuth.App
             if (FilterType == 1)
             {
                 var hasTestCode = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.Department.Equals(departmen) && c.OrderNo == OrderNo).Select(c => c.GeneratorCode).Distinct().ToListAsync();
-                if (dataType == 1)
+                switch (dataType)
                 {
-                    result.Data = (from a in bindDevList.AsEnumerable()
-                                   join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
-                                   where !hasTestCode.Contains(a.GeneratorCode)
-                                   select new { a.GeneratorCode })
-                                   .OrderBy(c => c.GeneratorCode)
-                                   .Distinct()
-                                   .ToList();
-                }
-                else
-                {
-                    result.Data = (from a in bindDevList.AsEnumerable()
-                                   join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
-                                   where hasTestCode.Contains(a.GeneratorCode)
-                                   select new { a.GeneratorCode })
-                                   .OrderBy(c => c.GeneratorCode)
-                                   .Distinct()
-                                   .ToList();
+                    case 1:
+                        result.Data = (from a in bindDevList.AsEnumerable()
+                                       join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
+                                       where !hasTestCode.Contains(a.GeneratorCode) select new { a.GeneratorCode }).OrderBy(c => c.GeneratorCode).Distinct().ToList();
+                        break;
+                    case 2:
+                        result.Data = (from a in bindDevList.AsEnumerable()
+                                       join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
+                                       where hasTestCode.Contains(a.GeneratorCode) select new { a.GeneratorCode })
+                                       .OrderBy(c => c.GeneratorCode).Distinct().ToList();
+                        break;
+                    case 3:
+                        result.Data = (from a in bindDevList.AsEnumerable()
+                                       join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
+                                       where GeneratorCode==a.GeneratorCode
+                                       select new { a.GeneratorCode }).Distinct().ToList();
+                        break;
                 }
             }
             else
             {
-                var hasTestList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.Department.Equals(departmen) && c.OrderNo == OrderNo && onlineLowGuid.Contains(c.LowGuid)).Select(c => c.LowGuid).Distinct().ToListAsync();
-                if (dataType == 1)
+                var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.Department.Equals(departmen) && c.OrderNo == OrderNo && onlineLowGuid.Contains(c.LowGuid)).Select(c => c.LowGuid).Distinct().ToListAsync();
+                switch (dataType)
                 {
-                    result.Data = (from a in bindDevList.AsEnumerable()
-                                   join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
-                                   where !hasTestList.Contains(b.low_guid)
-                                   select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
-                                   .OrderBy(c => c.GeneratorCode)
-                                   .ThenBy(c => c.DevUid)
-                                   .ThenBy(c => c.low_no)
-                                   .Distinct()
-                                   .ToList();
+                    case 1:
+                        result.Data = (from a in bindDevList.AsEnumerable()
+                                       join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
+                                       where !hasTestLowList.Contains(b.low_guid)
+                                       select new { a.GeneratorCode, DevUid=b.dev_uid, b.low_no, EdgeGuid=b.edge_guid, SrvGuid=b.srv_guid, BtsServerIp=b.bts_server_ip, Guid=b.mid_guid, LowGuid=b.low_guid, UnitId=b.unit_id })
+                                       .OrderBy(c => c.GeneratorCode).ThenBy(c => c.DevUid).ThenBy(c => c.low_no).Distinct().ToList();
+                        break;
+                    case 2:
+                        result.Data = (from a in bindDevList.AsEnumerable()
+                                       join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
+                                       where hasTestLowList.Contains(b.low_guid)
+                                       select new { a.GeneratorCode, DevUid = b.dev_uid, b.low_no, EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, BtsServerIp = b.bts_server_ip, Guid = b.mid_guid, LowGuid = b.low_guid, UnitId = b.unit_id })
+                                       .OrderBy(c => c.GeneratorCode).ThenBy(c => c.DevUid).ThenBy(c => c.low_no).Distinct().ToList();
+                        break;
+                    case 3:
+                        result.Data = (from a in bindDevList.AsEnumerable()
+                                       join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
+                                       where GeneratorCode == a.GeneratorCode
+                                       select new { a.GeneratorCode, DevUid = b.dev_uid, b.low_no, EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, BtsServerIp = b.bts_server_ip, Guid = b.mid_guid, LowGuid = b.low_guid, UnitId = b.unit_id })
+                                       .OrderBy(c => c.GeneratorCode).ThenBy(c => c.DevUid).ThenBy(c => c.low_no).Distinct().ToList();
+                        break;
                 }
-                else
-                {
-                    result.Data = (from a in bindDevList.AsEnumerable()
-                                   join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
-                                   where hasTestList.Contains(b.low_guid)
-                                   select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
-                               .OrderBy(c => c.GeneratorCode)
-                               .ThenBy(c => c.DevUid)
-                               .ThenBy(c => c.low_no)
-                               .Distinct()
-                               .ToList();
-                }
-
             }
             return result;
         }
@@ -890,7 +890,7 @@ namespace OpenAuth.App
             if (FilterType == 1)
             {
                 result.Data = (from a in bindDevList.AsEnumerable()
-                               join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid 
+                               join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
                                select new { a.GeneratorCode })
                                .OrderBy(c => c.GeneratorCode)
                                .Distinct()
@@ -900,7 +900,7 @@ namespace OpenAuth.App
             {
                 result.Data = (from a in bindDevList.AsEnumerable()
                                join b in onlineDevList.AsEnumerable() on a.LowGuid equals b.low_guid
-                               select new { a.GeneratorCode, DevUid=b.dev_uid, b.low_no, EdgeGuid= b.edge_guid, SrvGuid=b.srv_guid, a.BtsServerIp, Guid=b.mid_guid, LowGuid= b.low_guid, UnitId=b.unit_id })
+                               select new { a.GeneratorCode, DevUid = b.dev_uid, b.low_no, EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, a.BtsServerIp, Guid = b.mid_guid, LowGuid = b.low_guid, UnitId = b.unit_id })
                                .OrderBy(c => c.GeneratorCode)
                                .ThenBy(c => c.DevUid)
                                .ThenBy(c => c.low_no)
@@ -926,11 +926,11 @@ namespace OpenAuth.App
             }
             var departmen = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
             return await (from a in UnitWork.Find<DeviceBindMap>(null)
-                          join c in UnitWork.Find<edge_low>(null) on a.LowGuid  equals c.low_guid 
+                          join c in UnitWork.Find<edge_low>(null) on a.LowGuid equals c.low_guid
                           join b in UnitWork.Find<edge_channel>(null) on new { c.edge_guid, c.srv_guid, c.dev_uid, c.low_guid } equals new { b.edge_guid, b.srv_guid, b.dev_uid, b.low_guid }
                           join d in UnitWork.Find<edge>(null) on c.edge_guid equals d.edge_guid
                           join e in UnitWork.Find<edge_host>(null) on d.edge_guid equals e.edge_guid
-                          where list.Contains(a.GeneratorCode) && d.department==departmen && d.status==1
+                          where list.Contains(a.GeneratorCode) && d.department == departmen && d.status == 1
                           select new StartDeviceListResp { EdgeGuid = b.edge_guid, GeneratorCode = a.GeneratorCode, BtsServerIp = e.bts_server_ip, SrvGuid = e.srv_guid, MidGuid = c.mid_guid, RangeCurrArray = c.range_curr_array, dev_uid = b.dev_uid, unit_id = b.unit_id, bts_id = b.bts_id, LowGuid = b.low_guid }).ToListAsync();
         }
 
@@ -952,8 +952,8 @@ namespace OpenAuth.App
             var devuidList = list.Select(c => c.DevUid).ToList();
             var lowList = list.Select(c => c.LowGuid).ToList();
             return await (from a in UnitWork.Find<DeviceBindMap>(null)
-                          join c in UnitWork.Find<edge_low>(null) on a.LowGuid  equals c.low_guid 
-                          join b in UnitWork.Find<edge_channel>(null) on new { c.edge_guid,c.srv_guid, c.dev_uid, c.low_guid } equals new { b.edge_guid, b.srv_guid,  b.dev_uid, b.low_guid }
+                          join c in UnitWork.Find<edge_low>(null) on a.LowGuid equals c.low_guid
+                          join b in UnitWork.Find<edge_channel>(null) on new { c.edge_guid, c.srv_guid, c.dev_uid, c.low_guid } equals new { b.edge_guid, b.srv_guid, b.dev_uid, b.low_guid }
                           join d in UnitWork.Find<edge>(null) on c.edge_guid equals d.edge_guid
                           join e in UnitWork.Find<edge_host>(null) on d.edge_guid equals e.edge_guid
                           where edgeList.Contains(b.edge_guid) && srvGuidList.Contains(b.srv_guid) && devuidList.Contains(b.dev_uid) && lowList.Contains(b.low_guid)
@@ -1389,7 +1389,7 @@ namespace OpenAuth.App
                         }
                         else if (1000 <= k && k <= 999999)
                         {
-                            var current = k ;
+                            var current = k;
                             dic.Add(m, current);
                         }
                         else if (1000000 <= k && k <= 999999999)
