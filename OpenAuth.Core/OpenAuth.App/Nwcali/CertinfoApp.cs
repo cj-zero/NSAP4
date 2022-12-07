@@ -1247,7 +1247,7 @@ namespace OpenAuth.App
             var jobIds = entrusted.Select(c => c.JodId).ToList();//已经生成过的流程ID
             //var deliveryList = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货").Select(c => new { c.sbo_id, c.base_entry, c.base_type, c.job_data, c.job_id, c.step_id, c.job_state, c.sync_stat, c.sbo_itf_return }).ToListAsync();
             var deliveryList = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货" && c.step_id == 455).Select(c => c.job_id).ToListAsync();
-            var deliveryJob = await UnitWork.Find<wfa_job>(c => deliveryList.Contains(c.job_id)).Where(c => !jobIds.Contains(c.job_id)).Select(c => new { c.sbo_id, c.base_entry, c.base_type, c.job_data, c.job_id, c.step_id, c.job_state, c.sync_stat, c.sbo_itf_return }).ToListAsync();//在选择序列号环节
+            var deliveryJob = await UnitWork.Find<wfa_job>(c => !jobIds.Contains(c.job_id) && deliveryList.Contains(c.job_id)).Select(c => new { c.sbo_id, c.base_entry, c.base_type, c.job_data, c.job_id, c.step_id, c.job_state, c.sync_stat, c.sbo_itf_return }).ToListAsync();//在选择序列号环节
             List<Entrustment> entrustments = new List<Entrustment>();
             #region 生成备料单
             try
@@ -1343,111 +1343,119 @@ namespace OpenAuth.App
                 #region 物料重置
                 var finlishJobs = await UnitWork.Find<wfa_job>(null).Where(c => c.job_type_id == 1 && c.job_nm == "销售交货" && c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToListAsync();//选择了序列号/结束的交货流程并且同步完成
                 entrustments = entrustments.Where(c => finlishJobs.Contains(c.JodId) && c.Status == 1).ToList();
-                for (int i = 0; i < entrustments.Count; i++)
+                if (deliveryJob.Count > 0)
                 {
-                    var item1 = entrustments[i];
-                    var job = deliveryJob.Where(c => c.job_id == item1.JodId).FirstOrDefault();
-                    var serialNumber = await (from a in UnitWork.Find<OITL>(null)
-                                              join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
-                                              from b in ab.DefaultIfEmpty()
-                                              join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
-                                              from c in bc.DefaultIfEmpty()
-                                              where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
-                                              select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
-
-                    int line = 0, sort = 0;
-                    foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
+                    for (int i = 0; i < entrustments.Count; i++)
                     {
-                        int line2 = 0;
-                        if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
+                        var item1 = entrustments[i];
+                        var job1 = deliveryJob.Where(c => c.job_id == item1.JodId).FirstOrDefault();
+                        var serialNumber = await (from a in UnitWork.Find<OITL>(null)
+                                                  join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
+                                                  from b in ab.DefaultIfEmpty()
+                                                  join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
+                                                  from c in bc.DefaultIfEmpty()
+                                                  where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job1.sbo_itf_return
+                                                  select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
+
+                        int line = 0, sort = 0;
+                        foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
                         {
-                            ++line;
-                            foreach (var items in groupItem)
+                            int line2 = 0;
+                            if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
                             {
-                                ++line2; ++sort;
-                                foreach (EntrustmentDetail entrustmentDetail in item1.EntrustmentDetails)
+                                ++line;
+                                foreach (var items in groupItem)
                                 {
-                                    entrustmentDetail.EntrustmentId = item1.Id;
+                                    ++line2; ++sort;
+                                    foreach (EntrustmentDetail entrustmentDetail in item1.EntrustmentDetails)
+                                    {
+                                        entrustmentDetail.EntrustmentId = item1.Id;
+                                        entrustmentDetail.ItemCode = groupItem.Key;
+                                        entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
+                                        entrustmentDetail.SerialNumber = items.MnfSerial;
+                                        entrustmentDetail.Quantity = 1;
+                                        entrustmentDetail.LineNum = line + "-" + line2;
+                                        entrustmentDetail.Sort = sort;
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                }
+               
+                #endregion
+
+                #region 生成委托单
+                // var finlishJob = deliveryList.Where(c => c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToList();
+                var finlishEntrusted = entrusted.Where(c => finlishJobs.Contains(c.JodId) && c.Status == 1).ToList();//选择了序列号/结束的交货流程并且同步完成
+                if (deliveryJob.Count > 0)
+                {
+                    for (int i = 0; i < finlishEntrusted.Count; i++)
+                    {
+                        var item = finlishEntrusted[i];
+                        var job = deliveryJob.Where(c => c.job_id == item.JodId).FirstOrDefault();
+                        var serialNumber = await (from a in UnitWork.Find<OITL>(null)
+                                                  join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
+                                                  from b in ab.DefaultIfEmpty()
+                                                  join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
+                                                  from c in bc.DefaultIfEmpty()
+                                                  where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
+                                                  select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
+
+                        int line = 0, sort = 0;
+                        List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
+                        foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
+                        {
+                            int line2 = 0;
+                            var deleteData = await UnitWork.Find<EntrustmentDetail>(x => x.EntrustmentId == item.Id)?.ToArrayAsync();
+                            if (deleteData != null && deleteData.Count() > 0)
+                            {
+                                try
+                                {
+                                    await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
+                                    await UnitWork.SaveAsync();
+                                }
+                                catch (DbUpdateConcurrencyException ex)
+                                {
+                                    throw new Exception("数据删除异常", ex);
+                                }
+                            }
+
+                            if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
+                            {
+                                ++line;
+                                foreach (var items in groupItem)
+                                {
+                                    ++line2; ++sort;
+                                    EntrustmentDetail entrustmentDetail = new EntrustmentDetail();
+                                    entrustmentDetail.EntrustmentId = item.Id;
                                     entrustmentDetail.ItemCode = groupItem.Key;
                                     entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
                                     entrustmentDetail.SerialNumber = items.MnfSerial;
                                     entrustmentDetail.Quantity = 1;
                                     entrustmentDetail.LineNum = line + "-" + line2;
                                     entrustmentDetail.Sort = sort;
+                                    entrustmentDetail.Id = Guid.NewGuid().ToString();
+                                    detail.Add(entrustmentDetail);
                                 }
                             }
-
                         }
+
+                        await UnitWork.BatchAddAsync<EntrustmentDetail>(detail.ToArray());
+                        await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
+                        {
+                            DeliveryId = job.sbo_itf_return,
+                            Status = 2,//待处理
+                            EntrustedUserId = item.ContactsId,
+                            EntrustedUser = item.Contacts,
+                            EntrustedDate = DateTime.Now,
+                            UpdateDate = DateTime.Now
+                        });
+                        await UnitWork.SaveAsync();
                     }
                 }
-                #endregion
-
-                #region 生成委托单
-                // var finlishJob = deliveryList.Where(c => c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToList();
-                var finlishEntrusted = entrusted.Where(c => finlishJobs.Contains(c.JodId) && c.Status == 1).ToList();//选择了序列号/结束的交货流程并且同步完成
-                for (int i = 0; i < finlishEntrusted.Count; i++)
-                {
-                    var item = finlishEntrusted[i];
-                    var job = deliveryJob.Where(c => c.job_id == item.JodId).FirstOrDefault();
-                    var serialNumber = await (from a in UnitWork.Find<OITL>(null)
-                                              join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
-                                              from b in ab.DefaultIfEmpty()
-                                              join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
-                                              from c in bc.DefaultIfEmpty()
-                                              where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
-                                              select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
-
-                    int line = 0, sort = 0;
-                    List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
-                    foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
-                    {
-                        int line2 = 0;
-                        var deleteData = await UnitWork.Find<EntrustmentDetail>(x => x.EntrustmentId == item.Id)?.ToArrayAsync();
-                        if (deleteData != null && deleteData.Count() > 0)
-                        {
-                            try
-                            {
-                                await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
-                                await UnitWork.SaveAsync();
-                            }
-                            catch (DbUpdateConcurrencyException ex)
-                            {
-                                throw new Exception("数据删除异常", ex);
-                            }
-                        }
-
-                        if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
-                        {
-                            ++line;
-                            foreach (var items in groupItem)
-                            {
-                                ++line2; ++sort;
-                                EntrustmentDetail entrustmentDetail = new EntrustmentDetail();
-                                entrustmentDetail.EntrustmentId = item.Id;
-                                entrustmentDetail.ItemCode = groupItem.Key;
-                                entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
-                                entrustmentDetail.SerialNumber = items.MnfSerial;
-                                entrustmentDetail.Quantity = 1;
-                                entrustmentDetail.LineNum = line + "-" + line2;
-                                entrustmentDetail.Sort = sort;
-                                entrustmentDetail.Id = Guid.NewGuid().ToString();
-                                detail.Add(entrustmentDetail);
-                            }
-                        }
-                    }
-
-                    await UnitWork.BatchAddAsync<EntrustmentDetail>(detail.ToArray());
-                    await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
-                    {
-                        DeliveryId = job.sbo_itf_return,
-                        Status = 2,//待处理
-                        EntrustedUserId = item.ContactsId,
-                        EntrustedUser = item.Contacts,
-                        EntrustedDate = DateTime.Now,
-                        UpdateDate = DateTime.Now
-                    });
-                    await UnitWork.SaveAsync();
-                }
+               
                 #endregion
 
                 #region 同步状态
@@ -1633,7 +1641,7 @@ namespace OpenAuth.App
                         }
                         else
                         {
-                            _logger.LogError("物料明细为空");
+                            _logger.LogError("委托单物料明细为空");
                         }
 
                         ControlDataList controlDataList = new ControlDataList();
@@ -1644,19 +1652,19 @@ namespace OpenAuth.App
                             ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
                             if (returnResult.status != 200)
                             {
-                                _logger.LogError("调用2接口失败：" + returnResult.message);
+                                _logger.LogError("委托单调用2接口失败：" + returnResult.message);
                             }
                         }
                     }
                 }
                 else 
                 {
-                    _logger.LogError("调用1接口失败：" + calibrations.message);
+                    _logger.LogError("委托单调用1接口失败：" + calibrations.message);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError("调用接口失败：" + ex.Message.ToString());
+                _logger.LogError("委托单调用接口失败：" + ex.Message.ToString());
             }
             #endregion
         }
