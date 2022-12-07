@@ -586,6 +586,7 @@ namespace OpenAuth.App.ContractManager
                                          from b in ab.DefaultIfEmpty()
                                          select new ContractMsgHelp
                                          {
+                                             Id = a.Id,
                                              ContractNo = a.ContractNo,
                                              ContractTypeName = a.ContractTypeName,
                                              FileTypeName = b == null ? "" : b.FileType,
@@ -602,6 +603,7 @@ namespace OpenAuth.App.ContractManager
                                      from b in ab.DefaultIfEmpty()
                                      select new ContractMsgHelp
                                      {
+                                         Id = a.Id,
                                          ContractNo = a.ContractNo,
                                          ContractTypeName = a.ContractTypeName,
                                          FileTypeName = b == null ? "" : b.Name,

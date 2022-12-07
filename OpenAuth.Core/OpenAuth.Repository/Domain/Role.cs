@@ -67,5 +67,11 @@ namespace OpenAuth.Repository.Domain
         [Description("身份标识")]
         public string Identity { get; set; }
 
+        /// <summary>
+        /// 角色标识
+        /// </summary>
+        [Description("角色标识")]
+        public string RoleKey { get; set; }
+
     }
 }

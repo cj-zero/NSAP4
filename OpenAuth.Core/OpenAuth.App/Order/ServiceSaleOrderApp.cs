@@ -86,6 +86,278 @@ namespace OpenAuth.App.Order
             _saleBusinessMethodHelp = saleBusinessMethodHelp;
         }
 
+        #region 销售报价单查询
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pageSize"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="filterQuery"></param>
+        /// <param name="sortname"></param>
+        /// <param name="sortorder"></param>
+        /// <param name="type"></param>
+        /// <param name="ViewFull"></param>
+        /// <param name="ViewSelf"></param>
+        /// <param name="UserID"></param>
+        /// <param name="SboID"></param>
+        /// <param name="ViewSelfDepartment"></param>
+        /// <param name="DepID"></param>
+        /// <param name="ViewCustom"></param>
+        /// <param name="ViewSales"></param>
+        /// <param name="sqlcont"></param>
+        /// <param name="sboname"></param>
+        /// <returns></returns>
+        public TableData SelectOrderDraftOQUTInfo(int pageSize, int pageIndex, QuerySalesQuotationReq query, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, string sqlcont, string sboname)
+        {
+            TableData tableData = null;
+            int rowCount = 0;
+            bool IsSql = true;
+            string sortString = string.Empty;
+            string filterString = string.Empty;
+            string line = string.Empty;
+            int uSboId = SboID;
+            //排序
+            if (string.IsNullOrWhiteSpace(query.SortName))
+            {
+                sortString = string.Format("{0} {1}", "a.docentry", "desc".ToUpper());
+            }
+            else
+            {
+                sortString = string.Format("{0} {1}", query.SortName, query.SortOrder);
+            }
+            string dRowData = string.Empty;
+            #region 搜索条件
+            //账
+            if (query.Sboid > 0)
+            {
+                if (query.Sboid == SboID)
+                {
+                    IsSql = true;
+                }
+                else
+                {
+                    IsSql = false;
+                }
+            }
+
+            //单号条件
+            if (!string.IsNullOrWhiteSpace(query.DocEntry))
+            {
+                filterString += string.Format("a.DocEntry LIKE '{0}' AND ", query.DocEntry.Trim());
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.CardCode))
+            {
+                filterString += string.Format("(a.CardCode LIKE '%{0}%' OR a.CardName LIKE '%{0}%') AND ", query.CardCode.Trim());
+            }
+            if (!string.IsNullOrWhiteSpace(query.DocStatus))
+            {
+                if (query.DocStatus == "ON")
+                {
+                    filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') AND ");
+                }
+                if (query.DocStatus == "OY")
+                {
+                    filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') AND ");
+                }
+                if (query.DocStatus == "CY")
+                {
+                    filterString += string.Format(" a.CANCELED = 'Y' AND ");
+                }
+                if (query.DocStatus == "CN")
+                {
+                    filterString += string.Format(" (a.DocStatus = 'C' AND a.CANCELED = 'N') AND ");
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(query.Comments))
+            {
+                filterString += string.Format("a.Comments LIKE '%{0}%' AND ", query.Comments);
+            }
+            if (!string.IsNullOrWhiteSpace(query.SlpName))
+            {
+                filterString += string.Format("c.SlpName LIKE '%{0}%' AND ", query.SlpName.Trim());
+            }
+            //时间区间
+            if (!string.IsNullOrWhiteSpace(query.FirstTime) && !string.IsNullOrWhiteSpace(query.LastTime))
+            {
+                filterString += string.Format("a.UpdateDate BETWEEN '{0}' AND '{1}' AND ", query.FirstTime, query.LastTime);
+            }
+
+            if (type == "ORDR")
+            {
+                if (!string.IsNullOrWhiteSpace(query.Indicator))
+                {
+                    filterString += string.Format("a.Indicator = '{0}' AND ", query.Indicator);
+                }
+            }
+
+
+            #endregion
+
+            #region 根据不同的单据显示不同的内容
+            if (!string.IsNullOrEmpty(type))
+            {
+                if (type == "OQUT") { type = "sale_oqut"; line = "sale_qut1"; }//销售报价单
+                else if (type == "ORDR") { type = "sale_ordr"; line = "sale_rdr1"; }//销售订单
+                else if (type == "ODLN") { type = "sale_odln"; line = "sale_dln1"; }//销售交货单
+                else if (type == "OINV") { type = "sale_oinv"; line = "sale_inv1"; }//应收发票
+                else if (type == "ORDN") { type = "sale_ordn"; line = "sale_rdn1"; }//销售退货单
+                else if (type == "ORIN") { type = "sale_orin"; line = "sale_rin1"; }//应收贷项凭证
+                else if (type == "OPQT") { type = "buy_opqt"; line = "buy_pqt1"; }//采购报价单
+                else if (type == "OPOR") { type = "buy_opor"; line = "buy_por1"; }//采购订单
+                else if (type == "OPDN") { type = "buy_opdn"; line = "buy_pdn1"; }//采购收货单
+                else if (type == "OPCH") { type = "buy_opch"; line = "buy_pch1"; }//应付发票
+                else if (type == "ORPD") { type = "buy_orpd"; line = "buy_rpd1"; }//采购退货单
+                else if (type == "ORPC") { type = "buy_orpc"; line = "buy_rpc1"; }//应付贷项凭证
+                else { type = "sale_oqut"; line = "sale_qut1"; }
+            }
+            #endregion
+
+            #region 判断权限
+            string arr_roles = UnitWork.ExcuteSql<RolesDto>(ContextType.NsapBaseDbContext, $"SELECT a.role_id Id,b.role_nm Name FROM nsap_base.base_user_role AS a INNER JOIN nsap_base.base_role AS b ON a.role_id=b.role_id WHERE a.user_id={UserID}", CommandType.Text, null).FirstOrDefault()?.Name;
+            if ((line == "buy_pqt1" || line == "buy_por1" || line == "buy_pdn1" || line == "buy_pch1" || line == "buy_rpd1" || line == "buy_rpc1") && ((!arr_roles.Contains("物流文员")) && (!arr_roles.Contains("系统管理员"))))//若不含有物流文员角色，则则屏蔽运输采购单
+            {
+                filterString += string.Format(" d.QryGroup1='N' AND ");
+            }
+            if (ViewSelfDepartment && !ViewFull)
+            {
+                System.Data.DataTable rDataRows;
+                DataTable rdepRows = new DataTable();
+                if (line == "buy_por1" || line == "buy_pdn1" || line == "buy_pqt1" || line == "buy_pch1" || line == "buy_rpd1" || line == "buy_rpc1")
+                {
+                    //查询部门映射关系表
+                    rdepRows = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT dep_id2 FROM nsap_bone.base_dep_map  WHERE dep_id1={DepID} and map_type_id=1", CommandType.Text, null);
+                }
+                if (rdepRows.Rows.Count > 0)
+                {
+                    string dep_ids = string.Empty;
+                    foreach (DataRow item in rdepRows.Rows)
+                    {
+                        dep_ids += item[0].ToString() + ",";
+                    }
+                    //部门查询
+                    rDataRows = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT a.sale_id,a.tech_id FROM nsap_base.sbo_user a LEFT JOIN nsap_base.base_user_detail b ON a.user_id = b.user_id WHERE b.dep_id in ({dep_ids.TrimEnd(',')}) AND a.sbo_id = {SboID}", CommandType.Text, null);
+                }
+                else
+                {
+                    //根据部门ID获取销售员ID
+                    rDataRows = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT a.sale_id,a.tech_id FROM nsap_base.sbo_user a LEFT JOIN nsap_base.base_user_detail b ON a.user_id = b.user_id WHERE b.dep_id = {DepID} AND a.sbo_id = {SboID}", CommandType.Text, null);
+                }
+                if (rDataRows.Rows.Count > 0)
+                {
+                    filterString += string.Format(" (a.SlpCode IN(");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][0]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(") OR d.DfTcnician IN (");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][1]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(")) AND ");
+                }
+            }
+            else if (ViewSelf && !ViewFull && !ViewSelfDepartment)
+            {
+                System.Data.DataTable rDataRowsSlp = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={UserID} AND sbo_id={SboID}", CommandType.Text, null); ;
+                if (rDataRowsSlp.Rows.Count > 0)
+                {
+                    string slpCode = rDataRowsSlp.Rows[0][0].ToString();
+                    string slpTcnician = rDataRowsSlp.Rows[0][1].ToString();
+                    filterString += string.Format(" (a.SlpCode = {0}) AND ", slpCode);// OR d.DfTcnician={1}   , slpTcnician  不允许售后查看业务员的单
+                }
+                else
+                {
+                    filterString = string.Format(" (a.SlpCode = {0}) AND ", 0);
+                }
+            }
+            #endregion
+            if (!string.IsNullOrEmpty(filterString))
+            {
+                filterString = filterString.Substring(0, filterString.Length - 5);
+            }
+            if (IsSql)
+            {
+                if (!ViewSelf)
+                {
+                    filterString += "1 = 2";
+                }
+                //视图查询数据
+                tableData = SelectOrdersOQUTInfo(out rowCount, pageSize, pageIndex, filterString, sortString, type, line, ViewCustom, ViewSales, sqlcont, sboname);
+
+            }
+
+            return tableData;
+        }
+        /// <summary>
+        /// 查看视图【主页面 - 帐套开启】
+        /// </summary>
+        /// <returns></returns>
+        public TableData SelectOrdersOQUTInfo(out int rowCounts, int pageSize, int pageIndex, string filterQuery, string orderName, string type, string line, bool ViewCustom, bool ViewSales, string sqlcont, string sboname)
+        {
+            TableData tableData = new TableData();
+            StringBuilder tableName = new StringBuilder();
+            StringBuilder filedName = new StringBuilder(); int Custom = 0; int Sales = 0;
+            if (ViewCustom) { Custom = 1; }
+            if (ViewSales) { Sales = 1; }
+            filedName.Append(" a.UpdateDate,a.DocEntry,a.CardCode,CASE WHEN 1 = " + Custom + " THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Sales + " THEN a.DocTotal ELSE 0 END AS DocTotal,CASE WHEN 1 = " + Sales + " THEN (a.DocTotal-a.PaidToDate) ELSE 0 END AS OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.PymntGroup,'' as billID,'' AS ActualDocDueDate ");
+            if (type.ToLower() == "sale_ordr" || type.ToLower() == "opor")
+            {
+                filedName.Append(",'' as PrintNo,'' as PrintNumIndex");
+            }
+
+            if (type == "sale_oqut")
+            {
+                filedName.Append(",'0'  as AttachFlag ");
+            }
+            
+            tableName.AppendFormat("{0}." + type + " a ", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.crm_oslp c ON a.SlpCode = c.SlpCode AND a.sbo_id=c.sbo_id", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.crm_ocrd d ON a.CardCode = d.CardCode AND a.sbo_id=d.sbo_id", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.crm_octg e ON a.GroupNum = e.GroupNum AND a.sbo_id=e.sbo_id", "nsap_bone");
+            DataTable dt = SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
+            if (type == "sale_oqut")
+            {
+                if (dt.Rows.Count > 0)
+                {
+                    //获取订单号
+                    List<uint> orderNos = (from d in dt.AsEnumerable() select d.Field<uint>("DocEntry")).ToList();
+                    string orderNo = string.Join(",", orderNos);
+                    if (!string.IsNullOrWhiteSpace(orderNo))
+                    {
+                        string strSql2 = string.Format("SELECT  DISTINCT 1 value,T0.docEntry docEntry  FROM nsap_oa.file_main AS T0 ");
+                        strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
+                        strSql2 += string.Format(@"INNER JOIN (
+SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.func_id = b.func_id LEFT JOIN nsap_base.base_page c ON c.page_id = b.page_id WHERE c.page_url = 'sales/SalesQuotation.aspx'
+) as t ON t.type_id = T0.file_type_id ");
+                        strSql2 += string.Format("WHERE T0.docEntry  in( {0} ) ", orderNo);
+                        List<ResultOrderDto> fileflags = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null);
+                        if (fileflags != null && fileflags.Count > 0)
+                        {
+                            DataRow[] dataRowS = dt.Select("DocEntry in (" + orderNo + ")");
+                            foreach (DataRow temprow in dataRowS)
+                            {
+                                var fileflag = fileflags.FirstOrDefault(zw => zw.docEntry.ToString() == temprow["DocEntry"].ToString());
+                                if (fileflag != null)
+                                {
+                                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            tableData.Data = dt.Tolist<SalesDraftDto>();
+            tableData.Count = rowCounts;
+            return tableData;
+        }
+        #endregion
+
 
         /// <summary>
         /// 
@@ -6558,7 +6830,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             //    List<int> docEntrys = _orderDraftServiceApp.GetDocEntrys(model.NewDocEntry);
             //    filterString += string.Format("a.DocEntry in ({0}) AND ", string.Join(",", docEntrys, 0, docEntrys.Count()));
             //}
-
+            filterString += string.Format("a.sbo_id = {0} AND e.sbo_id = {0} AND c.sbo_id = {0} AND d.sbo_id = {0} AND ", Define.SBO_ID);
             if (!string.IsNullOrWhiteSpace(model.IsContract))
             {
                 User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
@@ -6769,18 +7041,18 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             strSql.Append(" a.UpdateDate,a.DocEntry,a.CardCode,CASE WHEN 1 = " + Custom + " THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Sales + " THEN a.DocTotal ELSE 0 END AS DocTotal,CASE WHEN 1 = " + Sales + " THEN (a.DocTotal-a.PaidToDate) ELSE 0 END AS OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.PymntGroup,'' as billID,'' AS ActualDocDueDate ");
             strSql.Append(",'10011111-28a9-4767-854f-77246e36d24d1111111111111111111' as PrintNo,'00' as PrintNumIndex,'' as billStatus,'' as bonusStatus,'' as proStatus,n.Name as IndicatorName,'*********************************' as EmpAcctWarn,'' as AttachFlag,a.U_DocRCTAmount");
             strSql.Append(", '0000000000000' as TransFee,a.DocCur FROM ");
-            strSql.AppendFormat("" + sboname + "ORDR a ");
-            strSql.AppendFormat(" LEFT JOIN " + sboname + "OSLP c ON a.SlpCode = c.SlpCode");
-            strSql.AppendFormat(" LEFT JOIN " + sboname + "OCRD d ON a.CardCode = d.CardCode");
-            strSql.AppendFormat(" LEFT JOIN " + sboname + "OCTG e ON a.GroupNum = e.GroupNum");
-            strSql.AppendFormat(" LEFT JOIN " + sboname + "OIDC  n ON a.Indicator=n.Code");
+            strSql.AppendFormat("nsap_bone.sale_ordr a ");
+            strSql.AppendFormat(" LEFT JOIN nsap_bone.crm_oslp c ON a.SlpCode = c.SlpCode");
+            strSql.AppendFormat(" LEFT JOIN nsap_bone.crm_ocrd d ON a.CardCode = d.CardCode");
+            strSql.AppendFormat(" LEFT JOIN nsap_bone.crm_octg e ON a.GroupNum = e.GroupNum");
+            strSql.AppendFormat(" LEFT JOIN nsap_bone.crm_oidc  n ON a.Indicator=n.Code");
             if (!string.IsNullOrEmpty(filterQuery))
             {
                 strSql.Append(" WHERE " + filterQuery + "");
             }
 
             strSql.Append(" ) A WHERE A.rn BETWEEN  " + (((pageIndex - 1) * pageSize) + 1)+ " AND " + (pageIndex * pageSize) + " ");
-            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
             rowCounts = Convert.ToInt32(dt.Rows.Count == 0 ? 0 : (dt.Rows[0][1]));
             //filedName.Append(" a.UpdateDate,a.DocEntry,a.CardCode,CASE WHEN 1 = " + Custom + " THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Sales + " THEN a.DocTotal ELSE 0 END AS DocTotal,CASE WHEN 1 = " + Sales + " THEN (a.DocTotal-a.PaidToDate) ELSE 0 END AS OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.PymntGroup,'' as billID,'' AS ActualDocDueDate ");
             //filedName.Append(",'10011111-28a9-4767-854f-77246e36d24d1111111111111111111' as PrintNo,'00' as PrintNumIndex,'' as billStatus,'' as bonusStatus,'' as proStatus,n.Name as IndicatorName,'*********************************' as EmpAcctWarn,'' as AttachFlag,a.U_DocRCTAmount");
@@ -6808,7 +7080,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 ordrrow["billStatus"] = "";
                 ordrrow["proStatus"] = "";
                 ordrrow["EmpAcctWarn"] = "";
-                ordrrow["AttachFlag"] = "0";
+                ordrrow["AttachFlag"] = "";
                 ordrrow["TransFee"] = "0.00";
                 //string orderid = ordrrow["DocEntry"].ToString();
                 //var dataTable = GetDataTableV2(orderid, nsapsboId.ToString(), typeidstr);
@@ -11185,7 +11457,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                         continue;
                     }
                     var specJob = UnitWork.ExcuteSql<SaleOrderUtilityView>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text, null);
-     
+
                     if (specJob.FirstOrDefault() != null)
                     {
                         datarow["Process"] = specJob.FirstOrDefault()._System_Progress.ToString();

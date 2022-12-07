@@ -102,6 +102,11 @@ namespace OpenAuth.App.Request
     public class ContractMsgHelp
     {
         /// <summary>
+        /// Id
+        /// </summary>
+        public string Id { get; set; }
+
+        /// <summary>
         /// 合同编号
         /// </summary>
         public string ContractNo { get; set; }

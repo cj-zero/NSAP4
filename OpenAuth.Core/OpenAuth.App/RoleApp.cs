@@ -38,35 +38,58 @@ namespace OpenAuth.App
           
             Role role = obj;
             role.CreateTime = DateTime.Now;
-            Repository.Add(role);
-            obj.Id = role.Id;   //要把保存后的ID存入view
-           
-            //如果当前账号不是SYSTEM，则直接分配
-            var loginUser = _auth.GetCurrentUser();
-            if (loginUser.User.Account != Define.SYSTEM_USERNAME)
+            List<Role> roles = new List<Role>();
+            if (string.IsNullOrEmpty(obj.RoleKey))
             {
-                _revelanceApp.Assign(new AssignReq
-                {
-                    type = Define.USERROLE,
-                    firstId = loginUser.User.Id,
-                    secIds = new[] {role.Id}
-                });
+               roles = UnitWork.Find<Role>(r => r.RoleKey == obj.RoleKey).ToList();
             }
-            
 
+            if (roles != null && roles.Count() > 0)
+            {
+                throw new Exception("角色标识不允许重复");
+            }
+            else
+            {
+                Repository.Add(role);
+                obj.Id = role.Id;   //要把保存后的ID存入view
+
+                //如果当前账号不是SYSTEM，则直接分配
+                var loginUser = _auth.GetCurrentUser();
+                if (loginUser.User.Account != Define.SYSTEM_USERNAME)
+                {
+                    _revelanceApp.Assign(new AssignReq
+                    {
+                        type = Define.USERROLE,
+                        firstId = loginUser.User.Id,
+                        secIds = new[] { role.Id }
+                    });
+                }
+            }
         }
         
         public void Update(RoleView obj)
         {
             Role role = obj;
-
-            UnitWork.Update<Role>(u => u.Id == obj.Id, u => new Role
+            List<Role> roles = new List<Role>();
+            if (string.IsNullOrEmpty(obj.RoleKey))
             {
-                Name = role.Name,
-                Status = role.Status,
-                Identity = role.Identity
-            });
+                roles = UnitWork.Find<Role>(r => r.RoleKey == obj.RoleKey).ToList();
+            }
 
+            if (roles != null && roles.Count() > 1)
+            {
+                throw new Exception("角色标识不允许重复");
+            }
+            else
+            {
+                UnitWork.Update<Role>(u => u.Id == obj.Id, u => new Role
+                {
+                    Name = role.Name,
+                    Status = role.Status,
+                    Identity = role.Identity,
+                    RoleKey = role.RoleKey
+                });
+            }
         }
 
 
