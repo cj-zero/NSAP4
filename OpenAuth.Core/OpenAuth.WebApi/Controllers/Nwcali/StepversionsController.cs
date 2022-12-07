@@ -790,11 +790,11 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 
+        /// WmsAccessToken
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public TableData sk()
+        public TableData WmsAccessToken()
         {
             var result = new TableData();
             result.Data = _app.WmsAccessToken();
