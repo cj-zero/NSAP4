@@ -1121,6 +1121,7 @@ namespace OpenAuth.App
                 .WhereIf(request.StartTime != null, c => c.CreateDate >= request.StartTime.Value.Date)
                 .WhereIf(request.EndTime != null, c => c.CreateDate < request.EndTime.Value.AddDays(1).Date);
 
+            query = query.OrderByDescending(r => r.UpdateDate);
             var list = await query.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
             result.Data = list;
             result.Count = await query.CountAsync();
@@ -1237,247 +1238,254 @@ namespace OpenAuth.App
         /// 拉取销售交货生成备料单
         /// </summary>
         /// <returns></returns>
-         public async Task SynSalesDelivery()
+
+        public async Task SynSalesDelivery()
         {
             //销售交货流程 并处于序列号选择环节
             //var deliveryJob = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货" ).ToListAsync(); 
-            var entrusted = await UnitWork.Find<Entrustment>(c => c.Status != 5).ToListAsync();
+            var entrusted = await UnitWork.Find<Entrustment>(c => c.Status != 5).Select(r => new { r.Id, r.JodId, r.Status, r.ContactsId, r.Contacts }).ToListAsync();
             var jobIds = entrusted.Select(c => c.JodId).ToList();//已经生成过的流程ID
-            var deliveryList = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货").Select(c => new { c.sbo_id, c.base_entry, c.base_type, c.job_data, c.job_id, c.step_id, c.job_state, c.sync_stat, c.sbo_itf_return }).ToListAsync();
-            var deliveryJob = deliveryList.Where(c => !jobIds.Contains(c.job_id) && c.step_id == 455).ToList();//在选择序列号环节
+            //var deliveryList = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货").Select(c => new { c.sbo_id, c.base_entry, c.base_type, c.job_data, c.job_id, c.step_id, c.job_state, c.sync_stat, c.sbo_itf_return }).ToListAsync();
+            var deliveryList = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货" && c.step_id == 455).Select(c => c.job_id).ToListAsync();
+            var deliveryJob = await UnitWork.Find<wfa_job>(c => !jobIds.Contains(c.job_id) && deliveryList.Contains(c.job_id)).Select(c => new { c.sbo_id, c.base_entry, c.base_type, c.job_data, c.job_id, c.step_id, c.job_state, c.sync_stat, c.sbo_itf_return }).ToListAsync();//在选择序列号环节
             List<Entrustment> entrustments = new List<Entrustment>();
             #region 生成备料单
-            if (deliveryJob.Count > 0)
+            try
             {
-                foreach (var item in deliveryJob)
+                if (deliveryJob.Count > 0)
                 {
-                    var saleOrder = await UnitWork.Find<sale_ordr>(c => c.sbo_id == item.sbo_id && c.DocEntry == item.base_entry).FirstOrDefaultAsync();
-                    if (saleOrder != null)
+                    foreach (var item in deliveryJob)
                     {
-                        var model = DeSerialize(item.job_data);
-                        Entrustment single = new Entrustment();
-
-                        var saler = await UnitWork.Find<crm_oslp>(c => c.SlpCode == saleOrder.SlpCode && c.sbo_id == saleOrder.sbo_id).FirstOrDefaultAsync();
-                        //获取部门
-                        var query = from a in UnitWork.Find<User>(c => c.Name == saler.SlpName)
-                                    join b in UnitWork.Find<Relevance>(c => c.Key == Define.USERORG) on a.Id equals b.FirstId into ab
-                                    from b in ab.DefaultIfEmpty()
-                                    join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
-                                    from c in bc.DefaultIfEmpty()
-                                    select new { a.Id, UserName = a.Name, OrgName = c.Name, c.CascadeId };
-
-                        var OrgNameList = await query.OrderByDescending(o => o.CascadeId).FirstOrDefaultAsync();
-                        single.ContactsId = OrgNameList?.Id;
-                        single.Contacts = OrgNameList?.UserName;
-                        single.ContactsOrg = OrgNameList?.OrgName;
-                        single.Phone = saler?.Memo;
-
-                        //获取开票到地址
-                        var entrustedUnit = GetAddress("C00550", saleOrder.sbo_id);//新威尔
-                        var certUnit = GetAddress(saleOrder.CardCode, saleOrder.sbo_id);//新威尔
-                        single.EntrustedUnit = entrustedUnit?.CardName;//????
-                        single.ECountry = entrustedUnit?.Country;
-                        single.EProvince = entrustedUnit?.State;
-                        single.ECity = entrustedUnit?.City;
-                        single.EAddress = entrustedUnit?.Building;
-                        single.CertUnit = saleOrder?.CardName;
-                        single.CertCountry = certUnit?.Country;
-                        single.CertProvince = certUnit?.State;
-                        single.CertCity = certUnit?.City;
-                        single.CertAddress = certUnit?.Building;
-                        single.CreateDate = DateTime.Now;
-                        single.SaleId = saleOrder.DocEntry;
-                        //单据备注+设备编号/箱号+验收期限+系统操作者+生产部门
-                        if (!string.IsNullOrWhiteSpace(saleOrder.Comments))
-                            saleOrder.Comments += ",";
-                        if (!string.IsNullOrWhiteSpace(saleOrder.U_CPH))
-                            saleOrder.U_CPH += ",";
-                        if (!string.IsNullOrWhiteSpace(saleOrder.U_YSQX))
-                            saleOrder.U_YSQX += ",";
-                        if (!string.IsNullOrWhiteSpace(saleOrder.U_YGMD))
-                            saleOrder.U_YGMD += ",";
-                        if (!string.IsNullOrWhiteSpace(saleOrder.U_SCBM))
-                            saleOrder.U_SCBM += ",";
-
-                        single.Remark = (saleOrder.Comments + saleOrder.U_CPH + saleOrder.U_YSQX + saleOrder.U_YGMD + saleOrder.U_SCBM).Trim();
-                        single.Status = 1;
-                        single.UpdateDate = DateTime.Now;
-                        single.JodId = item.job_id;
-
-                        //物料明细
-                        if (model.DocType == "I")
+                        var saleOrder = await UnitWork.Find<sale_ordr>(c => c.sbo_id == item.sbo_id && c.DocEntry == item.base_entry).FirstOrDefaultAsync();
+                        if (saleOrder != null)
                         {
-                            single.EntrustmentDetails = new List<EntrustmentDetail>();
-                            int i = 0;
-                            foreach (var data in model.billSalesDetails)
-                            {
-                                if (data.ItemCode.StartsWith("CT") || data.ItemCode.StartsWith("CTE") || data.ItemCode.StartsWith("CE"))
-                                {
-                                    ++i;
-                                    EntrustmentDetail obj = new EntrustmentDetail();
-                                    obj.LineNum = i.ToString();
-                                    obj.EntrustmentId = single.Id;
-                                    obj.ItemName = data.Dscription.Split(',')[0].Split('-')[0];
-                                    obj.ItemCode = data.ItemCode;
-                                    obj.Quantity = Convert.ToInt32(data.Quantity.Split(".")[0]);
-                                    obj.Sort = i;
+                            var model = DeSerialize(item.job_data);
+                            Entrustment single = new Entrustment();
+                            var saler = await UnitWork.Find<crm_oslp>(c => c.SlpCode == saleOrder.SlpCode && c.sbo_id == saleOrder.sbo_id).FirstOrDefaultAsync();
 
-                                    single.EntrustmentDetails.Add(obj);
+                            //获取部门
+                            var query = from a in UnitWork.Find<User>(c => c.Name == saler.SlpName)
+                                        join b in UnitWork.Find<Relevance>(c => c.Key == Define.USERORG) on a.Id equals b.FirstId into ab
+                                        from b in ab.DefaultIfEmpty()
+                                        join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
+                                        from c in bc.DefaultIfEmpty()
+                                        select new { a.Id, UserName = a.Name, OrgName = c.Name, c.CascadeId };
+
+                            var OrgNameList = await query.OrderByDescending(o => o.CascadeId).FirstOrDefaultAsync();
+                            single.ContactsId = OrgNameList?.Id;
+                            single.Contacts = OrgNameList?.UserName;
+                            single.ContactsOrg = OrgNameList?.OrgName;
+                            single.Phone = saler?.Memo;
+
+                            //获取开票到地址
+                            var entrustedUnit = GetAddress("C00550", saleOrder.sbo_id);//新威尔
+                            var certUnit = GetAddress(saleOrder.CardCode, saleOrder.sbo_id);//新威尔
+                            single.EntrustedUnit = entrustedUnit?.CardName;//????
+                            single.ECountry = entrustedUnit?.Country;
+                            single.EProvince = entrustedUnit?.State;
+                            single.ECity = entrustedUnit?.City;
+                            single.EAddress = entrustedUnit?.Building;
+                            single.CertUnit = saleOrder?.CardName;
+                            single.CertCountry = certUnit?.Country;
+                            single.CertProvince = certUnit?.State;
+                            single.CertCity = certUnit?.City;
+                            single.CertAddress = certUnit?.Building;
+                            single.CreateDate = DateTime.Now;
+                            single.SaleId = saleOrder.DocEntry;
+                            //单据备注+设备编号/箱号+验收期限+系统操作者+生产部门
+                            if (!string.IsNullOrWhiteSpace(saleOrder.Comments))
+                                saleOrder.Comments += ",";
+                            if (!string.IsNullOrWhiteSpace(saleOrder.U_CPH))
+                                saleOrder.U_CPH += ",";
+                            if (!string.IsNullOrWhiteSpace(saleOrder.U_YSQX))
+                                saleOrder.U_YSQX += ",";
+                            if (!string.IsNullOrWhiteSpace(saleOrder.U_YGMD))
+                                saleOrder.U_YGMD += ",";
+                            if (!string.IsNullOrWhiteSpace(saleOrder.U_SCBM))
+                                saleOrder.U_SCBM += ",";
+
+                            single.Remark = (saleOrder.Comments + saleOrder.U_CPH + saleOrder.U_YSQX + saleOrder.U_YGMD + saleOrder.U_SCBM).Trim();
+                            single.Status = 1;
+                            single.UpdateDate = DateTime.Now;
+                            single.JodId = item.job_id;
+
+                            //物料明细
+                            if (model.DocType == "I")
+                            {
+                                single.EntrustmentDetails = new List<EntrustmentDetail>();
+                                int i = 0;
+                                foreach (var data in model.billSalesDetails)
+                                {
+                                    if (data.ItemCode.StartsWith("CT") || data.ItemCode.StartsWith("CTE") || data.ItemCode.StartsWith("CE"))
+                                    {
+                                        ++i;
+                                        EntrustmentDetail obj = new EntrustmentDetail();
+                                        obj.LineNum = i.ToString();
+                                        obj.EntrustmentId = single.Id;
+                                        obj.ItemName = data.Dscription.Split(',')[0].Split('-')[0];
+                                        obj.ItemCode = data.ItemCode;
+                                        obj.Quantity = string.IsNullOrEmpty(data.Quantity) ? 0 : Convert.ToInt32(data.Quantity.Split(".")[0]);
+                                        obj.Sort = i;
+
+                                        single.EntrustmentDetails.Add(obj);
+                                    }
+                                }
+                            }
+
+                            entrustments.Add(single);
+                            single = await UnitWork.AddAsync<Entrustment, int>(single);
+                            await UnitWork.SaveAsync();
+                        }
+                    }
+                }
+                #endregion
+
+                #region 物料重置
+                var finlishJobs = await UnitWork.Find<wfa_job>(null).Where(c => c.job_type_id == 1 && c.job_nm == "销售交货" && c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToListAsync();//选择了序列号/结束的交货流程并且同步完成
+                entrustments = entrustments.Where(c => finlishJobs.Contains(c.JodId) && c.Status == 1).ToList();
+                if (deliveryJob.Count > 0)
+                {
+                    for (int i = 0; i < entrustments.Count; i++)
+                    {
+                        var item1 = entrustments[i];
+                        var job1 = deliveryJob.Where(c => c.job_id == item1.JodId).FirstOrDefault();
+                        var serialNumber = await (from a in UnitWork.Find<OITL>(null)
+                                                  join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
+                                                  from b in ab.DefaultIfEmpty()
+                                                  join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
+                                                  from c in bc.DefaultIfEmpty()
+                                                  where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job1.sbo_itf_return
+                                                  select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
+
+                        int line = 0, sort = 0;
+                        foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
+                        {
+                            int line2 = 0;
+                            if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
+                            {
+                                ++line;
+                                foreach (var items in groupItem)
+                                {
+                                    ++line2; ++sort;
+                                    foreach (EntrustmentDetail entrustmentDetail in item1.EntrustmentDetails)
+                                    {
+                                        entrustmentDetail.EntrustmentId = item1.Id;
+                                        entrustmentDetail.ItemCode = groupItem.Key;
+                                        entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
+                                        entrustmentDetail.SerialNumber = items.MnfSerial;
+                                        entrustmentDetail.Quantity = 1;
+                                        entrustmentDetail.LineNum = line + "-" + line2;
+                                        entrustmentDetail.Sort = sort;
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                }
+               
+                #endregion
+
+                #region 生成委托单
+                // var finlishJob = deliveryList.Where(c => c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToList();
+                var finlishEntrusted = entrusted.Where(c => finlishJobs.Contains(c.JodId) && c.Status == 1).ToList();//选择了序列号/结束的交货流程并且同步完成
+                if (deliveryJob.Count > 0)
+                {
+                    for (int i = 0; i < finlishEntrusted.Count; i++)
+                    {
+                        var item = finlishEntrusted[i];
+                        var job = deliveryJob.Where(c => c.job_id == item.JodId).FirstOrDefault();
+                        var serialNumber = await (from a in UnitWork.Find<OITL>(null)
+                                                  join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
+                                                  from b in ab.DefaultIfEmpty()
+                                                  join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
+                                                  from c in bc.DefaultIfEmpty()
+                                                  where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
+                                                  select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
+
+                        int line = 0, sort = 0;
+                        List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
+                        foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
+                        {
+                            int line2 = 0;
+                            var deleteData = await UnitWork.Find<EntrustmentDetail>(x => x.EntrustmentId == item.Id)?.ToArrayAsync();
+                            if (deleteData != null && deleteData.Count() > 0)
+                            {
+                                try
+                                {
+                                    await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
+                                    await UnitWork.SaveAsync();
+                                }
+                                catch (DbUpdateConcurrencyException ex)
+                                {
+                                    throw new Exception("数据删除异常", ex);
+                                }
+                            }
+
+                            if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
+                            {
+                                ++line;
+                                foreach (var items in groupItem)
+                                {
+                                    ++line2; ++sort;
+                                    EntrustmentDetail entrustmentDetail = new EntrustmentDetail();
+                                    entrustmentDetail.EntrustmentId = item.Id;
+                                    entrustmentDetail.ItemCode = groupItem.Key;
+                                    entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
+                                    entrustmentDetail.SerialNumber = items.MnfSerial;
+                                    entrustmentDetail.Quantity = 1;
+                                    entrustmentDetail.LineNum = line + "-" + line2;
+                                    entrustmentDetail.Sort = sort;
+                                    entrustmentDetail.Id = Guid.NewGuid().ToString();
+                                    detail.Add(entrustmentDetail);
                                 }
                             }
                         }
 
-                        entrustments.Add(single);
-                        single = await UnitWork.AddAsync<Entrustment, int>(single);
+                        await UnitWork.BatchAddAsync<EntrustmentDetail>(detail.ToArray());
+                        await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
+                        {
+                            DeliveryId = job.sbo_itf_return,
+                            Status = 2,//待处理
+                            EntrustedUserId = item.ContactsId,
+                            EntrustedUser = item.Contacts,
+                            EntrustedDate = DateTime.Now,
+                            UpdateDate = DateTime.Now
+                        });
                         await UnitWork.SaveAsync();
                     }
                 }
-            }
-            #endregion
+               
+                #endregion
 
-            #region 物料重置
-            var finlishJobs = deliveryList.Where(c => c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToList();//选择了序列号/结束的交货流程并且同步完成
-            entrustments = entrustments.Where(c => finlishJobs.Contains(c.JodId) && c.Status == 1).ToList();
-            for (int i = 0; i < entrustments.Count; i++)
-            {
-                var item1 = entrustments[i];
-                var job = deliveryList.Where(c => c.job_id == item1.JodId).FirstOrDefault();
-
-                var serialNumber = await (from a in UnitWork.Find<OITL>(null)
-                                          join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
-                                          from b in ab.DefaultIfEmpty()
-                                          join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
-                                          from c in bc.DefaultIfEmpty()
-                                          where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
-                                          select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
-
-                int line = 0, sort = 0;
-                foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
+                #region 同步状态
+                var calibration = entrusted.Where(c => c.Status >= 3).ToList();
+                foreach (var item in calibration)
                 {
-                    int line2 = 0;
-                    if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
+                    var details = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
+                    var snids = details.Select(c => c.SerialNumber).ToList();
+                    var nwcert = await UnitWork.Find<NwcaliBaseInfo>(c => snids.Contains(c.TesterSn)).ToListAsync();
+                    if (nwcert != null && nwcert.Count > 0)
                     {
-                        ++line;
-                        foreach (var items in groupItem)
-                        {
-                            ++line2; ++sort;
-                            foreach (EntrustmentDetail entrustmentDetail in item1.EntrustmentDetails)
-                            {
-                                entrustmentDetail.EntrustmentId = item1.Id;
-                                entrustmentDetail.ItemCode = groupItem.Key;
-                                entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
-                                entrustmentDetail.SerialNumber = items.MnfSerial;
-                                entrustmentDetail.Quantity = 1;
-                                entrustmentDetail.LineNum = line + "-" + line2;
-                                entrustmentDetail.Sort = sort;
-                            }
-                        }
+                        var status = 4;//校准中
+                        SetStatus(ref details, nwcert);
+                        //全部为已校准 则为完成
+                        if (details.All(c => c.Status > 1))
+                            status = 5;//已完成
 
+                        await UnitWork.BatchUpdateAsync(details.ToArray());
+                        await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
+                        {
+                            Status = status,
+                            UpdateDate = DateTime.Now
+                        });
                     }
                 }
-            }
-            #endregion
+                #endregion
 
-            #region 生成委托单
-            var finlishJob = deliveryList.Where(c => c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToList();//选择了序列号/结束的交货流程并且同步完成
-            var finlishEntrusted = entrusted.Where(c => finlishJob.Contains(c.JodId) && c.Status == 1).ToList();
-            for (int i = 0; i < finlishEntrusted.Count; i++)
-            {
-                var item = finlishEntrusted[i];
-                var job = deliveryList.Where(c => c.job_id == item.JodId).FirstOrDefault();
+                #region 调用接口
+                string tokens = System.Web.HttpUtility.UrlEncode(_ddSettingHelp.GetCalibrationKey("Token"));
 
-                var serialNumber = await (from a in UnitWork.Find<OITL>(null)
-                                          join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
-                                          from b in ab.DefaultIfEmpty()
-                                          join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
-                                          from c in bc.DefaultIfEmpty()
-                                          where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
-                                          select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
-
-                int line = 0, sort = 0;
-                List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
-                foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
-                {
-                    int line2 = 0;
-
-                    var deleteData = await UnitWork.Find<EntrustmentDetail>(x => x.EntrustmentId == item.Id)?.ToArrayAsync();
-                    if (deleteData != null && deleteData.Count() > 0)
-                    {
-                        try
-                        {
-                            await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
-                            await UnitWork.SaveAsync();
-                        }
-                        catch (DbUpdateConcurrencyException ex)
-                        {
-                            throw new Exception("数据删除异常", ex);
-                        }
-                    }
-
-                    if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
-                    {
-                        ++line;
-                        foreach (var items in groupItem)
-                        {
-                            ++line2; ++sort;
-                            EntrustmentDetail entrustmentDetail = new EntrustmentDetail();
-                            entrustmentDetail.EntrustmentId = item.Id;
-                            entrustmentDetail.ItemCode = groupItem.Key;
-                            entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
-                            entrustmentDetail.SerialNumber = items.MnfSerial;
-                            entrustmentDetail.Quantity = 1;
-                            entrustmentDetail.LineNum = line + "-" + line2;
-                            entrustmentDetail.Sort = sort;
-                            entrustmentDetail.Id = Guid.NewGuid().ToString();
-                            detail.Add(entrustmentDetail);
-                        }
-
-                    }
-                }
-                await UnitWork.BatchAddAsync<EntrustmentDetail>(detail.ToArray());
-
-                await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
-                {
-                    DeliveryId = job.sbo_itf_return,
-                    Status = 2,//待处理
-                    EntrustedUserId = item.ContactsId,
-                    EntrustedUser = item.Contacts,
-                    EntrustedDate = DateTime.Now,
-                    UpdateDate = DateTime.Now
-                });
-                await UnitWork.SaveAsync();
-            }
-            #endregion
-
-            #region 同步状态
-            var calibration = entrusted.Where(c => c.Status >= 3).ToList();
-            foreach (var item in calibration)
-            {
-                var details = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
-                var snids = details.Select(c => c.SerialNumber).ToList();
-                var nwcert = await UnitWork.Find<NwcaliBaseInfo>(c => snids.Contains(c.TesterSn)).ToListAsync();
-                if (nwcert != null && nwcert.Count > 0)
-                {
-                    var status = 4;//校准中
-                    SetStatus(ref details, nwcert);
-                    //全部为已校准 则为完成
-                    if (details.All(c => c.Status > 1))
-                        status = 5;//已完成
-
-                    await UnitWork.BatchUpdateAsync(details.ToArray());
-                    await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
-                    {
-                        Status = status,
-                        UpdateDate = DateTime.Now
-                    });
-                }
-            }
-            #endregion
-
-            #region 调用接口
-            string tokens = System.Web.HttpUtility.UrlEncode(_ddSettingHelp.GetCalibrationKey("Token"));
-            try
-            {
                 //获取校准委托单组件信息
                 CalibrationResult calibrations = JsonConvert.DeserializeObject<CalibrationResult>(HttpHelpers.Get($"http://121.37.222.129:1666/api/Calibration/GetCalibrationFields?Token={tokens}"));
 
@@ -1631,6 +1639,10 @@ namespace OpenAuth.App
                                 submitDatas.Add(submitData);
                             }
                         }
+                        else
+                        {
+                            _logger.LogError("委托单物料明细为空");
+                        }
 
                         ControlDataList controlDataList = new ControlDataList();
                         controlDataList.controls_data_list = submitDatas;
@@ -1640,15 +1652,19 @@ namespace OpenAuth.App
                             ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
                             if (returnResult.status != 200)
                             {
-                                _logger.LogError(returnResult.message);
+                                _logger.LogError("委托单调用2接口失败：" + returnResult.message);
                             }
                         }
                     }
                 }
+                else 
+                {
+                    _logger.LogError("委托单调用1接口失败：" + calibrations.message);
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message.ToString());
+                _logger.LogError("委托单调用接口失败：" + ex.Message.ToString());
             }
             #endregion
         }
