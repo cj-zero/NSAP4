@@ -75,7 +75,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             strSql += string.Format(" LEFT JOIN {0}.store_oitw w ON d.ItemCode=w.ItemCode AND d.WhsCode=w.WhsCode AND d.sbo_id=w.sbo_id", "nsap_bone");
             strSql += string.Format(" left join manage_screening m on d.DocEntry = m.DocEntry and d.ItemCode = m.ItemCode and d.U_ZS = m.U_ZS and d.Quantity = m.Quantity", "erp4_serve");
             strSql += string.Format(" WHERE m.DocEntry is null and d.DocEntry=" + model.DocEntry + " AND d.sbo_id={0}", SboId);
-            strSql += string.Format(" and d.ItemCode REGEXP 'A605|A608|A313|A302|CT-4|CT-8|CE-4|CE-8|CE-7|CTE-4|CTE-8|CE-6|CA|CJE|CJ|CGE|CGE|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MZJ' ");
+            strSql += string.Format(" and d.ItemCode REGEXP 'A605|A608|A313|A302|CT-4|CT-8|CE-4|CE-8|CE-7|CTE-4|CTE-8|CE-6|CA|CJE|CJ|CGE|CGE|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MOCV|MRGV|MJ|MRP|MXC|MS|MB|MZJ' ");
             tableData.Count = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strSql.ToString(), CommandType.Text, null).Rows.Count;
 
             strSql += string.Format(" order by d.ItemCode limit {0} ,{1} ", (model.page - 1) * model.limit, model.limit);
