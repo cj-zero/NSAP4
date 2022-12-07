@@ -591,7 +591,13 @@ namespace OpenAuth.App
 
         public async Task CreateNwcailFileHelper()
         {
-            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).ToListAsync();
+            //var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).ToListAsync();
+            //foreach (var item in res)
+            //{
+            //    await CreateNwcailFile(item.CertificateNumber);
+            //}
+            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) &&
+            string.IsNullOrWhiteSpace(c.CNASPdfPath) && !c.TesterModel.Contains("V0")).OrderByDescending(c => c.Time).Take(1000).ToListAsync();
             foreach (var item in res)
             {
                 await CreateNwcailFile(item.CertificateNumber);
