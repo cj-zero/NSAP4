@@ -24,6 +24,7 @@ using Org.BouncyCastle.Ocsp;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.Text;
 using OpenAuth.App.Order;
 using Magicodes.ExporterAndImporter.Core.Extension;
+using NPOI.OpenXmlFormats.Dml;
 
 namespace OpenAuth.App.Material
 {
@@ -595,7 +596,26 @@ namespace OpenAuth.App.Material
                                             (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005508 DocEntry, max(_System_Progress) progress, fld005506 itemCode
                                             from OBJ162 group by RecordGuid, fld005508, _System_objNBS, fld005506,CreatedDate) a) t
                                             ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
-            return UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null);
+            strSql += string.Format(@"  union all     select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+                                            (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
+                                            (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005796 DocEntry, max(_System_Progress) progress, fld005787 itemCode
+                                            from OBJ170 group by RecordGuid, fld005796, _System_objNBS, fld005787,CreatedDate) a) t
+                                            ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
+
+            strSql += string.Format(@"  union all     select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+                                            (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
+                                            (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005878 DocEntry, max(_System_Progress) progress, fld005879 itemCode
+                                            from OBJ163 group by RecordGuid, fld005878, _System_objNBS, fld005879,CreatedDate) a) t
+                                            ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
+
+            strSql += string.Format(@"  union all     select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+                                            (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
+                                            (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005717 DocEntry, max(_System_Progress) progress, fld005719 itemCode
+                                            from OBJ169 group by RecordGuid, fld005717, _System_objNBS, fld005719,CreatedDate) a) t
+                                            ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
+            var dt = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null);
+
+            return dt;
         }
 
 
