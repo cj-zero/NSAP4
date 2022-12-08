@@ -1264,8 +1264,8 @@ namespace OpenAuth.App
             //销售交货流程 并处于序列号选择环节
             var entrusted = await UnitWork.Find<Entrustment>(c => c.Status != 5).Select(r => new { r.Id, r.JodId, r.Status, r.ContactsId, r.Contacts }).ToListAsync();
             var jobIds = entrusted.Select(c => c.JodId).ToList();//已经生成过的流程ID
-            var deliveryList = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货" && c.step_id == 455).Select(c => c.job_id).ToListAsync();
-            var deliveryJob = await UnitWork.Find<wfa_job>(c => !jobIds.Contains(c.job_id) && deliveryList.Contains(c.job_id)).Select(c => new { c.sbo_id, c.base_entry, c.base_type, c.job_data, c.job_id, c.step_id, c.job_state, c.sync_stat, c.sbo_itf_return }).ToListAsync();//在选择序列号环节
+            var deliveryList = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货").Select(c => new { c.sbo_id, c.base_entry, c.base_type, c.job_data, c.job_id, c.step_id, c.job_state, c.sync_stat, c.sbo_itf_return }).ToListAsync();
+            var deliveryJob = deliveryList.Where(c => !jobIds.Contains(c.job_id) && c.step_id == 455).ToList();//在选择序列号环节
             try
             {
                 #region 生成备料单
@@ -1364,7 +1364,7 @@ namespace OpenAuth.App
                     for (int i = 0; i < finlishEntrusted.Count; i++)
                     {
                         var item = finlishEntrusted[i];
-                        var job = deliveryJob.Where(c => c.job_id == item.JodId).FirstOrDefault();
+                        var job = deliveryList.Where(c => c.job_id == item.JodId).FirstOrDefault();
                         if (job != null)
                         {
                             var serialNumber = await (from a in UnitWork.Find<OITL>(null)
@@ -1628,7 +1628,7 @@ namespace OpenAuth.App
                             ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
                             if (returnResult.status != 200)
                             {
-                                _logger.LogError("委托单调用2接口失败：" + returnResult.message);
+                                _logger.LogError("委托单调用2接口失败：" + returnResult.message + " 参数：" + JsonConvert.SerializeObject(entrustment));
                             }
                             else
                             {
