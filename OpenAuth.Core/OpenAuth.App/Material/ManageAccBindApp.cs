@@ -461,6 +461,16 @@ AssignDate,CreatedDate,AssignedBy,CaseRecGuid,RecordGuid,TaskNBS,TaskOwnerId,Tim
             return result;
         }
 
+        public TableData GetDataC(string req)
+        {
+            var result = new TableData();
+            string sql = string.Format(@"SELECT  * from saleorderutility  WHERE fld005506 =   '{0}'  ", req);
+            //sql += req;
+            var specJob = UnitWork.ExcuteSql<SaleOrderUtilityView>(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
+            result.Data = specJob.ToList();
+            return result;
+        }
+
     }
 
 }

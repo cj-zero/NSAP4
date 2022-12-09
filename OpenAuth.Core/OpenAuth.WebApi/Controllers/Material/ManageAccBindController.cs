@@ -291,6 +291,29 @@ namespace OpenAuth.WebApi.Controllers.Material
             return result;
         }
 
+        /// <summary>
+        /// 获取物料详情数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public TableData GetDataC(string req)
+        {
+            //overtime code 
+            var result = new TableData();
+            try
+            {
+                result = _app.GetDataC(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
 
     }
 }
