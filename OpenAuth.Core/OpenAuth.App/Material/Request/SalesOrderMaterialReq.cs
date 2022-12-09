@@ -121,6 +121,55 @@ namespace OpenAuth.App.Material.Request
         public string Month { get; set; }
     }
 
+
+    public class statisticsTableB
+    {
+        public double TaskId { get; set; }
+
+        public double UserCreatedId { get; set; }
+
+        public double OwenerId { get; set; }
+
+        public string Subject { get; set; }
+
+        public DateTime StartDate { get; set; }
+
+        public DateTime DueDate { get; set; }
+
+        public int hasReminder { get; set; }
+
+        public int StatusId { get; set; }
+
+        public int PriorityId { get; set; }
+
+        public int Complete { get; set; }
+
+        public int isFinished { get; set; }
+
+        public int isPrivate { get; set; }
+
+        public int isDeleted { get; set; }
+
+
+        public DateTime AssignDate { get; set; }
+
+        public DateTime CreatedDate { get; set; }
+
+        public double AssignedBy { get; set; }
+
+        public string CaseRecGuid { get; set; }
+
+        public string RecordGuid { get; set; }
+
+        public string TaskNBS { get; set; }
+
+        public double TaskOwnerId { get; set; }
+
+        public float TimeAllocated { get; set; }
+
+    }
+
+
     public class submitMonth 
     {
         public List<string> Number { get; set; }
