@@ -627,11 +627,13 @@ namespace OpenAuth.WebApi.Controllers.Order
                 viewCustom = powers.ViewCustom;
             }
 
-            result = _serviceSaleOrderApp.SelectOrderDraftInfo(request.limit, request.page, request, type, viewFull, viewSelf, userId, sboid, viewSelfDepartment, Convert.ToInt32(depId.Value), viewCustom, viewSales, sqlcont, sboname);
+            result = _serviceSaleOrderApp.SelectOrderDraftOQUTInfo(request.limit, request.page, request, type, viewFull, viewSelf, userId, sboid, viewSelfDepartment, Convert.ToInt32(depId.Value), viewCustom, viewSales, sqlcont, sboname);
 
             List<SalesDraftDto> salesDraftDtos = new List<SalesDraftDto>();
+            var contracts = UnitWork.Find<ContractApply>(r => r.ContractStatus == "-1").Select(r => r.QuotationNo).ToList();
             foreach (SalesDraftDto salesDraftDto in result.Data)
             {
+                contracts = contracts.Where(r => r.Contains(salesDraftDto.DocEntry.ToString())).ToList();
                 salesDraftDtos.Add(new SalesDraftDto()
                 {
                     RowNumber = salesDraftDto.RowNumber,
@@ -651,8 +653,9 @@ namespace OpenAuth.WebApi.Controllers.Order
                     Printed = salesDraftDto.Printed,
                     AttachFlag = salesDraftDto.AttachFlag,
                     Flag = salesDraftDto.Flag,
-                    Terminals = salesDraftDto.Terminals
-                });
+                    Terminals = salesDraftDto.Terminals,
+                    ContractFlag = contracts != null && contracts.Count() > 0 ? true : false
+            });
             }
 
             result.Data = salesDraftDtos;

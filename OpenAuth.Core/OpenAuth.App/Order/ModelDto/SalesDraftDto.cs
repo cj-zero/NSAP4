@@ -85,6 +85,11 @@ namespace OpenAuth.App.Order
         /// 终端
         /// </summary>
         public string Terminals { get; set; }
+
+        /// <summary>
+        /// 标识
+        /// </summary>
+        public bool ContractFlag { get; set; }
     }
 
     /// <summary>

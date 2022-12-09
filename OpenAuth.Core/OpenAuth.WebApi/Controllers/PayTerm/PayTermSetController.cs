@@ -189,8 +189,7 @@ namespace OpenAuth.WebApi.Controllers.PayTerm
                 decimal totalPro = Convert.ToDecimal(obj.PrepaPro + obj.BefShipPro + obj.GoodsToPro + obj.AcceptancePayPro + obj.QualityAssurancePro);
                 if (totalPro == 100m)
                 {
-                    result = await _payTermApp.PayTermSave(obj);
-                   
+                    result = await _payTermApp.PayTermSave(obj);                  
                 }
                 else
                 {

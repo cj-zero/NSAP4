@@ -48,6 +48,11 @@ namespace OpenAuth.App.Response
         public string Identity { get; set; }
 
         /// <summary>
+        /// 角色标识
+        /// </summary>
+        public string RoleKey { get; set; }
+
+        /// <summary>
         ///是否属于某用户 
         /// </summary>
         public bool Checked { get; set; }
