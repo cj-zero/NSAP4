@@ -250,8 +250,8 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public  TableData GetDataA (string req)
+        [HttpPost]
+        public  TableData GetDataA ([FromBody] MaterialDataReq req)
         {
             //overtime code 
             var result = new TableData();
@@ -273,8 +273,8 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public  TableData GetDataB(string req)
+        [HttpPost]
+        public  TableData GetDataB([FromBody] MaterialDataReq req)
         {
             //overtime code 
             var result = new TableData();
@@ -296,8 +296,8 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public TableData GetDataC(string req)
+        [HttpPost]
+        public TableData GetDataC([FromBody] MaterialDataReq req)
         {
             //overtime code 
             var result = new TableData();

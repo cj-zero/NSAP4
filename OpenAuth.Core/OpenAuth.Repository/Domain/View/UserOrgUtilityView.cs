@@ -223,6 +223,11 @@ namespace OpenAuth.Repository.Domain.View
         public string detports  { get; set; }
 }
 
+    public class MaterialDataReq
+    {
+        public List<string> Alpha { get; set; }
+    }
+
     public class ArchiveData
     {
         public bool ArchiveFlag { get; set; }

@@ -440,31 +440,31 @@ namespace OpenAuth.App.Material
             return archiveData;
         }
 
-        public  TableData GetDataA(string req)
+        public  TableData GetDataA(MaterialDataReq req)
         {
             var result = new TableData();
-            string sql = string.Format(@"SELECT  * from TaskView5  WHERE fld005506 =   '{0}'  ", req);
+            string sql = string.Format(@"SELECT  * from TaskView5  WHERE fld005506 in   ( {0} )  ", String.Join(",",req.Alpha.Select(i => $"'{i}'")));
             //sql += req;
             var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
             result.Data = modeldata.ToList();
             return result;
         }
 
-        public TableData GetDataB(string req)
+        public TableData GetDataB(MaterialDataReq req)
         {
             var result = new TableData();
             string sql = string.Format(@"SELECT TaskId,UserCreatedId,Subject,StartDate,DueDate,hasReminder,StatusId,PriorityId,Complete,isFinished,isPrivate,isDeleted,
-AssignDate,CreatedDate,AssignedBy,CaseRecGuid,RecordGuid,TaskNBS,TaskOwnerId,TimeAllocated from Tasks  WHERE TaskNBS =    '{0}' ",req);
+AssignDate,CreatedDate,AssignedBy,CaseRecGuid,RecordGuid,TaskNBS,TaskOwnerId,TimeAllocated from Tasks  WHERE TaskNBS    in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i}'")));
             //sql += req;
             var modeldata = UnitWork.ExcuteSql<statisticsTableB>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
             result.Data = modeldata.ToList();
             return result;
         }
 
-        public TableData GetDataC(string req)
+        public TableData GetDataC(MaterialDataReq req)
         {
             var result = new TableData();
-            string sql = string.Format(@"SELECT  * from saleorderutility  WHERE fld005506 =   '{0}'  ", req);
+            string sql = string.Format(@"SELECT  * from saleorderutility  WHERE fld005506 in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i}'")));
             //sql += req;
             var specJob = UnitWork.ExcuteSql<SaleOrderUtilityView>(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
             result.Data = specJob.ToList();
