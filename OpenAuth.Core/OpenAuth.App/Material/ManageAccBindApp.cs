@@ -217,14 +217,26 @@ namespace OpenAuth.App.Material
         {
             DutyChartResponse dcr = new DutyChartResponse();
             // get due time personals
-            StringBuilder strSql = new StringBuilder();
+            
             string start = Convert.ToDateTime(req.Month + "-01").ToString("yyyy-MM-dd");
              string end = Convert.ToDateTime(req.Month + "-01").AddMonths(1).ToString("yyyy-MM-dd");
+
+            //StringBuilder strSql = new StringBuilder();
+            //strSql.AppendFormat("select AssignedTo,count(case when t.fld006314 = N'一般' then 1 else null end)*0.5 as Low    ,count(case when t.fld006314 = N'中等' then 1 else null end) as Medium     ,count(case when t.fld006314 = N'较高' then 1 else null end)*2 as High   ,count(case when t.fld006314 = N'超高' then 1 else null end)*3 as Top from  (select AssignedTo, fld006314,AssignDate  from TaskView5) as  t  where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by AssignedTo   ");
+            //var personalAssignList = UnitWork.ExcuteSql<SerieManageDataRaw>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
+            //StringBuilder strFSql = new StringBuilder();
+            //strFSql.AppendFormat("select AssignedTo,count(case when t.fld006314 = N'一般' then 1 else null end)*0.5 as Low    ,count(case when t.fld006314 = N'中等' then 1 else null end) as Medium     ,count(case when t.fld006314 = N'较高' then 1 else null end)*2 as High   ,count(case when t.fld006314 = N'超高' then 1 else null end)*3 as Top from  (select AssignedTo, fld006314,AssignDate  from TaskView5) as  t  where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by AssignedTo    ORDER BY CompleteCount DESC ");
+            //var personalFList = UnitWork.ExcuteSql<SerieManageDataRaw>(ContextType.ManagerDbContext, strFSql.ToString(), CommandType.Text);
+
+            #region rejected code v1
+            StringBuilder strSql = new StringBuilder();
             strSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  (select AssignedTo, Number, isFinished,AssignDate  from TaskView5) as  t where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by AssignedTo  ORDER BY CompleteCount DESC ");
-            var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(),CommandType.Text);
+            var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
             StringBuilder strFSql = new StringBuilder();
             strFSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from   (select AssignedTo, Number, isFinished,CompleteTime  from TaskView5) as  t  where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by AssignedTo    ORDER BY CompleteCount DESC ");
             var personalFList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strFSql.ToString(), CommandType.Text);
+            #endregion
+
             // get personals with their level for which the qualified line and excel line needed
             var personalNames = personalAssignList.Select(u => u.AssignedTo).ToList();
             var personalFNames = personalFList.Select(u => u.AssignedTo).ToList();

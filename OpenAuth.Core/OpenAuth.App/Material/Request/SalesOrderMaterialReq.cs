@@ -127,6 +127,11 @@ namespace OpenAuth.App.Material.Request
         public string Month { get; set; }
     }
 
+    public class withdarwSubmitReq
+    {
+        public List<string> Number { get; set; }
+    }
+
     public class ScoringDetail
     {
         public string level { get; set; }

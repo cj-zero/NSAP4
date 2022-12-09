@@ -340,6 +340,23 @@ namespace OpenAuth.Repository.Domain.View
 
     }
 
+    public class SerieManageDataRaw
+    {
+        public string AssignedTo { get; set; }
+
+        public int CompleteCount { get; set; }
+
+        public double LowDifficulty { get; set; }
+
+        public double MediumDifficulty { get; set; }
+
+        public double HighDifficulty { get; set; }
+
+        public double SuperDifficulty { get; set; }
+
+
+    }
+
     public class BindUtilityRep
     {
 

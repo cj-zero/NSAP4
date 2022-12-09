@@ -427,6 +427,27 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
         /// <summary>
+        /// 撤销月度统计
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("WithDrawSubmit")]
+        public async Task<Infrastructure.Response> WithDarwSubmit(withdarwSubmitReq req)
+        {
+            var response = new Infrastructure.Response();
+            try
+            {
+                response = await _app.WithDarwSubmit(req);
+            }
+            catch (Exception ex)
+            {
+                response.Message = ex.Message;
+            }
+            return response;
+        }
+
+        /// <summary>
         /// 统计分析页面
         /// </summary>
         /// <param name="request"></param>

@@ -758,7 +758,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             }
             if (!string.IsNullOrWhiteSpace(req.AssignedTo))
             {
-                sqlwhere += " and AssignedTo = N'" + req.AssignedTo + "'";
+                sqlwhere += " and AssignedTo like N'" + req.AssignedTo + "'";
             }
             if (!string.IsNullOrWhiteSpace(req.Number))
             {
@@ -798,11 +798,11 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             }
             if (req.duedateStart != null)
             {
-                sqlwhere += " and duedate  >= '" + req.duedateStart + "'";
+                sqlwhere += " and Completedate  >= '" + req.duedateStart + "'";
             }
             if (req.duedateEnd != null)
             {
-                sqlwhere += " and duedate <= '" + req.duedateEnd + "'";
+                sqlwhere += " and Completedate <= '" + req.duedateEnd + "'";
             }
             if (!string.IsNullOrEmpty(req.DutyFlag))
             {
@@ -847,7 +847,7 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
 
             foreach (var item in modeldata)
             {
-                var specSta = statisticView.Where(u => u.Number == item.Number).FirstOrDefault();
+                var specSta = statisticView.Where(u => u.Number == item.Number && u.IsDelete != 1).FirstOrDefault();
                 if (specSta!=null)
                 {
                     item.Month = statisticView.Where(u => u.Number == item.Number).FirstOrDefault().Month;
@@ -953,6 +953,28 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                 }
             }
             UnitWork.BatchAdd<TaskView, int>(list.ToArray());
+            await UnitWork.SaveAsync();
+            response.Message = "操作成功";
+            return response;
+        }
+
+
+        public async Task<Infrastructure.Response> WithDarwSubmit(withdarwSubmitReq req)
+        {
+            var response = new Infrastructure.Response();
+            response.Message = "";
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var rejectedList = UnitWork.Find<TaskView>(q => req.Number.Contains(q.Number)).ToList();
+            foreach (var rejecteditem in rejectedList)
+            {
+                rejecteditem.IsDelete = 1;
+            }
+            UnitWork.BatchUpdate<TaskView>(rejectedList.ToArray());
             await UnitWork.SaveAsync();
             response.Message = "操作成功";
             return response;
