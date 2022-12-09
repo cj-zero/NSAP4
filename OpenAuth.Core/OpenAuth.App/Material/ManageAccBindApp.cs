@@ -434,9 +434,24 @@ namespace OpenAuth.App.Material
         public  TableData GetDataA(MaterialDataReq req)
         {
             var result = new TableData();
-            string sql = string.Format(@"SELECT  * from TaskView5  WHERE fld005506 in   ( {0} )  ", String.Join(",",req.Alpha.Select(i => $"'{i}'")));
+            string sql = string.Format(@"SELECT  * from TaskView5  WHERE fld005506 in   ( {0} )  ", String.Join(",",req.Alpha.Select(i => $"'{i.Replace("\'","\"")}'")));
             //sql += req;
             var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
+            //List<statisticsTableSpec> finalList = new List<statisticsTableSpec>();
+            //foreach (var item in req.Alpha)
+            //{
+            //    var relateItem = modeldata.Where(a => a.fld005506 == item).ToList();
+            //    if (relateItem.Count !=0)
+            //    {
+            //        finalList.Add(new statisticsTableSpec
+            //        {
+            //            code = item,
+            //            data = relateItem
+            //        });
+                    
+            //    }
+
+            //}
             result.Data = modeldata.ToList();
             return result;
         }
@@ -444,8 +459,10 @@ namespace OpenAuth.App.Material
         public TableData GetDataB(MaterialDataReq req)
         {
             var result = new TableData();
-            string sql = string.Format(@"SELECT TaskId,UserCreatedId,Subject,StartDate,DueDate,hasReminder,StatusId,PriorityId,Complete,isFinished,isPrivate,isDeleted,
-AssignDate,CreatedDate,AssignedBy,CaseRecGuid,RecordGuid,TaskNBS,TaskOwnerId,TimeAllocated from Tasks  WHERE TaskNBS    in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i}'")));
+            string sql = string.Format(@"SELECT t.TaskId,t.UserCreatedId,t.Subject,t.StartDate,t.DueDate,t.hasReminder,t.StatusId,t.PriorityId,t.Complete,t.isFinished,t.isPrivate,t.isDeleted,
+t.AssignDate,t.CreatedDate,t.AssignedBy,t.CaseRecGuid,t.RecordGuid,t.TaskNBS,t.TaskOwnerId,t.TimeAllocated,convert(varchar(100),DATEADD(dd,-DATEDIFF(d,case when t.isFinished=1 then  ISNULL(t.CompletedDate,getdate()) else GETDATE() end,t.duedate),t.DueDate),23) CompleteTime,u.FirstNameAndLastName as ownername from Tasks t
+left JOIN UsersAndGroups u on u.UserID = t.TaskOwnerId
+    WHERE TaskNBS    in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i}'")));
             //sql += req;
             var modeldata = UnitWork.ExcuteSql<statisticsTableB>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
             result.Data = modeldata.ToList();
@@ -455,9 +472,9 @@ AssignDate,CreatedDate,AssignedBy,CaseRecGuid,RecordGuid,TaskNBS,TaskOwnerId,Tim
         public TableData GetDataC(MaterialDataReq req)
         {
             var result = new TableData();
-            string sql = string.Format(@"SELECT  * from saleorderutility  WHERE fld005506 in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i}'")));
+            string sql = string.Format(@"SELECT  * from alpha  WHERE fld005506 in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")));
             //sql += req;
-            var specJob = UnitWork.ExcuteSql<SaleOrderUtilityView>(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
+            var specJob = UnitWork.ExcuteSql<AlphaView>(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
             result.Data = specJob.ToList();
             return result;
         }

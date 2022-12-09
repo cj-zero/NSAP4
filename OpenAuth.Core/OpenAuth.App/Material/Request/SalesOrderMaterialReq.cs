@@ -98,6 +98,11 @@ namespace OpenAuth.App.Material.Request
         public DateTime? AssignDateEnd { get; set; }
     }
 
+    public class statisticsTableSpec
+    {
+        public string code { get; set; }
+        public List<statisticsTable> data { get; set; } = new List<statisticsTable>();
+}
 
     public class statisticsTable
     {
@@ -166,6 +171,10 @@ namespace OpenAuth.App.Material.Request
         public double TaskOwnerId { get; set; }
 
         public float TimeAllocated { get; set; }
+
+        public DateTime CompleteTime { get; set; }
+
+        public string ownername { get; set; }
 
     }
 

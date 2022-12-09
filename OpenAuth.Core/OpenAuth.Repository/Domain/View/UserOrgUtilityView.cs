@@ -41,6 +41,28 @@ namespace OpenAuth.Repository.Domain.View
     }
 
 
+    public class AlphaView
+    {
+
+        public string _System_objNBS { get; set; }
+
+        public string fld005506 { get; set; }
+
+        public string fld006314 { get; set; }
+
+        public string RecordGuid { get; set; }
+
+        public int deleted { get; set; }
+
+        public double _System_Progress { get; set; }
+
+        public DateTime CreatedDate { get; set; }
+
+        public DateTime DateModified { get; set; }
+
+    }
+
+
 
     public class UserManageUtilityRsp
     {
