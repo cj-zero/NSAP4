@@ -460,7 +460,7 @@ namespace OpenAuth.App.Material
         {
             var result = new TableData();
             string sql = string.Format(@"SELECT t.TaskId,t.UserCreatedId,t.Subject,t.StartDate,t.DueDate,t.hasReminder,t.StatusId,t.PriorityId,t.Complete,t.isFinished,t.isPrivate,t.isDeleted,
-t.AssignDate,t.CreatedDate,t.AssignedBy,t.CaseRecGuid,t.RecordGuid,t.TaskNBS,t.TaskOwnerId,t.TimeAllocated,convert(varchar(100),DATEADD(dd,-DATEDIFF(d,case when t.isFinished=1 then  ISNULL(t.CompletedDate,getdate()) else GETDATE() end,t.duedate),t.DueDate),23) CompleteTime,u.FirstNameAndLastName as ownername from Tasks t
+t.AssignDate,t.CreatedDate,t.AssignedBy,t.CaseRecGuid,t.RecordGuid,t.TaskNBS,t.TaskOwnerId,t.TimeAllocated,CompletedDate as CompleteTime,u.FirstNameAndLastName as ownername from Tasks t
 left JOIN UsersAndGroups u on u.UserID = t.TaskOwnerId
     WHERE TaskNBS    in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i}'")));
             //sql += req;
