@@ -10,11 +10,13 @@ using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
 using OpenAuth.App.ClientRelation;
 using OpenAuth.App.Clue.ModelDto;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Material.Request;
 using OpenAuth.App.Order;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Material;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Domain.View;
 using OpenAuth.Repository.Interface;
 using System;
@@ -438,7 +440,26 @@ namespace OpenAuth.App.Material
             return archiveData;
         }
 
+        public  TableData GetDataA(string req)
+        {
+            var result = new TableData();
+            string sql = string.Format(@"SELECT  * from TaskView5  WHERE fld005506 =   '{0}'  ", req);
+            //sql += req;
+            var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
+            result.Data = modeldata.ToList();
+            return result;
+        }
 
+        public TableData GetDataB(string req)
+        {
+            var result = new TableData();
+            string sql = string.Format(@"SELECT TaskId,UserCreatedId,Subject,StartDate,DueDate,hasReminder,StatusId,PriorityId,Complete,isFinished,isPrivate,isDeleted,
+AssignDate,CreatedDate,AssignedBy,CaseRecGuid,RecordGuid,TaskNBS,TaskOwnerId,TimeAllocated from Tasks  WHERE TaskNBS =    '{0}' ",req);
+            //sql += req;
+            var modeldata = UnitWork.ExcuteSql<statisticsTableB>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
+            result.Data = modeldata.ToList();
+            return result;
+        }
 
     }
 
