@@ -1262,7 +1262,7 @@ namespace OpenAuth.App
         public async Task SynSalesDelivery()
         {
             //销售交货流程 并处于序列号选择环节
-            var entrusted = await UnitWork.Find<Entrustment>(c => c.Status != 5).Select(r => new { r.Id, r.JodId, r.Status, r.ContactsId, r.Contacts }).ToListAsync();
+            var entrusted = await UnitWork.Find<Entrustment>(c => c.Status != 5).ToListAsync();
             var jobIds = entrusted.Select(c => c.JodId).ToList();//已经生成过的流程ID
             var deliveryList = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货").Select(c => new { c.sbo_id, c.base_entry, c.base_type, c.job_data, c.job_id, c.step_id, c.job_state, c.sync_stat, c.sbo_itf_return }).ToListAsync();
             var deliveryJob = deliveryList.Where(c => !jobIds.Contains(c.job_id) && c.step_id == 455).ToList();//在选择序列号环节
@@ -1357,8 +1357,8 @@ namespace OpenAuth.App
                 #endregion
 
                 #region 生成委托单
-                var finlishJobs = await UnitWork.Find<wfa_job>(null).Where(c => c.job_type_id == 1 && c.job_nm == "销售交货" && c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToListAsync();//选择了序列号/结束的交货流程并且同步完成
-                var finlishEntrusted = entrusted.Where(c => finlishJobs.Contains(c.JodId) && c.Status == 1).ToList();//选择了序列号/结束的交货流程并且同步完成
+                var finlishJob = deliveryList.Where(c => c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToList();//选择了序列号/结束的交货流程并且同步完成
+                var finlishEntrusted = entrusted.Where(c => finlishJob.Contains(c.JodId) && c.Status == 1).ToList();//选择了序列号/结束的交货流程并且同步完成
                 if (deliveryJob.Count > 0)
                 {
                     for (int i = 0; i < finlishEntrusted.Count; i++)

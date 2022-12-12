@@ -187,6 +187,11 @@ namespace OpenAuth.Repository.Domain.Material
         public string AliasEn { get; set; }
 
         /// <summary>
+        /// 升级版本
+        /// </summary>
+        public string UpgradeVer { get; set; }
+
+        /// <summary>
         /// 备注
         /// </summary>
         public string Remark { get; set; }
