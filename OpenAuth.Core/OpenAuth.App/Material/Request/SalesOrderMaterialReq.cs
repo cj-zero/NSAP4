@@ -176,6 +176,10 @@ namespace OpenAuth.App.Material.Request
 
         public string ownername { get; set; }
 
+        public int DueHours { get; set; }
+
+        public int WorkHours { get; set; }
+
     }
 
 
