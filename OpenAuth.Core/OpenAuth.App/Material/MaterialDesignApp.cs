@@ -798,11 +798,11 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             }
             if (req.duedateStart != null)
             {
-                sqlwhere += " and duedate  >= '" + req.duedateStart + "'";
+                sqlwhere += " and DATEADD(dd,-DueDays,duedate)  >= '" + req.duedateStart + "'";
             }
             if (req.duedateEnd != null)
             {
-                sqlwhere += " and duedate <= '" + req.duedateEnd + "'";
+                sqlwhere += " and DATEADD(dd,-DueDays,duedate) <= '" + req.duedateEnd + "'";
             }
             if (!string.IsNullOrEmpty(req.DutyFlag))
             {
