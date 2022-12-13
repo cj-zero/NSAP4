@@ -289,6 +289,16 @@ namespace OpenAuth.WebApi.Controllers
         //    await _app.Test();
         //}
 
+        /// <summary>
+        /// 定时刷新数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task UpdateDataJob()
+        {
+            await _app.UpdateDataJob();
+        }
+
         public OutsourcsController(OutsourcApp app)
         {
             _app = app;
