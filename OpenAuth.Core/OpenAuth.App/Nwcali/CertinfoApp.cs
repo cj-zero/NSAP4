@@ -1271,6 +1271,7 @@ namespace OpenAuth.App
                 #region 生成备料单
                 if (deliveryJob.Count > 0)
                 {
+                    deliveryJob = deliveryJob.Where((x, i) => deliveryJob.FindIndex(z => z.job_id == x.job_id) == i).ToList();
                     foreach (var item in deliveryJob)
                     {
                         var saleOrder = await UnitWork.Find<sale_ordr>(c => c.sbo_id == item.sbo_id && c.DocEntry == item.base_entry).FirstOrDefaultAsync();
@@ -1359,73 +1360,70 @@ namespace OpenAuth.App
                 #region 生成委托单
                 var finlishJob = deliveryList.Where(c => c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToList();//选择了序列号/结束的交货流程并且同步完成
                 var finlishEntrusted = entrusted.Where(c => finlishJob.Contains(c.JodId) && c.Status == 1).ToList();//选择了序列号/结束的交货流程并且同步完成
-                if (deliveryJob.Count > 0)
+                for (int i = 0; i < finlishEntrusted.Count; i++)
                 {
-                    for (int i = 0; i < finlishEntrusted.Count; i++)
+                    var item = finlishEntrusted[i];
+                    var job = deliveryList.Where(c => c.job_id == item.JodId).FirstOrDefault();
+                    if (job != null)
                     {
-                        var item = finlishEntrusted[i];
-                        var job = deliveryList.Where(c => c.job_id == item.JodId).FirstOrDefault();
-                        if (job != null)
+                        var serialNumber = await (from a in UnitWork.Find<OITL>(null)
+                                                  join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
+                                                  from b in ab.DefaultIfEmpty()
+                                                  join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
+                                                  from c in bc.DefaultIfEmpty()
+                                                  where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
+                                                  select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
+
+                        int line = 0, sort = 0;
+                        List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
+                        foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
                         {
-                            var serialNumber = await (from a in UnitWork.Find<OITL>(null)
-                                                      join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
-                                                      from b in ab.DefaultIfEmpty()
-                                                      join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
-                                                      from c in bc.DefaultIfEmpty()
-                                                      where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
-                                                      select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
-
-                            int line = 0, sort = 0;
-                            List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
-                            foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
+                            int line2 = 0;
+                            var deleteData = await UnitWork.Find<EntrustmentDetail>(x => x.EntrustmentId == item.Id)?.ToArrayAsync();
+                            if (deleteData != null && deleteData.Count() > 0)
                             {
-                                int line2 = 0;
-                                var deleteData = await UnitWork.Find<EntrustmentDetail>(x => x.EntrustmentId == item.Id)?.ToArrayAsync();
-                                if (deleteData != null && deleteData.Count() > 0)
+                                try
                                 {
-                                    try
-                                    {
-                                        await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
-                                        await UnitWork.SaveAsync();
-                                    }
-                                    catch (DbUpdateConcurrencyException ex)
-                                    {
-                                        throw new Exception("数据删除异常", ex);
-                                    }
+                                    await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
+                                    await UnitWork.SaveAsync();
                                 }
-
-                                if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
+                                catch (DbUpdateConcurrencyException ex)
                                 {
-                                    ++line;
-                                    foreach (var items in groupItem)
-                                    {
-                                        ++line2; ++sort;
-                                        EntrustmentDetail entrustmentDetail = new EntrustmentDetail();
-                                        entrustmentDetail.EntrustmentId = item.Id;
-                                        entrustmentDetail.ItemCode = groupItem.Key;
-                                        entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
-                                        entrustmentDetail.SerialNumber = items.MnfSerial;
-                                        entrustmentDetail.Quantity = 1;
-                                        entrustmentDetail.LineNum = line + "-" + line2;
-                                        entrustmentDetail.Sort = sort;
-                                        entrustmentDetail.Id = Guid.NewGuid().ToString();
-                                        detail.Add(entrustmentDetail);
-                                    }
+                                    throw new Exception("数据删除异常", ex);
                                 }
                             }
 
-                            await UnitWork.BatchAddAsync<EntrustmentDetail>(detail.ToArray());
-                            await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
+                            if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
                             {
-                                DeliveryId = job.sbo_itf_return,
-                                Status = 2,//待处理
-                                EntrustedUserId = item.ContactsId,
-                                EntrustedUser = item.Contacts,
-                                EntrustedDate = DateTime.Now,
-                                UpdateDate = DateTime.Now
-                            });
-                            await UnitWork.SaveAsync();
+                                ++line;
+                                foreach (var items in groupItem)
+                                {
+                                    ++line2; ++sort;
+                                    EntrustmentDetail entrustmentDetail = new EntrustmentDetail();
+                                    entrustmentDetail.EntrustmentId = item.Id;
+                                    entrustmentDetail.ItemCode = groupItem.Key;
+                                    entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
+                                    entrustmentDetail.SerialNumber = items.MnfSerial;
+                                    entrustmentDetail.Quantity = 1;
+                                    entrustmentDetail.LineNum = line + "-" + line2;
+                                    entrustmentDetail.Sort = sort;
+                                    entrustmentDetail.Id = Guid.NewGuid().ToString();
+                                    detail.Add(entrustmentDetail);
+                                }
+                            }
                         }
+
+                        await UnitWork.BatchAddAsync<EntrustmentDetail>(detail.ToArray());
+                        await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
+                        {
+                            DeliveryId = job.sbo_itf_return,
+                            Status = 2,//待处理
+                            EntrustedUserId = item.ContactsId,
+                            EntrustedUser = item.Contacts,
+                            EntrustedDate = DateTime.Now,
+                            UpdateDate = DateTime.Now
+                        });
+                        await UnitWork.SaveAsync();
                     }
                 }
 
@@ -1644,6 +1642,8 @@ namespace OpenAuth.App
                                             Status = -1,
                                             UpdateDate = DateTime.Now
                                         });
+
+                                        await UnitWork.SaveAsync();
                                     }
                                 }
                             }
