@@ -288,8 +288,9 @@ namespace OpenAuth.WebApi.Controllers.Material
 
             List<DataTable> list = new List<DataTable>();
             string sql = "  select * from ( select RecordGuid,CreatedDate, fld005508 DocEntry, max(_System_Progress) progress,fld005506 itemCode,_System_objNBS ProjectNo from OBJ162 group by RecordGuid, fld005508,_System_objNBS,fld005506,CreatedDate  union all  select RecordGuid,CreatedDate, fld017268 DocEntry, max(_System_Progress) progress,fld005787 itemCode,_System_objNBS ProjectNo from OBJ170 group by RecordGuid, fld017268,_System_objNBS,fld005787,CreatedDate  union all  select RecordGuid,CreatedDate, fld005717 DocEntry, max(_System_Progress) progress,fld005719 itemCode,_System_objNBS ProjectNo from OBJ169 group by RecordGuid, fld005717,_System_objNBS,fld005719,CreatedDate) a   ";
-            //sql += "where a.DocEntry = 'SE-" + docentry + "' and itemCode = '" + itemcode.Replace("'","''") + "'";
-            sql += "where  itemCode = '" + itemcode.Replace("'", "''") + "'";
+            sql += "where a.DocEntry = 'SE-" + docentry + "' and itemCode = '" + itemcode.Replace("'","''") + "'";
+            //sql += "where  itemCode = '" + itemcode.Replace("'", "''") + "'";
+           // sql += " ORDER BY Progress DESC ";
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
             list.Add(dts);
             if (dts != null && dts.Rows.Count > 0)
