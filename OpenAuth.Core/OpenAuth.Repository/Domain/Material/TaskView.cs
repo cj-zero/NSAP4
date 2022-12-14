@@ -44,6 +44,8 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public DateTime? UpdateDate { get; set; }
 
+        public int IsDelete { get; set; }
+
         public override void GenerateDefaultKeyVal()
         {
         }
