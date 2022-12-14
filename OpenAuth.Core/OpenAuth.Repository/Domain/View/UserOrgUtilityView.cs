@@ -349,6 +349,7 @@ namespace OpenAuth.Repository.Domain.View
     public class MaterialDataReq
     {
         public List<string> Alpha { get; set; }
+        public string ProjectNo { get; set; }
     }
 
     public class ArchiveData

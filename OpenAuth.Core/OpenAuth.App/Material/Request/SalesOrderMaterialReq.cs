@@ -180,6 +180,7 @@ namespace OpenAuth.App.Material.Request
 
         public int WorkHours { get; set; }
 
+        public string AssignedTo { get; set; }
     }
 
 

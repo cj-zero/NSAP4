@@ -470,7 +470,7 @@ left outer join UsersAndGroups as us2 on us2.UserID=t.OwnerId
     WHERE TaskNBS    in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i}'")));
             //sql += req;
             var modeldata = UnitWork.ExcuteSql<statisticsTableB>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
-            result.Data = modeldata.ToList();
+            result.Data = modeldata.Where(a=>a.Subject.Contains(req.ProjectNo)).ToList();
             return result;
         }
 
