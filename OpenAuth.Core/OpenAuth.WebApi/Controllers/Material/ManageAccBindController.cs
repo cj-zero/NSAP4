@@ -314,6 +314,29 @@ namespace OpenAuth.WebApi.Controllers.Material
             return result;
         }
 
+        /// <summary>
+        /// 获取项目计划工时数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public TableData GetDataD([FromBody] MaterialDataReq req)
+        {
+            //overtime code 
+            var result = new TableData();
+            try
+            {
+                result = _app.GetDataD(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
 
     }
 }

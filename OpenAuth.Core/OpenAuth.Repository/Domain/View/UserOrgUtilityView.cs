@@ -62,6 +62,107 @@ namespace OpenAuth.Repository.Domain.View
 
     }
 
+    public class BetaView
+    {
+
+        public string _System_objNBS { get; set; }
+
+        public string itemcode { get; set; }
+
+        public string num { get; set; }
+
+        public string IdRecord { get; set; }
+
+        public string RecordGuid { get; set; }
+
+        public int deleted { get; set; }
+
+        public double _System_Progress { get; set; }
+
+        public DateTime CreatedDate { get; set; }
+
+        public DateTime DateModified { get; set; }
+
+    }
+
+    public class BetaSubView
+    {
+
+        public int StageId { get; set; }
+
+        public string Description { get; set; }
+
+        public string LongDescription { get; set; }
+
+        public int IndentLevel { get; set; }
+
+        public DateTime Start { get; set; }
+
+        public int Work { get; set; }
+
+        public DateTime Finish { get; set; }
+
+        public int OrderIndex { get; set; }
+
+        public int CompletedWork { get; set; }
+
+        public DateTime dueDate { get; set; }
+
+        public int dueWork { get; set; }
+
+        public int DueCompletedWork { get; set; }
+
+        public string ResponsibleUser { get; set; }
+
+        public string objNBS { get; set; }
+
+        public string itemcode { get; set; }
+
+        public double progress { get; set; }
+
+
+    }
+
+
+    public class BetaSubFinalView
+    {
+
+        public int StageId { get; set; }
+
+        public string Description { get; set; }
+
+        public string LongDescription { get; set; }
+
+        public int IndentLevel { get; set; }
+
+        public DateTime Start { get; set; }
+
+        public int Work { get; set; }
+
+        public DateTime Finish { get; set; }
+
+        public int OrderIndex { get; set; }
+
+        public int CompletedWork { get; set; }
+
+        public DateTime dueDate { get; set; }
+
+        public int dueWork { get; set; }
+
+        public int DueCompletedWork { get; set; }
+
+        public string ResponsibleUser { get; set; }
+
+        public string objNBS { get; set; }
+
+        public string itemcode { get; set; }
+
+        public double progress { get; set; }
+
+        public List<string> TaskList { get; set; } = new List<string>();
+
+    }
+
 
 
     public class UserManageUtilityRsp

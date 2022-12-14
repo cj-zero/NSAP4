@@ -598,8 +598,8 @@ namespace OpenAuth.App.Material
                                             ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
             strSql += string.Format(@"  union all     select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
                                             (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
-                                            (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005796 DocEntry, max(_System_Progress) progress, fld005787 itemCode
-                                            from OBJ170 group by RecordGuid, fld005796, _System_objNBS, fld005787,CreatedDate) a) t
+                                            (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld017268 DocEntry, max(_System_Progress) progress, fld005787 itemCode
+                                            from OBJ170 group by RecordGuid, fld005787, _System_objNBS, fld017268,CreatedDate) a) t
                                             ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
 
             strSql += string.Format(@"  union all     select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
@@ -733,13 +733,13 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             List<TaskView> statisticView = new List<TaskView>();
             if (!string.IsNullOrEmpty(req.Month))
             {
-                statisticView.AddRange(UnitWork.Find<TaskView>(q => q.Month == req.Month).ToList());
+                statisticView.AddRange(UnitWork.Find<TaskView>(q => q.Month == req.Month && q.IsDelete ==0).ToList());
                 NumberList.AddRange(statisticView.Select(q => q.Number).ToList());
                 
             }
             else
             {
-                statisticView.AddRange(UnitWork.Find<TaskView>(null).ToList());
+                statisticView.AddRange(UnitWork.Find<TaskView>(q =>  q.IsDelete == 0).ToList());
                 NumberList.AddRange(statisticView.Select(q => q.Number).ToList());
             }
 
