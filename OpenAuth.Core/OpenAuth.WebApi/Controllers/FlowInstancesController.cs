@@ -26,8 +26,8 @@ namespace OpenAuth.WebApi.Controllers
         {
             var result = new Response<FlowVerificationResp>();
             try
-            {
-                result.Result = await _app.GetForVerification(id);
+            {             
+                result.Result = string.IsNullOrEmpty(id) ? result.Result : await _app.GetForVerification(id);
             }
             catch (Exception ex)
             {
