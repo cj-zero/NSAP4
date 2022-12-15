@@ -25,13 +25,19 @@ using OfficeOpenXml.FormulaParsing.Excel.Functions.Text;
 using OpenAuth.App.Order;
 using Magicodes.ExporterAndImporter.Core.Extension;
 using NPOI.OpenXmlFormats.Dml;
+using MySql.Data.MySqlClient;
+using Microsoft.Extensions.Logging;
+using OpenAuth.App.Client;
 
 namespace OpenAuth.App.Material
 {
+    
     public class MaterialDesignApp : OnlyUnitWorkBaeApp
     {
-        public MaterialDesignApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        private ILogger<MaterialDesignApp> _logger;
+        public MaterialDesignApp(IUnitWork unitWork, ILogger<MaterialDesignApp> logger, IAuth auth) : base(unitWork, auth)
         {
+            _logger = logger;
         }
 
 
@@ -709,6 +715,98 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
                 Count = count.Rows[0][0].ToInt(),
             };
         }
+
+
+
+        public string AddBOMExcel(DataTable dt, string filename)
+        {
+            this._logger.LogError("bom导入excel开始：", Array.Empty<object>());
+            if (dt.Rows.Count < 1 || dt.Columns.Count != 5)
+            {
+                return null;
+            }
+            this._logger.LogError("bom导入excel（dt.Rows.Count）：" + dt.Rows.Count.ToString(), Array.Empty<object>());
+            string text = string.Format("select excel_id from store_oitt_excel where excel_nm= '" + filename + "' order by crt_dt desc", Array.Empty<object>());
+            DataTable dataTable = this.UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, text.ToString(), CommandType.Text, null);
+            int num = 1;
+            if (dataTable != null && dataTable.Rows.Count > 0)
+            {
+                num = dataTable.Rows.Count + 1;
+            }
+            string text2 = string.Format("INSERT INTO {0}.store_oitt_excel (excel_nm,ItemCode,sbo_id,U_BBH,crt_dt,opt_id,is_import) ", "nsap_bone");
+            text2 += string.Format("VALUES ('{0}','{1}',{2},'{3}','{4}','{5}',{6});SELECT LAST_INSERT_ID() NewIdentity;", new object[]
+            {
+        filename,
+        StringExtension.FilterESC(filename),
+        1,
+        "V1." + num.ToString().PadLeft(2, '0'),
+        DateTime.Now.ToString(),
+        0,
+        0
+            });
+            if (this.UnitWork.ExecuteSql(text2.ToString(), ContextType.NsapBoneDbContextType) > 0)
+            {
+                dataTable = this.UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, text.ToString(), CommandType.Text, null);
+                string arg = "";
+                if (dataTable != null && dataTable.Rows.Count > 0)
+                {
+                    arg = dataTable.Rows[0]["excel_id"].ToString();
+                }
+                int num2 = 0;
+                StringBuilder stringBuilder = new StringBuilder();
+                List<MySqlParameter> list = new List<MySqlParameter>();
+                stringBuilder.AppendFormat("INSERT INTO {0}.store_oitt_excel_detail (excel_id,excel_line,crt_dt,MaterialNo,PCBFootprint,ItemValue,Quantity,Reference,ItemCode) VALUES ", "nsap_bone");
+                for (int i = 0; i < dt.Rows.Count; i++)
+                {
+                    string text3 = dt.Rows[i][0].ToString().Trim();
+                    string text4 = "";
+                    if (!string.IsNullOrEmpty(text3))
+                    {
+                        text4 = this.GetItemCodeByPCBA(text3, 1.ToString());
+                    }
+                    num2++;
+                    stringBuilder.AppendFormat("({1},?excel_line{0},?crt_dt{0},?MaterialNo{0},?PCBFootprint{0},?ItemValue{0},?Quantity{0},?Reference{0},?ItemCode{0}),", num2, arg);
+                    list.Add(new MySqlParameter(string.Format("?excel_line{0}", num2), num2 - 1));
+                    list.Add(new MySqlParameter(string.Format("?crt_dt{0}", num2), DateTime.Now.ToString()));
+                    list.Add(new MySqlParameter(string.Format("?MaterialNo{0}", num2), text3));
+                    list.Add(new MySqlParameter(string.Format("?PCBFootprint{0}", num2), dt.Rows[i][2].ToString()));
+                    list.Add(new MySqlParameter(string.Format("?ItemValue{0}", num2), dt.Rows[i][1].ToString()));
+                    list.Add(new MySqlParameter(string.Format("?Quantity{0}", num2), float.Parse((dt.Rows[i][4].ToString() == "") ? "0" : dt.Rows[i][4].ToString())));
+                    list.Add(new MySqlParameter(string.Format("?Reference{0}", num2), dt.Rows[i][3].ToString().Trim()));
+                    list.Add(new MySqlParameter(string.Format("?ItemCode{0}", num2), text4));
+                }
+                string text5 = string.Format("{0};", stringBuilder.ToString().TrimEnd(','));
+                try
+                {
+                    this.UnitWork.ExecuteNonQuery(ContextType.NsapBoneDbContextType, CommandType.Text, text5, new object[]
+                    {
+                list
+                    });
+                }
+                catch (Exception ex)
+                {
+                    this._logger.LogError("bom导入excel（ex.Message）：" + ex.Message, Array.Empty<object>());
+                    throw;
+                }
+            }
+            return "1";
+        }
+
+
+        public string GetItemCodeByPCBA(string pcbaCode, string sboId)
+        {
+            string text = string.Format("SELECT ItemCode FROM {0}.store_oitm WHERE U_PCBA_item_ID='{2}' AND sbo_id = {1} limit 1", "nsap_bone", sboId, StringExtension.FilterSQL(pcbaCode));
+            object obj = this.UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, text, CommandType.Text, null);
+            if (obj != null)
+            {
+                return obj.ToString();
+            }
+            return "";
+        }
+
+
+
+
 
         #region 工程部考勤
         /// <summary>

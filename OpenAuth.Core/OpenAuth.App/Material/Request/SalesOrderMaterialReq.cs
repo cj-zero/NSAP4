@@ -1,6 +1,7 @@
 ﻿using OpenAuth.App.Request;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
 
 namespace OpenAuth.App.Material.Request
@@ -193,6 +194,12 @@ namespace OpenAuth.App.Material.Request
     public class withdarwSubmitReq
     {
         public List<string> Number { get; set; }
+    }
+
+    public class Data
+    {
+        public DataTable dt { get; set; }
+        public string filename { get; set; }
     }
 
     public class ScoringDetail
