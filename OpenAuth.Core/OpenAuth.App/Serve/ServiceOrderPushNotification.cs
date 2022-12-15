@@ -58,7 +58,7 @@ namespace OpenAuth.App.Serve
             await _hubContext.Clients.Groups("呼叫中心").SendAsync("ServiceOrderECNCount", "系统", serviceOrderEcnCount);
             #endregion
             #region 报销单
-            var reimburseInfos =await UnitWork.Find<ReimburseInfo>(r => r.RemburseStatus > 3 && r.RemburseStatus < 9).GroupBy(r=>r.RemburseStatus).Select(r=> new{ status=r.Key, count=r.Count()}).ToListAsync();
+            var reimburseInfos = await UnitWork.Find<ReimburseInfo>(r => r.RemburseStatus > 3 && r.RemburseStatus < 9).GroupBy(r => r.RemburseStatus).Select(r => new { status = r.Key, count = r.Count() }).ToListAsync();
             foreach (var item in reimburseInfos)
             {
                 switch (item.status)
@@ -143,15 +143,15 @@ namespace OpenAuth.App.Serve
             #endregion
             #region 责任归属
             var blameBelong = await UnitWork.Find<BlameBelong>(c => c.Status > 1 && c.Status < 6).Include(c => c.BlameBelongOrgs).ToListAsync();
-            var groubyList = blameBelong.GroupBy(r => r.Status).Select(r => new 
-            { 
-                status = r.Key, 
-                count = r.Count(), 
-                detail = r.Select(c => new 
-                { 
-                    DocType = c.DocType, 
-                    Orgs = c.BlameBelongOrgs.Where(s => !string.IsNullOrWhiteSpace(s.HandleUserName)).Select(s => new { HandleUserName=s.HandleUserName,IsHandle=s.IsHandle }).ToList() 
-                }).ToList() 
+            var groubyList = blameBelong.GroupBy(r => r.Status).Select(r => new
+            {
+                status = r.Key,
+                count = r.Count(),
+                detail = r.Select(c => new
+                {
+                    DocType = c.DocType,
+                    Orgs = c.BlameBelongOrgs.Where(s => !string.IsNullOrWhiteSpace(s.HandleUserName)).Select(s => new { HandleUserName = s.HandleUserName, IsHandle = s.IsHandle }).ToList()
+                }).ToList()
             }).ToList();
             var hrCount = 0;
             foreach (var item in groubyList)
@@ -214,7 +214,7 @@ namespace OpenAuth.App.Serve
 
             #region 结算单
 
-            var  flowInstanceInfos = await UnitWork.Find<FlowInstance>(f => f.CustomName == "个人代理结算单").GroupBy(a => a.ActivityName).Select(s => new { status = s.Key ,count = s.Count  ()}).ToListAsync();
+            var flowInstanceInfos = await UnitWork.Find<FlowInstance>(f => f.CustomName == "个人代理结算单").GroupBy(a => a.ActivityName).Select(s => new { status = s.Key, count = s.Count() }).ToListAsync();
             foreach (var item in flowInstanceInfos)
             {
                 switch (item.status)
@@ -235,6 +235,111 @@ namespace OpenAuth.App.Serve
             }
 
             #endregion
+
+            #region 销售-提交给我的
+            //获取提交给我的
+            var wfaJobList = await UnitWork.Find<wfa_job>(r => (r.job_type_id == 13 || r.job_type_id == 7 || r.job_type_id == 1 || r.job_type_id == 72) && (r.job_state == 1 || r.job_state == 4) && r.step_id != 0).Select(r => new { r.job_id, r.step_id}).ToListAsync();
+
+            //获取审批步骤
+            var wfaSteps = await UnitWork.Find<wfa_step>(r => r.job_type_id == 13 || r.job_type_id == 7 || r.job_type_id == 1 || r.job_type_id == 72).Select(r => new { r.step_id, r.audit_level }).ToListAsync();
+
+            //获取对应步骤的审批人Id
+            var wfaobjs = await UnitWork.Find<wfa_obj>(r => r.audit_obj_id != 0).Select(r => new { r.step_id, r.audit_obj_id }).ToListAsync();
+            
+            //获取记录审批人
+            var wfaJump = await UnitWork.Find<wfa_jump>(r => r.state == 0).Select(r => new { r.job_id, r.user_id, r.audit_level }).ToListAsync();
+            var wfaJobJumps = (from a in wfaJump
+                              join b in wfaJobList on a.job_id equals b.job_id
+                              join c in wfaSteps on b.step_id equals c.step_id
+                              where a.audit_level == c.audit_level
+                               select new
+                              {
+                                  step_id = b.step_id,
+                                  job_id = b.job_id
+                              }).ToList();
+
+            var wfaJobs = wfaJobJumps.GroupBy(r => new { r.step_id}).Select(r => new { stepId = r.Key.step_id, count = r.Count() }).ToList();
+       
+            //获取用户名称
+            var users = await UnitWork.Find<base_user>(null).Select(r => new { r.user_nm, user_id = Convert.ToInt32(r.user_id) }).ToListAsync();
+
+            //wfa_job与步骤对应的审批人
+            var saleSend = (from a in (from a in wfaJobs
+                                       join b in wfaobjs on a.stepId equals b.step_id into ab
+                                       from b in ab.DefaultIfEmpty()
+                                       where b != null
+                                       select new
+                                       {
+                                           totalCount = a.count,
+                                           stepId = a.stepId,
+                                           userId = b == null ? 0 : b.audit_obj_id
+                                       }).ToList()
+                            join b in users on a.userId equals b.user_id
+                            select new
+                            {
+                                totalCount = a.totalCount,
+                                stepId = a.stepId,
+                                userId = a.userId,
+                                userName = b == null ? "" : b.user_nm
+                            }).ToList();
+
+            //以人员为分组计算总数
+            var saleSingleSend = saleSend.GroupBy(r => new { r.userName }).Select(r => new { userName = r.Key.userName, totalCount = r.Sum(x => x.totalCount) }).ToList();
+
+            //循环推送消息
+            foreach (var item in saleSingleSend)
+            {
+                if (!string.IsNullOrEmpty(item.userName))
+                {
+                    await _hubContext.Clients.User(item.userName).SendAsync("SaleSubCount", "系统", item.totalCount);
+                }
+            }
+            #endregion
+
+            #region 订单合同-提交给我的
+            //获取订单合同申请单
+            List<string> statusList = new List<string>() { "3", "4", "5", "8", "9", "10", "12" };
+            var contracts = await UnitWork.Find<ContractApply>(r => statusList.Contains(r.ContractStatus)).GroupBy(r => new { r.ContractStatus }).Select(r => new { statu = r.Key.ContractStatus, count = r.Count()}).ToListAsync();
+
+            //订单合同循环推送
+            int fwCount = 0;
+            int sqCount = 0;
+            int zzCount = 0;
+            foreach (var item in contracts)
+            {
+                switch (item.statu)
+                {
+                    case "3":
+                        fwCount = fwCount + item.count;
+                        break;
+                    case "4":
+                        fwCount = fwCount + item.count;
+                        sqCount = sqCount + item.count;
+                        break;
+                    case "5":
+                        zzCount = zzCount + item.count;
+                        break;
+                    case "8":
+                        sqCount = sqCount + item.count;
+                        break;
+                    case "9":
+                        fwCount = fwCount + item.count;
+                        break;
+                    case "10":
+                        fwCount = fwCount + item.count;
+                        zzCount = zzCount + item.count;
+                        break;
+                    case "12":
+                        sqCount = sqCount + item.count;
+                        break;
+                }
+            }
+
+            await _hubContext.Clients.Groups("销售总助").SendAsync("ContractSendCount", "系统", zzCount);
+            await _hubContext.Clients.Groups("法务人员").SendAsync("ContractSendCount", "系统", fwCount);
+            await _hubContext.Clients.Groups("售前工程师").SendAsync("ContractSendCount", "系统", sqCount);
+            #endregion
+
             //推送版本号
             await _hubContext.Clients.All.SendAsync("Version", "系统", _appConfiguration.Value.Version);
         }
