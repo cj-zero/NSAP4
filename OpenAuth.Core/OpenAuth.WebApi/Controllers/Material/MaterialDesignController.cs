@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material;
@@ -505,5 +506,13 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return fileList;
         }
+
+        [HttpPost]
+        public string AddBOMExcel([FromBody] Data data)
+        {
+            return _app.AddBOMExcel(data.dt, data.filename);
+        }
+
+
     }
 }
