@@ -447,24 +447,26 @@ namespace OpenAuth.App.Material
         public  TableData GetDataA(MaterialDataReq req)
         {
             var result = new TableData();
-            string sql = string.Format(@"SELECT  * from TaskView5  WHERE fld005506 in   ( {0} )  ", String.Join(",",req.Alpha.Select(i => $"'{i.Replace("\'","\"")}'")));
+            //string sql = string.Format(@"SELECT  * from TaskView5  WHERE fld005506 in   ( {0} )  ", String.Join(",",req.Alpha.Select(i => $"'{i.Replace("\'","\"")}'")));
+            ////sql += req;
+            //var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
+            List<TaskNbsView> modeldata = new List<TaskNbsView>();
+            string sql = string.Format(@"SELECT * from (
+select a._System_objNBS ,a.fld005506 as itemcode ,a.fld005508 as num,a.idRecord ,a.RecordGuid ,a.deleted,a._System_Progress,a.CreatedDate,a.DateModified from (select * from OBJ162 where idRecord in (select max(idRecord) from OBJ162 group by _System_objNBS )) a
+union all
+select b._System_objNBS , b.fld005787 as itemcode ,b.fld017268 as num ,b.idRecord, b.RecordGuid , b.deleted,b._System_Progress,b.CreatedDate,b.DateModified from (select * from OBJ170 where idRecord in (select max(idRecord) from OBJ170 group by _System_objNBS )) b
+union all
+select c._System_objNBS ,c.fld005879 as itemcode ,c.fld005878 as num ,c.idRecord,c.RecordGuid ,c.deleted,c._System_Progress,c.CreatedDate,c.DateModified from (select * from OBJ163 where idRecord in (select max(idRecord) from OBJ163 group by _System_objNBS)) c
+union all
+select d._System_objNBS ,d.fld005719 as itemcode ,d.fld005717 as num ,d.idRecord,d.RecordGuid ,d.deleted,d._System_Progress,d.CreatedDate,d.DateModified from (select * from OBJ169 where idRecord in (select max(idRecord) from OBJ169 group by _System_objNBS)) d) as t WHERE t.itemcode in   ( {0} )  and  t.num like  '%{1}%' ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")), req.ProjectNo);
             //sql += req;
-            var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
-            //List<statisticsTableSpec> finalList = new List<statisticsTableSpec>();
-            //foreach (var item in req.Alpha)
-            //{
-            //    var relateItem = modeldata.Where(a => a.fld005506 == item).ToList();
-            //    if (relateItem.Count !=0)
-            //    {
-            //        finalList.Add(new statisticsTableSpec
-            //        {
-            //            code = item,
-            //            data = relateItem
-            //        });
-                    
-            //    }
-
-            //}
+            var specJobList = UnitWork.ExcuteSql<BetaView>(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
+            foreach (var item in specJobList)
+            {
+                var sql2 = string.Format(@"  	SELECT TaskId, TaskNBS, Subject, '{1}' as ProjectNo  from Tasks t where t.CaseRecGuid = '{0}'  ", item.RecordGuid,item._System_objNBS);
+                var taskNbsList = UnitWork.ExcuteSql<TaskNbsView>(ContextType.ManagerDbContext, sql2.ToString(), CommandType.Text, null);
+                modeldata.AddRange(taskNbsList);
+            }
             result.Data = modeldata.ToList();
             return result;
         }
@@ -504,14 +506,14 @@ select b._System_objNBS , b.fld005787 as itemcode ,b.fld017268 as num ,b.idRecor
 union all
 select c._System_objNBS ,c.fld005879 as itemcode ,c.fld005878 as num ,c.idRecord,c.RecordGuid ,c.deleted,c._System_Progress,c.CreatedDate,c.DateModified from (select * from OBJ163 where idRecord in (select max(idRecord) from OBJ163 group by _System_objNBS)) c
 union all
-select d._System_objNBS ,d.fld005719 as itemcode ,d.fld005717 as num ,d.idRecord,d.RecordGuid ,d.deleted,d._System_Progress,d.CreatedDate,d.DateModified from (select * from OBJ169 where idRecord in (select max(idRecord) from OBJ169 group by _System_objNBS)) d) as t WHERE t.itemcode in   ( {0} )   ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")));
+select d._System_objNBS ,d.fld005719 as itemcode ,d.fld005717 as num ,d.idRecord,d.RecordGuid ,d.deleted,d._System_Progress,d.CreatedDate,d.DateModified from (select * from OBJ169 where idRecord in (select max(idRecord) from OBJ169 group by _System_objNBS)) d) as t WHERE t.itemcode in   ( {0} )  and  t.num like  '%{1}%' ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")), req.ProjectNo);
             //sql += req;
             var specJobList = UnitWork.ExcuteSql<BetaView>(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
             List<BetaSubFinalView>  betaFinalList = new List<BetaSubFinalView>();
             if (specJobList != null)
             {
-                string sql3 = string.Format(@"SELECT  * from TaskView5  WHERE fld005506 in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")));
-                var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql3, CommandType.Text, null).ToList();
+                //string sql3 = string.Format(@"SELECT  * from TaskView5  WHERE fld005506 in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")));
+                //var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql3, CommandType.Text, null).ToList();
                 foreach (var item in specJobList)
                 {
                     var specidRecord = item.RecordGuid;
@@ -537,6 +539,8 @@ Left Outer Join ObjectFieldsGroups as ofg on ofg.GroupObjId=cs.ChildGroupObjId  
                         if (specJob2.FirstOrDefault() != null)
                         {
                             var finaljob = specJob2.FirstOrDefault();
+                            var sql3 = string.Format(@"  	SELECT TaskId, TaskNBS, Subject, '{1}' as ProjectNo  from Tasks t where t.CaseRecGuid = '{0}'  ", item.RecordGuid, item._System_objNBS);
+                            var taskNbsList = UnitWork.ExcuteSql<TaskNbsView>(ContextType.ManagerDbContext, sql3.ToString(), CommandType.Text, null);
                             betaFinalList.Add(new BetaSubFinalView
                             {
                                 StageId = finaljob.StageId,
@@ -555,7 +559,7 @@ Left Outer Join ObjectFieldsGroups as ofg on ofg.GroupObjId=cs.ChildGroupObjId  
                                 objNBS = finaljob.objNBS,
                                 itemcode = finaljob.itemcode,
                                 progress = finaljob.progress,
-                                TaskList = modeldata.Where(a => a.fld005506 == finaljob.itemcode).Select(n => n.Number).ToList()
+                                TaskList = taskNbsList.Select(n => n.TaskNBS).ToList()
                             }); 
                         }
  
