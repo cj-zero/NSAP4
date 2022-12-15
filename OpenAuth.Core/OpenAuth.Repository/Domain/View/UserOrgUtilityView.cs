@@ -124,6 +124,14 @@ namespace OpenAuth.Repository.Domain.View
     }
 
 
+    public class TaskNbsView
+    {
+        public int TaskId { get; set; }
+        public string TaskNBS { get; set; }
+        public string Subject { get; set; }
+        public string ProjectNo { get; set; }
+    }
+
     public class BetaSubFinalView
     {
 
