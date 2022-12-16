@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text;
+using System.Data;
 using Infrastructure;
 using Infrastructure.Const;
 using Infrastructure.Export;
@@ -10,6 +12,7 @@ using Magicodes.ExporterAndImporter.Core;
 using Magicodes.ExporterAndImporter.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OpenAuth.App.Interface;
@@ -26,7 +29,7 @@ using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Domain.Settlement;
 using OpenAuth.Repository.Domain.Workbench;
 using OpenAuth.Repository.Interface;
-
+using OpenAuth.Repository;
 
 namespace OpenAuth.App
 {
@@ -41,6 +44,7 @@ namespace OpenAuth.App
         private readonly RevelanceManagerApp _revelanceApp;
         private HttpHelper _helper;
         private IOptions<AppSetting> _appConfiguration;
+        private ILogger<OutsourcApp> _logger;
 
         /// <summary>
         /// 加载列表
@@ -835,6 +839,7 @@ namespace OpenAuth.App
                     else
                     {
                         money += Calculation(number);
+                        _logger.LogError("个人结算记录：" + number.ToString() + "个，" + "金额：" + money + "，用户：" + loginContext.User.Name + "，结算单Id：" + request.ServiceOrderSapId);
                     }
 
                 });
@@ -1175,7 +1180,7 @@ namespace OpenAuth.App
 
                     await UnitWork.UpdateAsync<Outsourc>(o => o.Id == req.outsourcId, u => new Outsourc
                     {
-                        TotalMoney = obj.TotalMoney,
+                        //TotalMoney = obj.TotalMoney,
                         FlowInstanceId = outsourcObj.FlowInstanceId,
                         UpdateTime = DateTime.Now,
                         //todo:补充或调整自己需要的字段
@@ -1697,7 +1702,9 @@ namespace OpenAuth.App
                         o.Money = Calculation(number);
                         o.IsOverseas = false;
                     }
+
                     obj.TotalMoney += o.Money;
+                    _logger.LogError("个人结算记录：" + number.ToString() + "个，" + "金额：" + obj.TotalMoney + "，用户：" + loginContext.User.Name + "，结算单Id：" + req.ServiceOrderSapId + "，地方：" + Province);
                 });
             }
             return obj;
@@ -2270,6 +2277,63 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
         }
 
+        /// <summary>
+        /// 刷新数据任务
+        /// </summary>
+        /// <returns></returns>
+        public async Task UpdateDataJob()
+        {
+            if (DateTime.Now.ToString("yyyy-MM-dd") == (DateTime.Now.Year.ToString() + "-" + DateTime.Now.Month + "-01"))
+            {
+                List<int> moneys = new List<int>() { 30, 35, 40, 45, 50, 60};
+                List<string> userNames = await UnitWork.Find<Outsourc>(null).GroupBy(r => new { r.CreateUser}).Select(r => r.Key.CreateUser).ToListAsync();
+                string StartDateTime = (new DateTime(DateTime.Now.Year, DateTime.Now.AddMonths(-1).Month, 1)).ToString("yyyy-MM-dd");
+                string EndDateTime = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)).ToString("yyyy-MM-dd");
+                foreach (string name in userNames)
+                {
+                    foreach (int item in moneys)
+                    {
+                        //刷新Outsourc数据
+                        StringBuilder strSql = new StringBuilder();
+                        strSql.AppendFormat("update erp4_settlement.outsourc as o join (select o.Id, e.Id as eId from erp4_settlement.outsourc as o join erp4_settlement.outsourcexpenses e on o.Id = e.OutsourcId where e.ExpenseType = 4 and e.IsOverseas = false ");
+                        strSql.AppendFormat(" and e.CompleteTime >= '"+ StartDateTime + "' and e.CompleteTime < '"+ EndDateTime + "' ");
+                        strSql.AppendFormat(" and o.CreateUser = '"+ name + "' order by CompleteTime ");
+
+                        //刷新Outsourcexpenses数据
+                        StringBuilder strSqlOut = new StringBuilder();
+                        strSqlOut.AppendFormat("update erp4_settlement.outsourcexpenses as oe join( select o.Id, e.Id as eId from erp4_settlement.outsourc as o join erp4_settlement.outsourcexpenses e on o.Id = e.OutsourcId where e.ExpenseType = 4 and e.IsOverseas = false ");
+                        strSqlOut.AppendFormat(" and e.CompleteTime >= '"+ StartDateTime +"' and e.CompleteTime < '"+ EndDateTime +"' ");
+                        strSqlOut.AppendFormat(" and CreateUser = '"+ name +"' order by CompleteTime");
+                        switch (item)
+                        {
+                            case 30:
+                                strSql.AppendFormat(" limit 0,100 ) t on on o.Id = t.Id set o.TotalMoney = 30");
+                                strSqlOut.AppendFormat(" limit 0 ,100) t on oe.Id = t.eId set oe.Money = 30");
+                                break;
+                            case 35:
+                                strSql.AppendFormat(" limit 100,50 ) t on on o.Id = t.Id set o.TotalMoney = 35");
+                                strSqlOut.AppendFormat(" limit 100 ,50) t on oe.Id = t.eId set oe.Money = 35");
+                                break;
+                            case 40:
+                                strSql.AppendFormat(" limit 150,50 ) t on on o.Id = t.Id set o.TotalMoney = 40");
+                                strSqlOut.AppendFormat(" limit 150 ,50) t on oe.Id = t.eId set oe.Money = 40");
+                                break;
+                            case 45:
+                                strSql.AppendFormat(" limit 200,50 ) t on on o.Id = t.Id set o.TotalMoney = 45");
+                                strSqlOut.AppendFormat(" limit 200 ,50) t on oe.Id = t.eId set oe.Money = 45");
+                                break;
+                            case 50:
+                                strSql.AppendFormat(" limit 250,50 ) t on on o.Id = t.Id set o.TotalMoney = 50");
+                                strSqlOut.AppendFormat(" limit 250 ,50) t on oe.Id = t.eId set oe.Money = 50");
+                                break;
+                        }
+
+                        UnitWork.ExecuteScalar(ContextType.Nsap4SettlementContextType, strSql.ToString(), CommandType.Text, null);
+                        UnitWork.ExecuteScalar(ContextType.Nsap4SettlementContextType, strSqlOut.ToString(), CommandType.Text, null);
+                    }
+                }  
+            }
+        }
 
         public async Task<List<OutsourcCondition>> OutsourcCondition(List<int> ids)
         {
@@ -2286,7 +2350,7 @@ namespace OpenAuth.App
             return result;
         }
         public OutsourcApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, PendingApp pendingApp, WorkbenchApp workbenchApp,
-            QuotationApp quotationApp, ModuleFlowSchemeApp moduleFlowSchemeApp, RevelanceManagerApp app, IAuth auth, UserManagerApp userManagerApp, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
+            QuotationApp quotationApp, ModuleFlowSchemeApp moduleFlowSchemeApp, RevelanceManagerApp app, ILogger<OutsourcApp> logger, IAuth auth, UserManagerApp userManagerApp, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _flowInstanceApp = flowInstanceApp;
@@ -2297,6 +2361,7 @@ namespace OpenAuth.App
             _userManagerApp = userManagerApp;
             _revelanceApp = app;
             _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
+            _logger = logger;
         }
     }
 }

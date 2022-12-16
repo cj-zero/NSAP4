@@ -459,6 +459,7 @@ namespace OpenAuth.App.Material
                 XWJSn = req.XWJSn,
                 Alias = req.Alias,
                 AliasEn = req.AliasEn ?? "",
+                UpgradeVer = req.UpgradeVer ?? "",
                 Remark = req.Remark,
                 CreateUser = _auth.GetCurrentUser()?.User?.Id ?? "",
                 CreateTime = DateTime.Now,
@@ -491,6 +492,7 @@ namespace OpenAuth.App.Material
                        select new
                        {
                            h.XWJSn,
+                           h.UpgradeVer,
                            s.XWJSoftwareVersionName,
                            s.FilePath,
                            s.Alias,
@@ -522,6 +524,7 @@ namespace OpenAuth.App.Material
                 XWJSn = req.XWJSn,
                 Alias = req.Alias,
                 AliasEn = req.AliasEn ?? "",
+                UpgradeVer = req.UpgradeVer ?? "",
                 Remark = req.Remark,
                 UpdateTime = DateTime.Now
             });

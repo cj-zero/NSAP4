@@ -328,10 +328,10 @@ namespace OpenAuth.App
             {
                 throw new Exception("请选择客户！");
             }
-            if (req.BeforeSaleDemandOrders != null && req.BeforeSaleDemandOrders.Count == 0)
-            {
-                throw new Exception("请关联单据！");
-            }
+            //if (req.BeforeSaleDemandOrders != null && req.BeforeSaleDemandOrders.Count == 0)
+            //{
+            //    throw new Exception("请关联单据！");
+            //}
             if (req.DemandContents == null)
             {
                 throw new Exception("请填写需求简述！");

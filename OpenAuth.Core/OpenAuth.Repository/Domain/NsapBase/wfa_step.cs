@@ -50,7 +50,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public bool audit_level { get; set; }
+        public int audit_level { get; set; }
         /// <summary>
         /// 
         /// </summary>
