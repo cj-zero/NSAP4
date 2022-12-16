@@ -1077,6 +1077,7 @@ namespace OpenAuth.App
                         chl.barcode = "";
                         chl.battery_mass = 0;
                         chl.desc = "";
+                        chl.xwj_guid = item.LowGuid;
                         arg.chl.Add(chl);
                     }
                     deviceTest.canTestDeviceResp.control.arg = JsonConvert.SerializeObject(arg);
@@ -1166,6 +1167,7 @@ namespace OpenAuth.App
                             chl.barcode = "";
                             chl.battery_mass = 0;
                             chl.desc = "";
+                            chl.xwj_guid = item.LowGuid;
                             if (row.bts_id <= channelLimit)
                             {
                                 arg1.chl.Add(chl);
@@ -1187,6 +1189,7 @@ namespace OpenAuth.App
                             chl.barcode = "";
                             chl.battery_mass = 0;
                             chl.desc = "";
+                            chl.xwj_guid = item.LowGuid;
                             if (row.bts_id % 2 > 0)
                             {
                                 arg1.chl.Add(chl);
@@ -1270,6 +1273,7 @@ namespace OpenAuth.App
                     chl.barcode = "";
                     chl.battery_mass = 0;
                     chl.desc = "";
+                    chl.xwj_guid = item.LowGuid;
                     arg.chl.Add(chl);
                 }
                 deviceTest.canTestDeviceResp.control.arg = JsonConvert.SerializeObject(arg);

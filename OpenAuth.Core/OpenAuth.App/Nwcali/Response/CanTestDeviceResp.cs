@@ -61,5 +61,6 @@ namespace OpenAuth.App.Nwcali.Response
         /// 备注,如果为空则会使用工步文件中的信息
         /// </summary>
         public string desc { get; set; }
+        public string xwj_guid { get; set; }
     }
 }
