@@ -562,7 +562,7 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
             var result = new TableData();
-
+            result.Data = new List<ProductCodeListResp>();
             var ServiceWorkOrderList = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(request.ServiceOrderId))
                 .WhereIf(string.IsNullOrWhiteSpace(request.CreateUserId), s => s.CurrentUserNsapId.Equals(loginUser.Id))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserId), s => s.CurrentUserNsapId.Equals(request.CreateUserId))
