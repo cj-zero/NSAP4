@@ -133,23 +133,22 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             List<string> user_ids = new List<string>();
-            var query = await (from a in UnitWork.Find<AppUserMap>(null)
+            var query = (from a in UnitWork.Find<AppUserMap>(null)
                                   join b in UnitWork.Find<User>(null) on a.UserID equals b.Id
                                   join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
                                   join d in UnitWork.Find<Repository.Domain.Org>(null) on c.SecondId equals d.Id
                                   where b.Status == 0 && c.Key == "UserOrg"
                                   select new { user_id = a.AppUserId, real_name=b.Name, entry_time=b.EntryTime==null?"":b.EntryTime.ToString("yyyy-MM-dd HH:mm:ss"), department_id = d.Id, department = d.Name })
                                   .WhereIf(model.user_ids.Count>0, c => model.user_ids.Contains(c.user_id.Value))
-                                  .WhereIf(!string.IsNullOrWhiteSpace(model.key),c=>c.real_name.Contains(model.key))
-                                  .ToListAsync();
-            result.Count = query.Count;
+                                  .WhereIf(!string.IsNullOrWhiteSpace(model.key),c=>c.real_name.Contains(model.key));
+            result.Count =await query.CountAsync();
             if (model.page_index > 0 && model.page_size > 0)
             {
-                result.Data = query.Skip((model.page_index- 1) * model.page_size).Take(model.page_size);
+                result.Data = await query.Skip((model.page_index- 1) * model.page_size).Take(model.page_size).ToListAsync();
             }
             else
             {
-                result.Data = query;
+                result.Data = await query.ToListAsync();
             }
             return result;
         }
@@ -167,7 +166,7 @@ namespace OpenAuth.App
             }
             var result = new TableData();
             List<string> user_ids = new List<string>();
-            var query = await (from a in UnitWork.Find<AppUserMap>(null)
+            var query = (from a in UnitWork.Find<AppUserMap>(null)
                                join b in UnitWork.Find<User>(null) on a.UserID equals b.Id
                                join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
                                join d in UnitWork.Find<Repository.Domain.Org>(null) on c.SecondId equals d.Id
@@ -176,16 +175,15 @@ namespace OpenAuth.App
                                   .WhereIf(model.user_ids!=null && model.user_ids.Count > 0, c => model.user_ids.Contains(c.user_id.Value))
                                   .WhereIf(!string.IsNullOrWhiteSpace(model.username), c => c.user_name.Contains(model.username))
                                   .WhereIf(!string.IsNullOrWhiteSpace(model.department), c => c.department.Contains(model.department))
-                                  .WhereIf(!string.IsNullOrWhiteSpace(model.department_id),c=> department_ids.Contains(c.department_id))
-                                  .ToListAsync();
-            result.Count = query.Count;
+                                  .WhereIf(!string.IsNullOrWhiteSpace(model.department_id),c=> department_ids.Contains(c.department_id));
+            result.Count =await query.CountAsync();
             if (model.page_index > 0 && model.page_size > 0)
             {
-                result.Data = query.Skip((model.page_index - 1) * model.page_size).Take(model.page_size);
+                result.Data =await query.Skip((model.page_index - 1) * model.page_size).Take(model.page_size).ToListAsync();
             }
             else
             {
-                result.Data = query;
+                result.Data =await query.ToListAsync();
             }
             return result;
         }
