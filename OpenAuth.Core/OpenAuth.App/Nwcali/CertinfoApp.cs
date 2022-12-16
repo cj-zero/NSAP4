@@ -2594,8 +2594,8 @@ namespace OpenAuth.App
                 {
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
-                    beginTime = DateTimeOffset.FromUnixTimeSeconds(Convert.ToInt64(item["beginTime"])).LocalDateTime,
-                    endTime = DateTimeOffset.FromUnixTimeSeconds(Convert.ToInt64(item["endTime"])).LocalDateTime,
+                    beginTime = (DateTimeOffset.FromUnixTimeSeconds(Convert.ToInt64(item["beginTime"])).LocalDateTime).ToString("yyyy-MM-dd HH:mm:ss"),
+                    endTime = (DateTimeOffset.FromUnixTimeSeconds(Convert.ToInt64(item["endTime"])).LocalDateTime).ToString("yyyy-MM-dd HH:mm:ss"),
                     lowGuid = item["lowGuid"].ToString(),
                     lowVer = item["lowVer"].ToString(),
                     conclusion = item["conclusion"].ToString(),
