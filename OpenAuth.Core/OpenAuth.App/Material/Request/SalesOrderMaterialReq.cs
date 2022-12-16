@@ -1,6 +1,7 @@
 ﻿using OpenAuth.App.Request;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
 
 namespace OpenAuth.App.Material.Request
@@ -98,6 +99,11 @@ namespace OpenAuth.App.Material.Request
         public DateTime? AssignDateEnd { get; set; }
     }
 
+    public class statisticsTableSpec
+    {
+        public string code { get; set; }
+        public List<statisticsTable> data { get; set; } = new List<statisticsTable>();
+}
 
     public class statisticsTable
     {
@@ -121,10 +127,79 @@ namespace OpenAuth.App.Material.Request
         public string Month { get; set; }
     }
 
+
+    public class statisticsTableB
+    {
+        public double TaskId { get; set; }
+
+        public double UserCreatedId { get; set; }
+
+        public double OwenerId { get; set; }
+
+        public string Subject { get; set; }
+
+        public DateTime StartDate { get; set; }
+
+        public DateTime DueDate { get; set; }
+
+        public int hasReminder { get; set; }
+
+        public int StatusId { get; set; }
+
+        public int PriorityId { get; set; }
+
+        public int Complete { get; set; }
+
+        public int isFinished { get; set; }
+
+        public int isPrivate { get; set; }
+
+        public int isDeleted { get; set; }
+
+
+        public DateTime AssignDate { get; set; }
+
+        public DateTime CreatedDate { get; set; }
+
+        public double AssignedBy { get; set; }
+
+        public string CaseRecGuid { get; set; }
+
+        public string RecordGuid { get; set; }
+
+        public string TaskNBS { get; set; }
+
+        public double TaskOwnerId { get; set; }
+
+        public float TimeAllocated { get; set; }
+
+        public DateTime CompleteTime { get; set; }
+
+        public string ownername { get; set; }
+
+        public int DueHours { get; set; }
+
+        public int WorkHours { get; set; }
+
+        public string AssignedTo { get; set; }
+    }
+
+
     public class submitMonth 
     {
         public List<string> Number { get; set; }
         public string Month { get; set; }
+    }
+
+    public class withdarwSubmitReq
+    {
+        public List<string> Number { get; set; }
+    }
+
+    public class Data
+    {
+        public DataTable dt { get; set; }
+        public string filename { get; set; }
     }
 
     public class ScoringDetail

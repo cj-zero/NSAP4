@@ -1,20 +1,25 @@
-﻿using Infrastructure;
+﻿using DocumentFormat.OpenXml.Presentation;
+using DocumentFormat.OpenXml.Wordprocessing;
+using Infrastructure;
 using Infrastructure.Export;
 using Magicodes.ExporterAndImporter.Core;
 using Magicodes.ExporterAndImporter.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using NPOI.HPSF;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
 using OpenAuth.App.ClientRelation;
 using OpenAuth.App.Clue.ModelDto;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Material.Request;
 using OpenAuth.App.Order;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Material;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Domain.View;
 using OpenAuth.Repository.Interface;
 using System;
@@ -27,6 +32,7 @@ using System.Reactive.Joins;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using TencentCloud.Tci.V20190318.Models;
 
 
 namespace OpenAuth.App.Material
@@ -217,14 +223,26 @@ namespace OpenAuth.App.Material
         {
             DutyChartResponse dcr = new DutyChartResponse();
             // get due time personals
-            StringBuilder strSql = new StringBuilder();
+            
             string start = Convert.ToDateTime(req.Month + "-01").ToString("yyyy-MM-dd");
              string end = Convert.ToDateTime(req.Month + "-01").AddMonths(1).ToString("yyyy-MM-dd");
+
+            //StringBuilder strSql = new StringBuilder();
+            //strSql.AppendFormat("select AssignedTo,count(case when t.fld006314 = N'一般' then 1 else null end)*0.5 as Low    ,count(case when t.fld006314 = N'中等' then 1 else null end) as Medium     ,count(case when t.fld006314 = N'较高' then 1 else null end)*2 as High   ,count(case when t.fld006314 = N'超高' then 1 else null end)*3 as Top from  (select AssignedTo, fld006314,AssignDate  from TaskView5) as  t  where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by AssignedTo   ");
+            //var personalAssignList = UnitWork.ExcuteSql<SerieManageDataRaw>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
+            //StringBuilder strFSql = new StringBuilder();
+            //strFSql.AppendFormat("select AssignedTo,count(case when t.fld006314 = N'一般' then 1 else null end)*0.5 as Low    ,count(case when t.fld006314 = N'中等' then 1 else null end) as Medium     ,count(case when t.fld006314 = N'较高' then 1 else null end)*2 as High   ,count(case when t.fld006314 = N'超高' then 1 else null end)*3 as Top from  (select AssignedTo, fld006314,AssignDate  from TaskView5) as  t  where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by AssignedTo    ORDER BY CompleteCount DESC ");
+            //var personalFList = UnitWork.ExcuteSql<SerieManageDataRaw>(ContextType.ManagerDbContext, strFSql.ToString(), CommandType.Text);
+
+            #region rejected code v1
+            StringBuilder strSql = new StringBuilder();
             strSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  (select AssignedTo, Number, isFinished,AssignDate  from TaskView5) as  t where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by AssignedTo  ORDER BY CompleteCount DESC ");
-            var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(),CommandType.Text);
+            var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
             StringBuilder strFSql = new StringBuilder();
             strFSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from   (select AssignedTo, Number, isFinished,CompleteTime  from TaskView5) as  t  where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by AssignedTo    ORDER BY CompleteCount DESC ");
             var personalFList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strFSql.ToString(), CommandType.Text);
+            #endregion
+
             // get personals with their level for which the qualified line and excel line needed
             var personalNames = personalAssignList.Select(u => u.AssignedTo).ToList();
             var personalFNames = personalFList.Select(u => u.AssignedTo).ToList();
@@ -426,7 +444,132 @@ namespace OpenAuth.App.Material
             return archiveData;
         }
 
+        public  TableData GetDataA(MaterialDataReq req)
+        {
+            var result = new TableData();
+            //string sql = string.Format(@"SELECT  * from TaskView5  WHERE fld005506 in   ( {0} )  ", String.Join(",",req.Alpha.Select(i => $"'{i.Replace("\'","\"")}'")));
+            ////sql += req;
+            //var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
+            List<TaskNbsView> modeldata = new List<TaskNbsView>();
+            string sql = string.Format(@"SELECT * from (
+select a._System_objNBS ,a.fld005506 as itemcode ,a.fld005508 as num,a.idRecord ,a.RecordGuid ,a.deleted,a._System_Progress,a.CreatedDate,a.DateModified from (select * from OBJ162 where idRecord in (select max(idRecord) from OBJ162 group by _System_objNBS )) a
+union all
+select b._System_objNBS , b.fld005787 as itemcode ,b.fld017268 as num ,b.idRecord, b.RecordGuid , b.deleted,b._System_Progress,b.CreatedDate,b.DateModified from (select * from OBJ170 where idRecord in (select max(idRecord) from OBJ170 group by _System_objNBS )) b
+union all
+select c._System_objNBS ,c.fld005879 as itemcode ,c.fld005878 as num ,c.idRecord,c.RecordGuid ,c.deleted,c._System_Progress,c.CreatedDate,c.DateModified from (select * from OBJ163 where idRecord in (select max(idRecord) from OBJ163 group by _System_objNBS)) c
+union all
+select d._System_objNBS ,d.fld005719 as itemcode ,d.fld005717 as num ,d.idRecord,d.RecordGuid ,d.deleted,d._System_Progress,d.CreatedDate,d.DateModified from (select * from OBJ169 where idRecord in (select max(idRecord) from OBJ169 group by _System_objNBS)) d) as t WHERE t.itemcode in   ( {0} )  and  t.num like  '%{1}%' ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")), req.ProjectNo);
+            //sql += req;
+            var specJobList = UnitWork.ExcuteSql<BetaView>(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
+            foreach (var item in specJobList)
+            {
+                var sql2 = string.Format(@"  	SELECT TaskId, TaskNBS, Subject, '{1}' as ProjectNo  from Tasks t where t.CaseRecGuid = '{0}'  ", item.RecordGuid,item._System_objNBS);
+                var taskNbsList = UnitWork.ExcuteSql<TaskNbsView>(ContextType.ManagerDbContext, sql2.ToString(), CommandType.Text, null);
+                modeldata.AddRange(taskNbsList);
+            }
+            result.Data = modeldata.ToList();
+            return result;
+        }
 
+        public TableData GetDataB(MaterialDataReq req)
+        {
+            var result = new TableData();
+            string sql = string.Format(@"SELECT t.TaskId,t.UserCreatedId,t.Subject,t.StartDate,t.DueDate,t.hasReminder,t.StatusId,t.PriorityId,t.Complete,t.isFinished,t.isPrivate,t.isDeleted,
+t.AssignDate,t.CreatedDate,t.AssignedBy,t.CaseRecGuid,t.RecordGuid,t.TaskNBS,t.TaskOwnerId,t.TimeAllocated,CompletedDate as CompleteTime,u.FirstNameAndLastName as ownername,DueHours=DATEDIFF(hh,case when t.isFinished=1 then  ISNULL(t.CompletedDate,getdate()) else GETDATE() end,t.duedate) , WorkHours=DATEDIFF(hh,t.StartDate,t.DueDate) ,AssignedTo=ISNULL(STUFF((select  ', '+ ISNULL(us.FirstName,us.UserName)+ISNULL(' '+us.LastName,'')   from TaskAssignment as ta join UsersAndGroups as us on us.UserID=ta.UserId where ta.TaskId=t.taskId   FOR XML PATH('')),1,2,''),ISNULL(us2.FirstName + ISNULL(' ' + us2.LastName,''),us2.UserName))  from Tasks t
+left JOIN UsersAndGroups u on u.UserID = t.TaskOwnerId
+left outer join UsersAndGroups as us2 on us2.UserID=t.OwnerId
+    WHERE TaskNBS    in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i}'")));
+            //sql += req;
+            var modeldata = UnitWork.ExcuteSql<statisticsTableB>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
+            result.Data = modeldata.Where(a=>a.Subject.Contains(req.ProjectNo)).ToList();
+            return result;
+        }
+
+        public TableData GetDataC(MaterialDataReq req)
+        {
+            var result = new TableData();
+            string sql = string.Format(@"SELECT  * from alpha  WHERE fld005506 in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")));
+            //sql += req;
+            var specJob = UnitWork.ExcuteSql<AlphaView>(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
+            result.Data = specJob.ToList();
+            return result;
+        }
+
+
+        public TableData GetDataD(MaterialDataReq req)
+        {
+            var result = new TableData();
+            string sql = string.Format(@"SELECT * from (
+select a._System_objNBS ,a.fld005506 as itemcode ,a.fld005508 as num,a.idRecord ,a.RecordGuid ,a.deleted,a._System_Progress,a.CreatedDate,a.DateModified from (select * from OBJ162 where idRecord in (select max(idRecord) from OBJ162 group by _System_objNBS )) a
+union all
+select b._System_objNBS , b.fld005787 as itemcode ,b.fld017268 as num ,b.idRecord, b.RecordGuid , b.deleted,b._System_Progress,b.CreatedDate,b.DateModified from (select * from OBJ170 where idRecord in (select max(idRecord) from OBJ170 group by _System_objNBS )) b
+union all
+select c._System_objNBS ,c.fld005879 as itemcode ,c.fld005878 as num ,c.idRecord,c.RecordGuid ,c.deleted,c._System_Progress,c.CreatedDate,c.DateModified from (select * from OBJ163 where idRecord in (select max(idRecord) from OBJ163 group by _System_objNBS)) c
+union all
+select d._System_objNBS ,d.fld005719 as itemcode ,d.fld005717 as num ,d.idRecord,d.RecordGuid ,d.deleted,d._System_Progress,d.CreatedDate,d.DateModified from (select * from OBJ169 where idRecord in (select max(idRecord) from OBJ169 group by _System_objNBS)) d) as t WHERE t.itemcode in   ( {0} )  and  t.num like  '%{1}%' ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")), req.ProjectNo);
+            //sql += req;
+            var specJobList = UnitWork.ExcuteSql<BetaView>(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
+            List<BetaSubFinalView>  betaFinalList = new List<BetaSubFinalView>();
+            if (specJobList != null)
+            {
+                //string sql3 = string.Format(@"SELECT  * from TaskView5  WHERE fld005506 in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")));
+                //var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql3, CommandType.Text, null).ToList();
+                foreach (var item in specJobList)
+                {
+                    var specidRecord = item.RecordGuid;
+                    if (!string.IsNullOrEmpty(specidRecord))
+                    {
+                        string sql2 = string.Format(@" Select cs.StageId
+ , cs.Description  
+  ,cs.LongDescription  
+  ,cs.[IndentLevel]
+   ,cs.[Start]
+  ,cs.[Work]
+  ,cs.[Finish]
+  ,cs.OrderIndex
+   ,cs.[CompletedWork]
+  ,cs.dueDate
+  ,cs.dueWork
+ ,cs.DueCompletedWork
+,ResponsibleUser=ISNULL(us.FirstName,us.UserName)+ISNULL(' ' +us.LastName,''), '{1}' as  objNBS ,'{2}' as itemcode, {3} as progress
+FROM  casesStagesMain as cs
+left outer Join UsersAndGroups as us on us.UserId=cs.ResponsibleUser
+Left Outer Join ObjectFieldsGroups as ofg on ofg.GroupObjId=cs.ChildGroupObjId  WHERE  IndentLevel = 0 AND  cs.RecordGuid =  '{0}'   Order by cs.OrderIndex ", specidRecord, item._System_objNBS, item.itemcode, item._System_Progress);
+                        var specJob2 = UnitWork.ExcuteSql<BetaSubView>(ContextType.ManagerDbContext, sql2.ToString(), CommandType.Text, null);
+                        if (specJob2.FirstOrDefault() != null)
+                        {
+                            var finaljob = specJob2.FirstOrDefault();
+                            var sql3 = string.Format(@"  	SELECT TaskId, TaskNBS, Subject, '{1}' as ProjectNo  from Tasks t where t.CaseRecGuid = '{0}'  ", item.RecordGuid, item._System_objNBS);
+                            var taskNbsList = UnitWork.ExcuteSql<TaskNbsView>(ContextType.ManagerDbContext, sql3.ToString(), CommandType.Text, null);
+                            betaFinalList.Add(new BetaSubFinalView
+                            {
+                                StageId = finaljob.StageId,
+                                Description = finaljob.Description,
+                                LongDescription = finaljob.LongDescription,
+                                IndentLevel = finaljob.IndentLevel,
+                                Start = finaljob.Start,
+                                Work = finaljob.Work,
+                                Finish = finaljob.Finish,
+                                OrderIndex = finaljob.OrderIndex,
+                                CompletedWork = finaljob.CompletedWork,
+                                dueDate = finaljob.dueDate,
+                                dueWork = finaljob.dueWork,
+                                DueCompletedWork = finaljob.DueCompletedWork,
+                                ResponsibleUser = finaljob.ResponsibleUser,
+                                objNBS = finaljob.objNBS,
+                                itemcode = finaljob.itemcode,
+                                progress = finaljob.progress,
+                                TaskList = taskNbsList.Select(n => n.TaskNBS).ToList()
+                            }); 
+                        }
+ 
+                    }
+                }
+                result.Data = betaFinalList.ToList();
+            }
+            
+            return result;
+        }
 
     }
 

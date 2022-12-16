@@ -74,12 +74,12 @@ namespace OpenAuth.WebApi
             {
                 foreach (var controller in GetControllers())
                 {
-                    option.SwaggerDoc(controller, new OpenApiInfo
-                    {
-                        Version = controller,
-                        Title = " NSAP4 API",
-                        Description = "By Neware-R7"
-                    });
+                        option.SwaggerDoc(controller, new OpenApiInfo
+                        {
+                            Version = controller,
+                            Title = " NSAP4 API",
+                            Description = "By Neware-R7"
+                        });
                 }
 
 

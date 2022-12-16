@@ -12,6 +12,7 @@ using Magicodes.ExporterAndImporter.Excel;
 using System.IO;
 using Newtonsoft.Json.Linq;
 using Magicodes.ExporterAndImporter.Core.Models;
+using OpenAuth.App.Response;
 
 namespace OpenAuth.WebApi.Controllers.Material
 {
@@ -233,6 +234,99 @@ namespace OpenAuth.WebApi.Controllers.Material
             try
             {
                 result.Result = await _app.SaveRateDetails(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// 获取物料数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public  TableData GetDataA ([FromBody] MaterialDataReq req)
+        {
+            //overtime code 
+            var result = new TableData();
+            try
+            {
+                result =  _app.GetDataA(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取物料下级数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public  TableData GetDataB([FromBody] MaterialDataReq req)
+        {
+            //overtime code 
+            var result = new TableData();
+            try
+            {
+                result =  _app.GetDataB(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取物料详情数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public TableData GetDataC([FromBody] MaterialDataReq req)
+        {
+            //overtime code 
+            var result = new TableData();
+            try
+            {
+                result = _app.GetDataC(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取项目计划工时数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public TableData GetDataD([FromBody] MaterialDataReq req)
+        {
+            //overtime code 
+            var result = new TableData();
+            try
+            {
+                result = _app.GetDataD(req);
             }
             catch (Exception ex)
             {
