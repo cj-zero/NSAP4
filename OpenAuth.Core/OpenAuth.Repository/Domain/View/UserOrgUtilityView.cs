@@ -255,7 +255,7 @@ namespace OpenAuth.Repository.Domain.View
     public class SerieData
     {
         public string Name { get; set; }
-        public List<double> SerieVal { get; set; }= new List<double>();
+        public List<decimal> SerieVal { get; set; }= new List<decimal>();
     }
 
     public class RateTableResponse
@@ -471,9 +471,9 @@ namespace OpenAuth.Repository.Domain.View
     {
         public string AssignedTo { get; set; }
 
-        public int Total { get; set; }
+        public decimal Total { get; set; }
 
-        public int CompleteCount { get; set; }
+        public decimal CompleteCount { get; set; }
 
     }
 

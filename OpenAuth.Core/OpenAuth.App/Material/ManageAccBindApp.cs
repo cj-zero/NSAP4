@@ -227,19 +227,14 @@ namespace OpenAuth.App.Material
             string start = Convert.ToDateTime(req.Month + "-01").ToString("yyyy-MM-dd");
              string end = Convert.ToDateTime(req.Month + "-01").AddMonths(1).ToString("yyyy-MM-dd");
 
-            //StringBuilder strSql = new StringBuilder();
-            //strSql.AppendFormat("select AssignedTo,count(case when t.fld006314 = N'一般' then 1 else null end)*0.5 as Low    ,count(case when t.fld006314 = N'中等' then 1 else null end) as Medium     ,count(case when t.fld006314 = N'较高' then 1 else null end)*2 as High   ,count(case when t.fld006314 = N'超高' then 1 else null end)*3 as Top from  (select AssignedTo, fld006314,AssignDate  from TaskView5) as  t  where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by AssignedTo   ");
-            //var personalAssignList = UnitWork.ExcuteSql<SerieManageDataRaw>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
-            //StringBuilder strFSql = new StringBuilder();
-            //strFSql.AppendFormat("select AssignedTo,count(case when t.fld006314 = N'一般' then 1 else null end)*0.5 as Low    ,count(case when t.fld006314 = N'中等' then 1 else null end) as Medium     ,count(case when t.fld006314 = N'较高' then 1 else null end)*2 as High   ,count(case when t.fld006314 = N'超高' then 1 else null end)*3 as Top from  (select AssignedTo, fld006314,AssignDate  from TaskView5) as  t  where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by AssignedTo    ORDER BY CompleteCount DESC ");
-            //var personalFList = UnitWork.ExcuteSql<SerieManageDataRaw>(ContextType.ManagerDbContext, strFSql.ToString(), CommandType.Text);
-
-            #region rejected code v1
+            #region  code v1
             StringBuilder strSql = new StringBuilder();
-            strSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  (select AssignedTo, Number, isFinished,AssignDate  from TaskView5) as  t where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by AssignedTo  ORDER BY CompleteCount DESC ");
+            //strSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  (select AssignedTo, Number, isFinished,AssignDate  from TaskView5) as  t where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by AssignedTo  ORDER BY CompleteCount DESC ");
+            strSql.AppendFormat("select AssignedTo,SUM(case when t.fld006314 = N'一般' then 0.5 when t.fld006314 = N'中等' then 1 when t.fld006314 = N'高级' then 2 when t.fld006314 = N'特级' then 3 else 0 END)  Total, SUM(case when (t.fld006314 = N'一般' AND t.isFinished = 1)   then 0.5 when (t.fld006314 = N'中等' AND t.isFinished = 1) then 1 when (t.fld006314 = N'高级' AND t.isFinished = 1) then 2 when (t.fld006314 = N'特级' AND t.isFinished = 1) then 3 else 0 END)  CompleteCount  from    (select  AssignedTo,fld006314,  isFinished,AssignDate  from TaskView5) as  t  where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'   group by AssignedTo ORDER BY CompleteCount DESC ");
             var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
             StringBuilder strFSql = new StringBuilder();
-            strFSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from   (select AssignedTo, Number, isFinished,CompleteTime  from TaskView5) as  t  where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by AssignedTo    ORDER BY CompleteCount DESC ");
+            //strFSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from   (select AssignedTo, Number, isFinished,CompleteTime  from TaskView5) as  t  where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by AssignedTo    ORDER BY CompleteCount DESC ");
+            strFSql.AppendFormat("select AssignedTo,SUM(case when t.fld006314 = N'一般' then 0.5 when t.fld006314 = N'中等' then 1 when t.fld006314 = N'高级' then 2 when t.fld006314 = N'特级' then 3 else 0 END)  Total, SUM(case when (t.fld006314 = N'一般' AND t.isFinished = 1)   then 0.5 when (t.fld006314 = N'中等' AND t.isFinished = 1) then 1 when (t.fld006314 = N'高级' AND t.isFinished = 1) then 2 when (t.fld006314 = N'特级' AND t.isFinished = 1) then 3 else 0 END)  CompleteCount  from    (select  AssignedTo,fld006314,  isFinished,CompleteTime  from TaskView5) as  t  where  CompleteTime   >= '" + start + "' AND CompleteTime  <='" + end + "'   group by AssignedTo ORDER BY CompleteCount DESC ");
             var personalFList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strFSql.ToString(), CommandType.Text);
             #endregion
 
