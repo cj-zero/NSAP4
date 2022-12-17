@@ -348,7 +348,7 @@ namespace OpenAuth.App.Material
                 if (!string.IsNullOrEmpty(dataitem.ContractReviewCode))
                 {
                     int ContractReviewCode = Convert.ToInt32(dataitem.ContractReviewCode);
-                    List<string> typeList = new List<string> { "套线", "铝条&#92;铜条", "钣金" };
+                    List<string> typeList = new List<string> { "套线", "铝条&#92;铜条", "钣金", "机加" };
                     var data = (from n in UnitWork.Find<sale_contract_review>(q => q.sbo_id == 1)
                                 join m in UnitWork.Find<sale_contract_review_detail>(q => q.sbo_id == 1)
                                 on n.contract_id equals m.contract_id into temp
