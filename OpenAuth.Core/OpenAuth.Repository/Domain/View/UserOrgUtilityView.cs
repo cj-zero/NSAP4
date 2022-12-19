@@ -348,11 +348,20 @@ namespace OpenAuth.Repository.Domain.View
     public class DetailExportSaveData
     {
         public string Time { get; set; }
+        public int Flag { get; set; }
         /// <summary>
         /// 数据
         /// </summary>
         public string detports  { get; set; }
 }
+
+    public class DetailData
+    {
+        public string Time { get; set; }
+        public string Name { get; set; }
+        public int Flag { get; set; }
+}
+
 
     public class MaterialDataReq
     {
@@ -366,7 +375,7 @@ namespace OpenAuth.Repository.Domain.View
         /// <summary>
         /// 数据
         /// </summary>
-        public string ArchiveDatas { get; set; }
+        public List<RateDetail> ArchiveDatas { get; set; }
     }
 
     /// <summary>

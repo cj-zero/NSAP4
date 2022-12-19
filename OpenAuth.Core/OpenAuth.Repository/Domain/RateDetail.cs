@@ -70,6 +70,9 @@ namespace OpenAuth.Repository.Domain
         [Description("是否删除")]
         public int IsDelete { get; set; }
 
+
+        public int ScriptFlag { get; set; }
+
     }
 
 

@@ -410,7 +410,8 @@ namespace OpenAuth.App.Material
                 Creatorid = loginContext.User.Id,
                 UpdateDate = DateTime.Now,
                 Updaterid = loginContext.User.Id,
-                IsDelete = 0
+                IsDelete = 0,
+                ScriptFlag = req.Flag
             };
             await UnitWork.AddAsync<RateDetail, int>(addItem);
             await UnitWork.SaveAsync();
@@ -422,14 +423,28 @@ namespace OpenAuth.App.Material
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        /// <exception cref="CommonException"></exception>
-        public async Task<ArchiveData> GetArchives(string req)
+        public async Task<ArchiveData> GetArchives(DetailData req)
         {
             ArchiveData archiveData = new ArchiveData();
-            var adata = UnitWork.FindSingle<RateDetail>(a => a.Time == req);
+            List<RateDetail> adata = new List<RateDetail>();
+             //adata = UnitWork.Find<RateDetail>(a => a.Time == req.Time && a.ScriptFlag == 0).OrderByDescending(a=>a.CreateDate).ToList();
+            if (string.IsNullOrEmpty(req.Time) && !string.IsNullOrEmpty(req.Name))
+            {
+                adata = UnitWork.Find<RateDetail>(a => a.Data.Contains(req.Name) && a.ScriptFlag == req.Flag).OrderByDescending(a => a.CreateDate).ToList();
+            }
+            if (!string.IsNullOrEmpty(req.Time) && string.IsNullOrEmpty(req.Name))
+            {
+                adata = UnitWork.Find<RateDetail>(a => a.Time == req.Time && a.ScriptFlag == req.Flag).OrderByDescending(a => a.CreateDate).ToList();
+            }
+            if (!string.IsNullOrEmpty(req.Time) && !string.IsNullOrEmpty(req.Name))
+            {
+                adata = UnitWork.Find<RateDetail>(a => a.Time == req.Time && a.Data.Contains(req.Name) && a.ScriptFlag == req.Flag).OrderByDescending(a => a.CreateDate).ToList();
+            }
+
+            
             if (adata!=null)
             {
-                archiveData.ArchiveDatas = adata.Data;
+                archiveData.ArchiveDatas = adata;
                 archiveData.ArchiveFlag = true;
             }
             else

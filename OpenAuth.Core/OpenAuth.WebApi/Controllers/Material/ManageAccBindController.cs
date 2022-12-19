@@ -176,8 +176,8 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<Response<ArchiveData>> GetArchives(string  req)
+        [HttpPost]
+        public async Task<Response<ArchiveData>> GetArchives([FromBody]  DetailData req)
         {
             var result = new Response<ArchiveData>();
             try

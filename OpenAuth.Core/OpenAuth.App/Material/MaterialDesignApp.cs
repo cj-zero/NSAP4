@@ -104,7 +104,7 @@ namespace OpenAuth.App.Material
                             on new { DocEntry = "SE-" + n.Field<string>("DocEntry"), itemCode = n.Field<string>("ItemCode") }
                             equals new { DocEntry = m.Field<string>("DocEntry"), itemCode = m.Field<string>("itemCode") } into temp
                             from t in temp.DefaultIfEmpty()
-                            select new
+                            select new MaterialRsp
                             {
                                 id = n.Field<int>("Id"),
                                 DocEntry = n.Field<string>("DocEntry"),
@@ -205,6 +205,16 @@ namespace OpenAuth.App.Material
                 querydata = querydata.OrderByDescending(q => q.SubmitTime);
             }
             var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            //20221217 replace the itemCode according to the request
+            //foreach (var item in data)
+            //{
+            //    if (item.ItemCode.Contains("M"))
+            //    {
+            //        string sql2 = string.Format(@" SELECT * from sale_contract_review_detail  where contract_id =  {0} ", item.ContractReviewCode);
+
+            //    }
+            //}
+
 
             result.Data = data;
             result.Count = querydata.Count();
