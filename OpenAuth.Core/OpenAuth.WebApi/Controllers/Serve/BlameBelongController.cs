@@ -65,7 +65,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// 获取采购单下销售单或服务单下序列号
         /// </summary>
         /// <param name="id">单号</param>
-        /// <param name="type">1-采购单 2-服务单</param>
+        /// <param name="type">1-采购单 2-服务单</param>   新   1-服务单 2-生产单 3-采购单
         /// <returns></returns>
         [HttpGet]
         public async Task<Infrastructure.Response<dynamic>> GetSaleOrderOrSN(int id, int type)
@@ -83,28 +83,46 @@ namespace OpenAuth.WebApi.Controllers.Serve
         {
             return await _app.GetDetails(id);
         }
-
+        /// <summary>
+        /// 获取详情-老数据
+        /// </summary>
+        /// <param name="docentry"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetDetailsOld(int id)
+        {
+            return await _app.GetDetailsOld(id);
+        }
+        /// <summary>
+        /// 获取当前用户部门人员
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetOrgUser(string userId)
+        {
+            return await _app.GetOrgUser(userId);
+        }
         /// <summary>
         /// 移交
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpPost]
-        public async Task<Response> TransferPerson(AccraditationBlameBelongReq req)
-        {
-            Response result = new Response();
-            try
-            {
-                await _app.TransferPerson(req);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
-            }
-            return result;
-        }
+        //[HttpPost]
+        //public async Task<Response> TransferPerson(AccraditationBlameBelongReq req)
+        //{
+        //    Response result = new Response();
+        //    try
+        //    {
+        //        await _app.TransferPerson(req);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = ex.Message;
+        //        Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+        //    }
+        //    return result;
+        //}
 
         /// <summary>
         /// 撤回

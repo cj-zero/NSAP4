@@ -67,6 +67,8 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<RDR1>().HasKey(o => o.DocEntry);
             #endregion
 
+            modelBuilder.Entity<OCTG>().HasKey(o => o.GroupNum);
+
             modelBuilder.Entity<OITL>().HasKey(o => o.LogEntry);
             modelBuilder.Entity<ITL1>().HasKey(o => new { o.LogEntry, o.ItemCode, o.SysNumber, });
             modelBuilder.Entity<OSRN>().HasKey(o => o.AbsEntry);
@@ -108,7 +110,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<OSRIModel> Osris { get; set; }
         public virtual DbSet<ORCTModel> Orcts { get; set; }
         public virtual DbSet<BalanceModel> BalanceModels { get; set; }
-
+        public virtual DbSet<OCTG> OCTGs { get; set; }
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
         //public virtual DbSet<AAC1> Aac1s { get; set; }
         //public virtual DbSet<AACP> Aacps { get; set; }

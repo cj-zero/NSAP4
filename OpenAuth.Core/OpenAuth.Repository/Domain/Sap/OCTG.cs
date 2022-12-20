@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OCTG")]
-    public partial class OCTG : Entity
+    public partial class OCTG
     {
         public OCTG()
         {
@@ -37,7 +37,7 @@ namespace OpenAuth.Repository.Domain.Sap
           this.CshRelev= string.Empty;
         }
 
-        
+        public short GroupNum { get; set; }
         /// <summary>
         /// 
         /// </summary>

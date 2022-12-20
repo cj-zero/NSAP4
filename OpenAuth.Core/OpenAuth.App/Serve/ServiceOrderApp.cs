@@ -3898,10 +3898,10 @@ namespace OpenAuth.App
             }
             #region MyRegion
             //var userList = UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.SecondId == "0733b6d1-2793-438a-854d-37426b5b39d0").Select(a => a.FirstId).ToList();
-            //userList = UnitWork.Find < User >(a => userList.Contains(a .Id) && a.Status == 0).Select(a => a.Id).ToList();
+            //userList = UnitWork.Find<User>(a => userList.Contains(a.Id) && a.Status == 0).Select(a => a.Id).ToList();
 
-            //var query1 = await (from a in UnitWork.Find<ServiceOrder>(c => c.CreateTime >= DateTime.Parse("2022-01-01 00:00:00") 
-            //                    && c.CreateTime < DateTime.Parse("2022-11-28 00:00:00") && c.VestInOrg == 1)
+            //var query1 = await (from a in UnitWork.Find<ServiceOrder>(c => c.CreateTime >= DateTime.Parse("2022-11-01 00:00:00")
+            //                    && c.CreateTime < DateTime.Parse("2022-12-01 00:00:00") && c.VestInOrg == 1)
             //                    join b in UnitWork.Find<ServiceDailyReport>(null) on a.Id equals b.ServiceOrderId
             //                    select new { a.U_SAP_ID, a.TerminalCustomerId, a.TerminalCustomer, a.CreateTime, b.MaterialCode, b.ManufacturerSerialNumber, b.CreaterName, b.TroubleDescription, b.ProcessDescription }).ToListAsync();
             //var list1 = new List<ServiceOrderExcelDto>();

@@ -918,5 +918,30 @@ namespace OpenAuth.App
                             select new UserResp { Id = a.FirstId ,OrgId = a.SecondId, OrgName =  c.Name }).ToList();
             return userList;
         }
+
+        /// <summary>
+        /// 加载用户的同部门人员
+        /// </summary>
+        public async Task<TableData> GetOrgUser(string userId)
+        {
+            TableData result = new TableData();
+            var orgId = UnitWork.Find<Relevance>(a => a.FirstId == userId && a.Key == Define.USERORG).FirstOrDefault().SecondId;
+
+            var data = from a in UnitWork.Find<Relevance>(null)
+                      join b in UnitWork.Find<User>(null) on a.FirstId equals b.Id
+                      join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                      where a.SecondId == orgId && a.Key == Define.USERORG
+                      select new
+                      {
+                          userId = b.Id,
+                          userName = b.Name,
+                          orgId = c.Id,
+                          orgName = c.Name
+
+                      };
+
+            result.Data = data;
+            return result;
+        }
     }
 }

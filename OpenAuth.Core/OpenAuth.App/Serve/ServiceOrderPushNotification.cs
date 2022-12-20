@@ -8,10 +8,13 @@ using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using System;
+using System.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using OpenAuth.App.Order;
 
 namespace OpenAuth.App.Serve
 {
@@ -19,11 +22,15 @@ namespace OpenAuth.App.Serve
     {
         private readonly IHubContext<MessageHub> _hubContext;
         private IOptions<AppSetting> _appConfiguration;
+        private ILogger<ServiceOrderPushNotification> _logger;
+        private OrderWorkbenchApp _orderWorkbenchApp;
 
-        public ServiceOrderPushNotification(IUnitWork unitWork, IHubContext<MessageHub> hubContext, IAuth auth, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
+        public ServiceOrderPushNotification(OrderWorkbenchApp orderWorkbenchApp, ILogger<ServiceOrderPushNotification> logger, IUnitWork unitWork, IHubContext<MessageHub> hubContext, IAuth auth, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
         {
             _hubContext = hubContext;
             _appConfiguration=appConfiguration;
+            _logger = logger;
+            _orderWorkbenchApp = orderWorkbenchApp;
         }
 
         #region 定时推送
@@ -142,76 +149,27 @@ namespace OpenAuth.App.Serve
             }
             #endregion
             #region 责任归属
-            var blameBelong = await UnitWork.Find<BlameBelong>(c => c.Status > 1 && c.Status < 6).Include(c => c.BlameBelongOrgs).ToListAsync();
-            var groubyList = blameBelong.GroupBy(r => r.Status).Select(r => new
-            {
-                status = r.Key,
-                count = r.Count(),
-                detail = r.Select(c => new
-                {
-                    DocType = c.DocType,
-                    Orgs = c.BlameBelongOrgs.Where(s => !string.IsNullOrWhiteSpace(s.HandleUserName)).Select(s => new { HandleUserName = s.HandleUserName, IsHandle = s.IsHandle }).ToList()
-                }).ToList()
-            }).ToList();
-            var hrCount = 0;
-            foreach (var item in groubyList)
-            {
-                switch (item.status)
-                {
-                    case 2:
-                        List<string> name = new List<string>();
-                        item.detail.ForEach(c =>
-                        {
-                            name.AddRange(c.Orgs.Where(w => w.IsHandle == false).Select(w => w.HandleUserName).ToList());
-                        });
-                        var user = name.GroupBy(c => c).Select(c => new { Name = c.Key, Count = c.Count() }).ToList();
-                        foreach (var item2 in user)
-                        {
-                            await _hubContext.Clients.User(item2.Name).SendAsync("BlameBelongCount", "系统", item2.Count);
-                        }
-                        break;
-                    case 3:
-                        //await _hubContext.Clients.Groups("按灯流程-人事审核").SendAsync("BlameBelongCount", "系统", item.count); 
-                        hrCount += item.count;
-                        break;
-                    case 4:
-                        //await _hubContext.Clients.Groups("财务复审").SendAsync("BlameBelongCount", "系统", item.count);
-                        var typeList = item.detail.GroupBy(c => c.DocType).Select(c => new { Type = c.Key, Count = c.Count() }).ToList();
-                        var otherCount = typeList.Where(c => c.Type == 2 || c.Type == 3).Sum(c => c.Count);
-                        foreach (var types in typeList)
-                        {
-                            switch (types.Type)
-                            {
-                                case 1:
-                                    await _hubContext.Clients.Groups("按灯流程-服务单审核").SendAsync("BlameBelongCount", "系统", types.Count);
-                                    break;
-                                case 2:
-                                    await _hubContext.Clients.Groups("按灯流程-采购生产审核").SendAsync("BlameBelongCount", "系统", otherCount);
-                                    break;
-                                case 3:
-                                    await _hubContext.Clients.Groups("按灯流程-采购生产审核").SendAsync("BlameBelongCount", "系统", otherCount);
-                                    break;
-                                case 4:
-                                    hrCount += types.Count;
-                                    //await _hubContext.Clients.Groups("按灯流程-人事审核").SendAsync("BlameBelongCount", "系统", hrCount);
-                                    break;
-                            }
+         
+            var BlameBelongFlowInstanceIds = await UnitWork.Find<BlameBelong>(c => c.Status >= 1 && c.Status < 6).Select(a => a.FlowInstanceId).ToListAsync();
+            var BlameBelongUserId = await UnitWork.Find<FlowInstance>(a => BlameBelongFlowInstanceIds.Contains(a.Id)).Select(a => a.MakerList).ToListAsync();
 
-                        }
-                        break;
-                    case 5:
-                        await _hubContext.Clients.Groups("出纳").SendAsync("BlameBelongCount", "系统", item.count);
-                        break;
-                }
-
+            List<string> BlameBelonglistUser = new List<string>();
+            foreach (var item in BlameBelongUserId)
+            {
+                BlameBelonglistUser.AddRange(item.Split(","));
             }
-            if (hrCount > 0)
+            var BlameBelonguserCount = BlameBelonglistUser.GroupBy(a => a).Select(a => new { Id = a.Key, Count = a.Count() });
+            BlameBelonglistUser = BlameBelonglistUser.Distinct().ToList();
+            var BlameBelongUsers = await UnitWork.Find<User>(a => BlameBelonglistUser.Contains(a.Id)).ToListAsync();
+            foreach (var item in BlameBelonguserCount)
             {
-                await _hubContext.Clients.Groups("按灯流程-人事审核").SendAsync("BlameBelongCount", "系统", hrCount);
-
+                var name = BlameBelongUsers.Where(a => a.Id == item.Id).FirstOrDefault()?.Name;
+                if (!string.IsNullOrEmpty(name)  )
+                {
+                    await _hubContext.Clients.User(name).SendAsync("BlameBelongCount", "系统", item.Count);
+                }
             }
             #endregion
-
             #region 结算单
 
             var flowInstanceInfos = await UnitWork.Find<FlowInstance>(f => f.CustomName == "个人代理结算单").GroupBy(a => a.ActivityName).Select(s => new { status = s.Key, count = s.Count() }).ToListAsync();
@@ -235,114 +193,155 @@ namespace OpenAuth.App.Serve
             }
 
             #endregion
+            #region 售前
 
-            //#region 销售-提交给我的
-            ////获取提交给我的
-            //var wfaJobList = await UnitWork.Find<wfa_job>(r => (r.job_type_id == 13 || r.job_type_id == 7 || r.job_type_id == 1 || r.job_type_id == 72) && (r.job_state == 1 || r.job_state == 4) && r.step_id != 0).Select(r => new { r.job_id, r.step_id}).ToListAsync();
+            var BeforeSaleFlowInstanceIds = await UnitWork.Find<BeforeSaleDemand>(c => c.Status >= 1 && c.Status <= 12).Select(a => a.FlowInstanceId).ToListAsync();
+            var BeforeSale = await UnitWork.Find<FlowInstance>(a => BeforeSaleFlowInstanceIds.Contains(a.Id)).Select(a => a.MakerList).ToListAsync();
 
-            ////获取审批步骤
-            //var wfaSteps = await UnitWork.Find<wfa_step>(r => r.job_type_id == 13 || r.job_type_id == 7 || r.job_type_id == 1 || r.job_type_id == 72).Select(r => new { r.step_id, r.audit_level }).ToListAsync();
+            List<string> BeforeSaleUser = new List<string>();
+            foreach (var item in BeforeSale)
+            {
+                BeforeSaleUser.AddRange(item.Split(","));
+            }
+            var BeforeSaleCount = BeforeSaleUser.GroupBy(a => a).Select(a => new { Id = a.Key, Count = a.Count() });
 
-            ////获取对应步骤的审批人Id
-            //var wfaobjs = await UnitWork.Find<wfa_obj>(r => r.audit_obj_id != 0).Select(r => new { r.step_id, r.audit_obj_id }).ToListAsync();
-            
-            ////获取记录审批人
-            //var wfaJump = await UnitWork.Find<wfa_jump>(r => r.state == 0).Select(r => new { r.job_id, r.user_id, r.audit_level }).ToListAsync();
-            //var wfaJobJumps = (from a in wfaJump
-            //                  join b in wfaJobList on a.job_id equals b.job_id
-            //                  join c in wfaSteps on b.step_id equals c.step_id
-            //                  where a.audit_level == c.audit_level
-            //                   select new
-            //                  {
-            //                      step_id = b.step_id,
-            //                      job_id = b.job_id
-            //                  }).ToList();
+            BeforeSaleUser = BeforeSaleUser.Distinct().ToList();
+            var BeforeSaleUsers = await UnitWork.Find<User>(a => BeforeSaleUser.Contains(a.Id)).ToListAsync();
+            foreach (var item in BeforeSaleCount)
+            {
+                var name = BeforeSaleUsers.Where(a => a.Id == item.Id).FirstOrDefault()?.Name;
+                if (!string.IsNullOrEmpty(name))
+                {
+                    await _hubContext.Clients.User(name).SendAsync("BeforeSaleCount", "系统", item.Count);
+                }
+            }
 
-            //var wfaJobs = wfaJobJumps.GroupBy(r => new { r.step_id}).Select(r => new { stepId = r.Key.step_id, count = r.Count() }).ToList();
-       
-            ////获取用户名称
-            //var users = await UnitWork.Find<base_user>(null).Select(r => new { r.user_nm, user_id = Convert.ToInt32(r.user_id) }).ToListAsync();
-
-            ////wfa_job与步骤对应的审批人
-            //var saleSend = (from a in (from a in wfaJobs
-            //                           join b in wfaobjs on a.stepId equals b.step_id into ab
-            //                           from b in ab.DefaultIfEmpty()
-            //                           where b != null
-            //                           select new
-            //                           {
-            //                               totalCount = a.count,
-            //                               stepId = a.stepId,
-            //                               userId = b == null ? 0 : b.audit_obj_id
-            //                           }).ToList()
-            //                join b in users on a.userId equals b.user_id
-            //                select new
-            //                {
-            //                    totalCount = a.totalCount,
-            //                    stepId = a.stepId,
-            //                    userId = a.userId,
-            //                    userName = b == null ? "" : b.user_nm
-            //                }).ToList();
-
-            ////以人员为分组计算总数
-            //var saleSingleSend = saleSend.GroupBy(r => new { r.userName }).Select(r => new { userName = r.Key.userName, totalCount = r.Sum(x => x.totalCount) }).ToList();
-
-            ////循环推送消息
-            //foreach (var item in saleSingleSend)
+            //foreach (var item in BeforeSaleInfo)
             //{
-            //    if (!string.IsNullOrEmpty(item.userName))
+            //    switch (item.Id)
             //    {
-            //        await _hubContext.Clients.User(item.userName).SendAsync("SaleSubCount", "系统", item.totalCount);
+            //        case "销售总助审批":
+            //            await _hubContext.Clients.Groups("需求反馈审批-销售总助").SendAsync("BeforeSaleCount", "系统", item.Count);
+            //            break;
+            //        case "需求组提交需求":
+            //            await _hubContext.Clients.Groups("需求反馈审批-需求工程师").SendAsync("BeforeSaleCount", "系统", item.Count);
+            //            break;
+            //        case "研发总助审批":
+            //            await _hubContext.Clients.Groups("需求反馈审批-研发总助").SendAsync("BeforeSaleCount", "系统", item.Count);
+            //            break;
+            //        case "研发确认":
+            //            await _hubContext.Clients.Groups("需求反馈审批-研发工程师").SendAsync("BeforeSaleCount", "系统", item.Count);
+            //            break;
+            //        case "总经理审批":
+            //            await _hubContext.Clients.Groups("总经理").SendAsync("BeforeSaleCount", "系统", item.Count);
+            //            break;
+            //        case "立项":
+            //            await _hubContext.Clients.Groups("需求反馈审批-研发总助").SendAsync("BeforeSaleCount", "系统", item.Count);
+            //            break;
+            //        case "需求提交":
+            //            await _hubContext.Clients.Groups("需求反馈审批-需求工程师").SendAsync("BeforeSaleCount", "系统", item.Count);
+            //            break;
+            //        case "研发提交":
+            //            await _hubContext.Clients.Groups("需求反馈审批-研发工程师").SendAsync("BeforeSaleCount", "系统", item.Count);
+            //            break;
+            //        case "测试提交":
+            //            await _hubContext.Clients.Groups("需求反馈审批-测试工程师").SendAsync("BeforeSaleCount", "系统", item.Count);
+            //            break;
+            //        //case "实施提交":
+            //        //    await _hubContext.Clients.Groups("456").SendAsync("OutsourcCount", "系统", item.Count);
+            //        //    break;
+                   
             //    }
             //}
-            //#endregion
-
-            //#region 订单合同-提交给我的
-            ////获取订单合同申请单
-            //List<string> statusList = new List<string>() { "3", "4", "5", "8", "9", "10", "12" };
-            //var contracts = await UnitWork.Find<ContractApply>(r => statusList.Contains(r.ContractStatus)).GroupBy(r => new { r.ContractStatus }).Select(r => new { statu = r.Key.ContractStatus, count = r.Count()}).ToListAsync();
-
-            ////订单合同循环推送
-            //int fwCount = 0;
-            //int sqCount = 0;
-            //int zzCount = 0;
-            //foreach (var item in contracts)
-            //{
-            //    switch (item.statu)
-            //    {
-            //        case "3":
-            //            fwCount = fwCount + item.count;
-            //            break;
-            //        case "4":
-            //            fwCount = fwCount + item.count;
-            //            sqCount = sqCount + item.count;
-            //            break;
-            //        case "5":
-            //            zzCount = zzCount + item.count;
-            //            break;
-            //        case "8":
-            //            sqCount = sqCount + item.count;
-            //            break;
-            //        case "9":
-            //            fwCount = fwCount + item.count;
-            //            break;
-            //        case "10":
-            //            fwCount = fwCount + item.count;
-            //            zzCount = zzCount + item.count;
-            //            break;
-            //        case "12":
-            //            sqCount = sqCount + item.count;
-            //            break;
-            //    }
-            //}
-
-            //await _hubContext.Clients.Groups("销售总助").SendAsync("ContractSendCount", "系统", zzCount);
-            //await _hubContext.Clients.Groups("法务人员").SendAsync("ContractSendCount", "系统", fwCount);
-            //await _hubContext.Clients.Groups("售前工程师").SendAsync("ContractSendCount", "系统", sqCount);
-            //#endregion
+            #endregion
 
             //推送版本号
             await _hubContext.Clients.All.SendAsync("Version", "系统", _appConfiguration.Value.Version);
         }
+
+        /// <summary>
+        /// 推送
+        /// </summary>
+        /// <returns></returns>
+        public async Task SendPendNum()
+        {
+            try
+            {
+                #region 销售-提交给我的
+                //获取提交给我的
+                var wfaJobList = await UnitWork.Find<wfa_job>(r => (r.job_type_id == 13 || r.job_type_id == 7 || r.job_type_id == 1 || r.job_type_id == 72) && (r.job_state == 1 || r.job_state == 4) && r.step_id != 0).GroupBy(r => new { r.step_id }).Select(r => r.Key.step_id ).ToListAsync();
+
+                //获取对应步骤的审批人Id
+                List<int> wfaobjs = await UnitWork.Find<wfa_obj>(r => r.audit_obj_id != 0 && wfaJobList.Contains((int)r.step_id)).GroupBy(r => new { r.audit_obj_id}).Select(r => r.Key.audit_obj_id).ToListAsync();
+
+                //查询数量
+                int rowCount = 0;
+                string filtequery = "job_id:`job_type_nm:`job_state:`job_nm:`customer:`applicator:`remarks:`base_entry:";
+                var userNames = await UnitWork.Find<base_user>(r => wfaobjs.Contains(Convert.ToInt32(r.user_id))).Select(r => new { r.user_id, r.user_nm}).ToListAsync(); 
+                foreach (int item in wfaobjs)
+                {          
+                    DataTable dt = _orderWorkbenchApp.GetSubmtToMe(1, 1, filtequery, "upd_dt", "desc", item, "13☉7☉1☉72", "", "", "", "", "", true, true, out rowCount);
+                    if (userNames != null && userNames.Count() > 0)
+                    {
+                        string userName = userNames.Where(r => r.user_id == item).Select(r => r.user_nm).FirstOrDefault();
+                        if (!string.IsNullOrEmpty(userName))
+                        {
+                           await _hubContext.Clients.User(userName).SendAsync("SaleSubCount", "系统", rowCount);
+                        }
+                    }
+                }
+                #endregion
+
+                #region 订单合同-提交给我的
+                //获取订单合同申请单
+                List<string> statusList = new List<string>() { "3", "4", "5", "8", "9", "10", "12" };
+                var contracts = await UnitWork.Find<ContractApply>(r => statusList.Contains(r.ContractStatus)).GroupBy(r => new { r.ContractStatus }).Select(r => new { statu = r.Key.ContractStatus, count = r.Count() }).ToListAsync();
+
+                //订单合同循环推送
+                int fwCount = 0;
+                int sqCount = 0;
+                int zzCount = 0;
+                foreach (var item in contracts)
+                {
+                    switch (item.statu)
+                    {
+                        case "3":
+                            fwCount = fwCount + item.count;
+                            break;
+                        case "4":
+                            fwCount = fwCount + item.count;
+                            sqCount = sqCount + item.count;
+                            break;
+                        case "5":
+                            zzCount = zzCount + item.count;
+                            break;
+                        case "8":
+                            sqCount = sqCount + item.count;
+                            break;
+                        case "9":
+                            fwCount = fwCount + item.count;
+                            break;
+                        case "10":
+                            fwCount = fwCount + item.count;
+                            zzCount = zzCount + item.count;
+                            break;
+                        case "12":
+                            sqCount = sqCount + item.count;
+                            break;
+                    }
+                }
+
+                await _hubContext.Clients.Groups("销售总助").SendAsync("ZZContractSendCount", "系统", zzCount);
+                await _hubContext.Clients.Groups("法务人员").SendAsync("FWContractSendCount", "系统", fwCount);
+                await _hubContext.Clients.Groups("售前工程师").SendAsync("SQContractSendCount", "系统", sqCount);
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("推送提交给我的异常：" + ex.Message.ToString());
+            }
+        }
+
 
         /// <summary>
         /// Web获取消息个数

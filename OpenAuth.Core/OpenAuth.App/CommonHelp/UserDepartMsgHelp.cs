@@ -99,5 +99,30 @@ namespace OpenAuth.App.CommonHelp
                 return departName;
             }
         }
+
+        /// <summary>
+        /// 获取3.0用户对应的部门
+        /// </summary>
+        /// <param name="userName">用户名称</param>
+        /// <returns>返回部门信息</returns>
+        public string GetUserNameDept(string userName)
+        {
+            string departName = "";
+            if (!string.IsNullOrEmpty(userName))
+            {
+                int userId = UnitWork.Find<base_user>(r => r.user_nm == userName).Select(r => Convert.ToInt32(r.user_id)).FirstOrDefault();
+                if (userId > 0)
+                {
+                    List<int> deptusers = UnitWork.Find<base_user_detail>(r => r.user_id == userId).Select(r => r.dep_id).ToList();
+                    if (deptusers != null && deptusers.Count() > 0)
+                    {
+                        List<string> depts = UnitWork.Find<base_dep>(r => deptusers.Contains(r.dep_id)).Select(r => r.dep_alias).ToList();
+                        departName = string.Join(",", depts);
+                    }
+                }
+            }
+
+            return departName;
+        }
     }
 }

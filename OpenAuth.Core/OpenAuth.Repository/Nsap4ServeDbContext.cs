@@ -63,6 +63,10 @@ namespace OpenAuth.Repository
         public virtual DbSet<BlameBelongFile> BlameBelongFiles { get; set; }
         public virtual DbSet<BlameBelongOrg> BlameBelongOrgs { get; set; }
         public virtual DbSet<BlameBelongOrgFile> BlameBelongOrgFiles { get; set; }
+        public virtual DbSet<BlameBelongUser> BlameBelongUsers { get; set; }
+        public virtual DbSet<BlameBelongUserFile> BlameBelongUserFiles { get; set; }
+        
+
         public virtual DbSet<BlameBelongHistory> BlameBelongHistorys { get; set; }
 
         public virtual DbSet<ServiceOrderSerial> Serviceorderserials { get; set; }

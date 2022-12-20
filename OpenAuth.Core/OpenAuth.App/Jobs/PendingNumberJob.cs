@@ -33,7 +33,7 @@ namespace OpenAuth.App.Jobs
             //todo:这里可以加入自己的自动任务逻辑
                 
             await _serviceorderpushnotification.SendPendingNumber();
-
+            await _serviceorderpushnotification.SendPendNum();
             _openJobApp.RecordRun(jobId);
         }
     }

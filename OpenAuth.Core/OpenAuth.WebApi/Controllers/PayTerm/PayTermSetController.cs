@@ -1039,5 +1039,53 @@ namespace OpenAuth.WebApi.Controllers.PayTerm
             return result;
         }
         #endregion
+
+        #region 订单流程
+        /// <summary>
+        /// 订单流程
+        /// </summary>
+        /// <param name="Id">销售订单Id</param>
+        /// <returns>返回流程信息</returns>
+        [HttpGet]
+        public async Task<TableData> GetSaleOrderFlow(int Id)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _payTermApp.GetSaleOrderFlow(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{Id.ToJson()} 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 采购进度
+        /// </summary>
+        /// <param name="Id">销售订单Id</param>
+        /// <returns>返回采购进度信息</returns>
+        [HttpGet]
+        public async Task<TableData> GetSaleBuy(int Id)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _payTermApp.GetSaleBuy(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{Id.ToJson()} 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        #endregion
     }
 }

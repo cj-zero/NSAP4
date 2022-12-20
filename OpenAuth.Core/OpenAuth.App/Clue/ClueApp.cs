@@ -275,7 +275,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<bool> ChangeClueStatusByJob()
         {
-            _logger.LogError("运行修改线索状态定时任务");
+            _logger.LogInformation("运行修改线索状态定时任务");
             var result = true;
             // get latest 3 minutes updated job(jobtype = 72)
             List<Repository.Domain.Serve.Clue> updateData = new List<Repository.Domain.Serve.Clue>();
@@ -284,9 +284,9 @@ namespace OpenAuth.App
             {
                 var updateClueIDs = updatedClueJob.Select(a => a.base_entry).ToList();
                 var logList = updatedClueJob.Select(a =>new { a.job_id, a.base_entry, a.sbo_itf_return}).ToList();
-                _logger.LogError("运行修改线索状态定时任务，Job修改线索参数为"+ JsonConvert.SerializeObject(logList));
+                _logger.LogInformation("运行修改线索状态定时任务，Job修改线索参数为"+ JsonConvert.SerializeObject(logList));
                 var clueList = UnitWork.Find<Repository.Domain.Serve.Clue>(a=> updateClueIDs.Contains(a.Id) && a.Status!=0 ).ToList();
-                _logger.LogError("运行修改线索状态定时任务，实际修改线索参数为" + JsonConvert.SerializeObject(clueList));
+                _logger.LogInformation("运行修改线索状态定时任务，实际修改线索参数为" + JsonConvert.SerializeObject(clueList));
                 foreach (var clue in clueList)
                 {
                     var specJob = updatedClueJob.Where(a => a.base_entry == clue.Id).FirstOrDefault();

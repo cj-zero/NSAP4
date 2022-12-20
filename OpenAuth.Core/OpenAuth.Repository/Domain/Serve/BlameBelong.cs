@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain.Serve;
 
 namespace OpenAuth.Repository.Domain
 {
@@ -82,7 +83,7 @@ namespace OpenAuth.Repository.Domain
         [Description("")]
         public string ProductionOrg { get; set; }
         /// <summary>
-        /// 1-撤回 2-责任部门审核 3-人事审核 4-责任金额判断 5-出纳 6-结束
+        /// -1-撤回  1-核查部门审核 2-责任部门审核 3-人事审核 4-责任金额判断 5-出纳 6-结束
         /// </summary>
         [Description("")]
         public int? Status { get; set; }
@@ -126,6 +127,29 @@ namespace OpenAuth.Repository.Domain
         /// 来源 1-erp 2-app
         /// </summary>
         public int? Source { get; set; }
+
+        /// <summary>
+        /// 预估金额说明
+        /// </summary>
+        public string AffectRemark { get; set; }
+
+        /// <summary>
+        /// 预估工时
+        /// </summary>
+        public string AffectHour { get; set; }
+
+        /// <summary>
+        /// 预估责任人
+        /// </summary>
+        public string AffectUser { get; set; }
+        public string AffectUserName { get; set; }
+
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string MaterialCode { get; set; }
+
+        public virtual List<BlameBelongUser> BlameBelongUser { get; set; }
         public virtual List<BlameBelongOrg> BlameBelongOrgs { get; set; }
         public virtual List<BlameBelongFile> BlameBelongFiles { get; set; }
 

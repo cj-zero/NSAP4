@@ -225,14 +225,19 @@ namespace OpenAuth.App.Material
         {
             DutyChartResponse dcr = new DutyChartResponse();
             // get due time personals
-            StringBuilder strSql = new StringBuilder();
             string start = Convert.ToDateTime(req.Month + "-01").ToString("yyyy-MM-dd");
              string end = Convert.ToDateTime(req.Month + "-01").AddMonths(1).ToString("yyyy-MM-dd");
-            strSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  (select AssignedTo, Number, isFinished,AssignDate  from TaskView5) as  t where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by AssignedTo  ORDER BY CompleteCount DESC ");
-            var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(),CommandType.Text);
+
+            #region  code v1
+            StringBuilder strSql = new StringBuilder();
+            //strSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from  (select AssignedTo, Number, isFinished,AssignDate  from TaskView5) as  t where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'  group by AssignedTo  ORDER BY CompleteCount DESC ");
+            strSql.AppendFormat("select AssignedTo,SUM(case when t.fld006314 = N'一般' then 0.5 when t.fld006314 = N'中等' then 1 when t.fld006314 = N'高级' then 2 when t.fld006314 = N'特级' then 3 else 0 END)  Total, SUM(case when (t.fld006314 = N'一般' AND t.isFinished = 1)   then 0.5 when (t.fld006314 = N'中等' AND t.isFinished = 1) then 1 when (t.fld006314 = N'高级' AND t.isFinished = 1) then 2 when (t.fld006314 = N'特级' AND t.isFinished = 1) then 3 else 0 END)  CompleteCount  from    (select  AssignedTo,fld006314,  isFinished,AssignDate  from TaskView5) as  t  where  AssignDate   >= '" + start + "' AND AssignDate  <='" + end + "'   group by AssignedTo ORDER BY CompleteCount DESC ");
+            var personalAssignList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strSql.ToString(), CommandType.Text);
             StringBuilder strFSql = new StringBuilder();
-            strFSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from   (select AssignedTo, Number, isFinished,CompleteTime  from TaskView5) as  t  where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by AssignedTo    ORDER BY CompleteCount DESC ");
+            //strFSql.AppendFormat("select AssignedTo,count(Number) as Total ,sum(case when isFinished = 1 then 1 else 0 end) as CompleteCount from   (select AssignedTo, Number, isFinished,CompleteTime  from TaskView5) as  t  where  CompleteTime  >= '" + start + "' AND CompleteTime  <='" + end + "'  group by AssignedTo    ORDER BY CompleteCount DESC ");
+            strFSql.AppendFormat("select AssignedTo,SUM(case when t.fld006314 = N'一般' then 0.5 when t.fld006314 = N'中等' then 1 when t.fld006314 = N'高级' then 2 when t.fld006314 = N'特级' then 3 else 0 END)  Total, SUM(case when (t.fld006314 = N'一般' AND t.isFinished = 1)   then 0.5 when (t.fld006314 = N'中等' AND t.isFinished = 1) then 1 when (t.fld006314 = N'高级' AND t.isFinished = 1) then 2 when (t.fld006314 = N'特级' AND t.isFinished = 1) then 3 else 0 END)  CompleteCount  from    (select  AssignedTo,fld006314,  isFinished,CompleteTime  from TaskView5) as  t  where  CompleteTime   >= '" + start + "' AND CompleteTime  <='" + end + "'   group by AssignedTo ORDER BY CompleteCount DESC ");
             var personalFList = UnitWork.ExcuteSql<SerieManageData>(ContextType.ManagerDbContext, strFSql.ToString(), CommandType.Text);
+            #endregion
             // get personals with their level for which the qualified line and excel line needed
             var personalNames = personalAssignList.Select(u => u.AssignedTo).ToList();
             var personalFNames = personalFList.Select(u => u.AssignedTo).ToList();
@@ -449,12 +454,12 @@ select b._System_objNBS , b.fld005787 as itemcode ,b.fld017268 as num ,b.idRecor
 union all
 select c._System_objNBS ,c.fld005879 as itemcode ,c.fld005878 as num ,c.idRecord,c.RecordGuid ,c.deleted,c._System_Progress,c.CreatedDate,c.DateModified from (select * from OBJ163 where idRecord in (select max(idRecord) from OBJ163 group by _System_objNBS)) c
 union all
-select d._System_objNBS ,d.fld005719 as itemcode ,d.fld005717 as num ,d.idRecord,d.RecordGuid ,d.deleted,d._System_Progress,d.CreatedDate,d.DateModified from (select * from OBJ169 where idRecord in (select max(idRecord) from OBJ169 group by _System_objNBS)) d) as t WHERE t.itemcode in   ( {0} )  and  t.num like  '%{1}%' ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")), req.ProjectNo);
+select d._System_objNBS ,d.fld005719 as itemcode ,d.fld005717 as num ,d.idRecord,d.RecordGuid ,d.deleted,d._System_Progress,d.CreatedDate,d.DateModified from (select * from OBJ169 where idRecord in (select max(idRecord) from OBJ169 group by _System_objNBS)) d) as t WHERE  t.deleted = 0  and  t.itemcode in   ( {0} )  and  t.num like  '%{1}%' ", String.Join(",", req.Alpha.Select(i => $"'{i.Replace("\'", "\"")}'")), req.ProjectNo);
             //sql += req;
             var specJobList = UnitWork.ExcuteSql<BetaView>(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
             foreach (var item in specJobList)
             {
-                var sql2 = string.Format(@"  	SELECT TaskId, TaskNBS, Subject, '{1}' as ProjectNo  from Tasks t where t.CaseRecGuid = '{0}'  ", item.RecordGuid,item._System_objNBS);
+                var sql2 = string.Format(@"  	SELECT TaskId, TaskNBS, Subject, '{1}' as ProjectNo  from Tasks t where t.isDeleted=0  and  t.CaseRecGuid = '{0}'  ", item.RecordGuid,item._System_objNBS);
                 var taskNbsList = UnitWork.ExcuteSql<TaskNbsView>(ContextType.ManagerDbContext, sql2.ToString(), CommandType.Text, null);
                 modeldata.AddRange(taskNbsList);
             }
@@ -469,7 +474,7 @@ select d._System_objNBS ,d.fld005719 as itemcode ,d.fld005717 as num ,d.idRecord
 t.AssignDate,t.CreatedDate,t.AssignedBy,t.CaseRecGuid,t.RecordGuid,t.TaskNBS,t.TaskOwnerId,t.TimeAllocated,CompletedDate as CompleteTime,u.FirstNameAndLastName as ownername,DueHours=DATEDIFF(hh,case when t.isFinished=1 then  ISNULL(t.CompletedDate,getdate()) else GETDATE() end,t.duedate) , WorkHours=DATEDIFF(hh,t.StartDate,t.DueDate) ,AssignedTo=ISNULL(STUFF((select  ', '+ ISNULL(us.FirstName,us.UserName)+ISNULL(' '+us.LastName,'')   from TaskAssignment as ta join UsersAndGroups as us on us.UserID=ta.UserId where ta.TaskId=t.taskId   FOR XML PATH('')),1,2,''),ISNULL(us2.FirstName + ISNULL(' ' + us2.LastName,''),us2.UserName))  from Tasks t
 left JOIN UsersAndGroups u on u.UserID = t.TaskOwnerId
 left outer join UsersAndGroups as us2 on us2.UserID=t.OwnerId
-    WHERE TaskNBS    in   ( {0} )  ", String.Join(",", req.Alpha.Select(i => $"'{i}'")));
+    WHERE TaskNBS    in   ( {0} )  and  t.isDeleted=0  ", String.Join(",", req.Alpha.Select(i => $"'{i}'")));
             //sql += req;
             var modeldata = UnitWork.ExcuteSql<statisticsTableB>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
             result.Data = modeldata.Where(a=>a.Subject.Contains(req.ProjectNo)).ToList();

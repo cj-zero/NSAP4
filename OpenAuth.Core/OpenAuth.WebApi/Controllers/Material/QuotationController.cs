@@ -524,7 +524,27 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
-
+        /// <summary>
+        /// 修改报价单物料，物流
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response> TimeOfDelivery(int QuotationId)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.TimeOfDelivery(QuotationId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{QuotationId}, 错误：{result.Message}");
+            }
+            return result;
+        }
         /// <summary>
         /// 删除报价单
         /// </summary>

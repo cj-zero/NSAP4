@@ -25,6 +25,8 @@ using Infrastructure.Extensions;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.App.SaleBusiness.Request;
 using OpenAuth.App.SaleBusiness.Common;
+using OpenAuth.App.Material;
+using OpenAuth.Repository.Domain.View;
 
 namespace OpenAuth.App.PayTerm
 {
@@ -37,6 +39,7 @@ namespace OpenAuth.App.PayTerm
         private ServiceSaleOrderApp _serviceSaleOrderApp;
         private UserDepartMsgHelp _userDepartMsgHelp;
         private SaleBusinessMethodHelp _saleBusinessMethodHelp;
+        private ManageAccBindApp _manageAccBindApp;
         private readonly DDVoiceApp _dDVoice;
         private List<string> RecePayTypes = new List<string>() { "预付/货前款", "货到款", "验收款", "质保款" };
 
@@ -45,7 +48,7 @@ namespace OpenAuth.App.PayTerm
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public PayTermApp(IUnitWork unitWork, IAuth auth, ICapPublisher capBus,UserDepartMsgHelp userDepartMsgHelp, SaleBusinessMethodHelp saleBusinessMethodHelp, ServiceBaseApp serviceBaseApp, ServiceSaleOrderApp serviceSaleOrderApp, DDVoiceApp dDVoiceApp) : base(unitWork, auth)
+        public PayTermApp(IUnitWork unitWork, IAuth auth, ICapPublisher capBus,UserDepartMsgHelp userDepartMsgHelp, SaleBusinessMethodHelp saleBusinessMethodHelp, ServiceBaseApp serviceBaseApp, ServiceSaleOrderApp serviceSaleOrderApp, DDVoiceApp dDVoiceApp, ManageAccBindApp manageAccBindApp) : base(unitWork, auth)
         {
             _UnitWork = unitWork;
             _auth = auth;
@@ -55,6 +58,7 @@ namespace OpenAuth.App.PayTerm
             _userDepartMsgHelp = userDepartMsgHelp;
             _dDVoice = dDVoiceApp;
             _saleBusinessMethodHelp = saleBusinessMethodHelp;
+            _manageAccBindApp = manageAccBindApp;
         }
 
         #region 付款条件设置
@@ -386,6 +390,7 @@ namespace OpenAuth.App.PayTerm
 
             //判定付款条件是否已经存在
             var crmOctgList = await UnitWork.Find<crm_octg>(r => r.PymntGroup == groupName).ToListAsync();
+            var octgLIst = await UnitWork.Find<OCTG>(r => r.PymntGroup == groupName).ToListAsync();
             var paytermsaves = await UnitWork.Find<PayTermSave>(r => r.GroupNum == groupName).ToListAsync();
             var payTermSets = await UnitWork.Find<PayTermSet>(r => r.ModuleName == "各阶段节点计算方法").ToListAsync();
             int groupNum = (await UnitWork.Find<crm_octg>(null).ToListAsync()).Max(r => Convert.ToInt32(r.GroupNum)) + 1;
@@ -402,14 +407,14 @@ namespace OpenAuth.App.PayTerm
                 return result;
             }
 
-            if (crmOctgList != null && crmOctgList.Count() > 0)
+            if (octgLIst != null && octgLIst.Count() > 0)
             {
                 result.Code = 201;
                 result.Data = new
                 {
-                    Id = crmOctgList.FirstOrDefault().GroupNum,
+                    Id = octgLIst.FirstOrDefault().GroupNum,
                     GroupNum = groupName,
-                    Message = "4.0中已经存在该配置的付款条件"
+                    Message = "已经存在该配置的付款条件"
                 };
 
                 return result;
@@ -4029,6 +4034,242 @@ namespace OpenAuth.App.PayTerm
                 result.Message = "删除失败，该客户不存在";
                 result.Code = 500;
             }
+
+            return result;
+        }
+        #endregion
+
+        #region  订单流程
+        /// <summary>
+        /// 订单流程
+        /// </summary>
+        /// <param name="saleId">销售订单Id'</param>
+        /// <returns>返回流程信息</returns>
+        public async Task<TableData> GetSaleOrderFlow(int saleId)
+        {
+            var result = new TableData();
+            if (saleId > 0)
+            {
+                List<SaleOrderFlowHelp> saleOrderFlowHelps = new List<SaleOrderFlowHelp>();
+
+                #region 提交到工程部
+                //获取工程部信息
+                MaterialDataReq materialDataReq = new MaterialDataReq();
+                materialDataReq.ProjectNo = saleId.ToString();
+                materialDataReq.Alpha = await UnitWork.Find<sale_rdr1>(r => r.DocEntry == saleId && r.sbo_id == Define.SBO_ID).Select(r => r.ItemCode).ToListAsync();
+                List<BetaSubFinalView> betaSubFinalViews = _manageAccBindApp.GetDataD(materialDataReq).Data;
+
+                //将工程部信息添加到流程
+                SaleOrderFlowHelp saleOrderFlowGCHelp = new SaleOrderFlowHelp();
+                saleOrderFlowGCHelp.ModelName = "提交至工程部";
+                saleOrderFlowGCHelp.Name = "刘静";
+                saleOrderFlowGCHelp.Dept = "E2";
+                saleOrderFlowGCHelp.DataTime = betaSubFinalViews.Count() == 0 ? DateTime.Now : betaSubFinalViews.FirstOrDefault().Start;
+                saleOrderFlowGCHelp.Flag = betaSubFinalViews.Count() == 0 ? false : true;
+                saleOrderFlowHelps.Add(saleOrderFlowGCHelp);
+                #endregion
+
+                #region 采购
+                SaleOrderFlowHelp saleOrderFlowHelp = new SaleOrderFlowHelp();
+                saleOrderFlowHelp.ModelName = "采购";
+                saleOrderFlowHelp.Flag = false;
+
+                //获取采购单关联表
+                var buyporrels = await UnitWork.Find<buy_porrel>(r => r.sbo_id == Define.SBO_ID && r.RelDoc_Entry == saleId).ToListAsync();
+                if (buyporrels != null && buyporrels.Count() > 0)
+                {
+                    var buyopors = await UnitWork.Find<buy_opor>(r => r.CANCELED == "N" && r.sbo_id == Define.SBO_ID && r.DocEntry == (buyporrels.FirstOrDefault()).POR_Entry).ToListAsync();
+                    if (buyopors != null && buyopors.Count() > 0)
+                    {
+                        var comBuyopors = buyopors.Where(r => r.DocStatus == "C").ToList();
+
+                        //采购信息
+                        saleOrderFlowHelp.Name = comBuyopors.FirstOrDefault().U_YGMD;
+                        saleOrderFlowHelp.Dept = _userDepartMsgHelp.GetUserNameDept(comBuyopors.FirstOrDefault().U_YGMD);
+                        if (comBuyopors != null && comBuyopors.Count() > 0)
+                        {
+                            saleOrderFlowHelp.DataTime = comBuyopors.FirstOrDefault().UpdateDate;
+                            saleOrderFlowHelp.Flag = true;
+                        }
+                        else
+                        {
+                            saleOrderFlowHelp.DataTime = buyopors.FirstOrDefault().CreateDate;
+                            saleOrderFlowHelp.Flag = false;
+                        }
+                    }
+                }
+
+                saleOrderFlowHelps.Add(saleOrderFlowHelp);
+                #endregion
+
+                #region 生产
+                SaleOrderFlowHelp saleOrderFlowSCHelp = new SaleOrderFlowHelp();
+                saleOrderFlowSCHelp.ModelName = "生产";
+                saleOrderFlowSCHelp.Flag = false;
+
+                //获取销售订单
+                var saleOrdrs = await UnitWork.Find<sale_ordr>(r => r.CANCELED == "N" && r.sbo_id == Define.SBO_ID && r.DocEntry == saleId).ToListAsync();
+                if (saleOrdrs != null && saleOrdrs.Count() > 0)
+                {
+                    int slpCode = (int)saleOrdrs.FirstOrDefault().SlpCode;
+                    var userids = UnitWork.Find<sbo_user>(r => r.sale_id == slpCode && r.sbo_id == Define.SBO_ID).Select(r => r.user_id).FirstOrDefault();
+                    saleOrderFlowSCHelp.Name = await UnitWork.Find<base_user>(r => r.user_id == userids).Select(r => r.user_nm).FirstOrDefaultAsync();
+                    saleOrderFlowSCHelp.Dept = _userDepartMsgHelp.GetUserIdDepart(Convert.ToInt32(userids));
+
+                    //获取生产单
+                    var owors = await UnitWork.Find<product_owor>(r => (r.Status == "P" || r.Status == "R" || r.Status == "L") && r.sbo_id == Define.SBO_ID && r.OriginAbs == saleId).ToListAsync();
+                    if (owors != null && owors.Count() > 0)
+                    {
+                        var oworLs = owors.Where(r => r.Status == "L").ToList();
+                        if (oworLs != null && oworLs.Count() > 0)
+                        {
+                            saleOrderFlowSCHelp.DataTime = owors.FirstOrDefault().UpdateDate;
+                            saleOrderFlowSCHelp.Flag = true;
+                        }
+                        else
+                        {
+                            saleOrderFlowSCHelp.DataTime = owors.FirstOrDefault().CreateDate;
+                            saleOrderFlowSCHelp.Flag = false;
+                        }
+                    }
+                }
+
+                saleOrderFlowHelps.Add(saleOrderFlowSCHelp);
+                #endregion
+
+                #region 交货
+                SaleOrderFlowHelp saleOrderFlowJHHelp = new SaleOrderFlowHelp();
+                saleOrderFlowJHHelp.ModelName = "交货";
+                saleOrderFlowJHHelp.Flag = false;
+
+                //获取交货单明细
+                var dln1s = await UnitWork.Find<sale_dln1>(r => r.sbo_id == Define.SBO_ID && r.BaseEntry == saleId).ToListAsync();
+                if (dln1s != null && dln1s.Count() > 0)
+                {
+                    //获取交货单
+                    var odlns = await UnitWork.Find<sale_odln>(r => r.sbo_id == Define.SBO_ID && r.CANCELED == "N" && r.DocEntry == (dln1s.FirstOrDefault().DocEntry)).ToListAsync();
+                    if (odlns != null && odlns.Count() > 0)
+                    {
+                        int slpCode = (int)odlns.FirstOrDefault().SlpCode;
+                        var userids = UnitWork.Find<sbo_user>(r => r.sale_id == slpCode && r.sbo_id == Define.SBO_ID).Select(r => r.user_id).FirstOrDefault();
+                        saleOrderFlowJHHelp.Name = await UnitWork.Find<base_user>(r => r.user_id == userids).Select(r => r.user_nm).FirstOrDefaultAsync();
+                        saleOrderFlowJHHelp.Dept = _userDepartMsgHelp.GetUserIdDepart(Convert.ToInt32(userids));
+
+                        //获取已清交货单
+                        var odlnCs = odlns.Where(r => r.DocStatus == "C").ToList();
+                        if (odlnCs != null && odlnCs.Count() > 0)
+                        {
+                            saleOrderFlowJHHelp.DataTime = odlnCs.FirstOrDefault().UpdateDate;
+                            saleOrderFlowJHHelp.Flag = true;
+                        }
+                        else
+                        {
+                            saleOrderFlowJHHelp.DataTime = odlns.FirstOrDefault().CreateDate;
+                            saleOrderFlowJHHelp.Flag = false;
+                        }
+                    }
+                }
+
+                saleOrderFlowHelps.Add(saleOrderFlowJHHelp);
+                #endregion
+
+                #region 收款
+                SaleOrderFlowHelp saleOrderFlowSKHelp = new SaleOrderFlowHelp();
+                saleOrderFlowSKHelp.ModelName = "收款";
+                saleOrderFlowSKHelp.Flag = false;
+                if (saleOrdrs != null && saleOrdrs.Count() > 0)
+                {
+                    int slpCode = (int)saleOrdrs.FirstOrDefault().SlpCode;
+                    var userids = UnitWork.Find<sbo_user>(r => r.sale_id == slpCode && r.sbo_id == Define.SBO_ID).Select(r => r.user_id).FirstOrDefault();
+                    saleOrderFlowSCHelp.Name = await UnitWork.Find<base_user>(r => r.user_id == userids).Select(r => r.user_nm).FirstOrDefaultAsync();
+                    saleOrderFlowSCHelp.Dept = _userDepartMsgHelp.GetUserIdDepart(Convert.ToInt32(userids));
+
+                    string strSql = string.Format("SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM {0}.sbo_info WHERE sbo_id={1}", "nsap_base", Define.SBO_ID);
+                    DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+                    string sboname = dt.Rows[0][0].ToString();
+
+                    //获取应收发票
+                    StringBuilder tableName2 = new StringBuilder();
+                    tableName2.Append("select SaleNo,sum(DocTotal) as sum_DocTotal,sum(DocTotalFC) as sum_DocTotalFC from (");
+                    tableName2.AppendFormat("SELECT T0.DocEntry,T3.DocEntry AS SaleNo,T0.DocTotal,T0.DocTotalFC ");
+                    tableName2.AppendFormat(" FROM " + sboname + ".dbo." + "ORCT AS T0 ");
+                    tableName2.AppendFormat("LEFT JOIN " + sboname + ".dbo." + "RCT2 AS T4 ON T0.DocEntry = T4.DocNum ");
+                    tableName2.AppendFormat("LEFT JOIN " + sboname + ".dbo." + "INV1 AS T1 ON T4.DocEntry = T1.DocEntry ");
+                    tableName2.AppendFormat("LEFT JOIN " + sboname + ".dbo." + "DLN1 AS T2 ON T1.BaseEntry = T2.DocEntry AND T1.BaseLine = T2.LineNum AND T1.BaseType = 15 ");
+                    tableName2.AppendFormat("LEFT JOIN " + sboname + ".dbo." + "RDR1 AS T3 ON T2.BaseEntry = T3.DocEntry AND T2.BaseLine = T3.LineNum AND T2.BaseType = 17 ");
+                    tableName2.AppendFormat(" where T0.Canceled='N' AND T3.DocEntry='" + saleOrdrs.FirstOrDefault().DocEntry + "'");
+                    tableName2.AppendFormat(" group by T0.DocEntry,T3.DocEntry,T0.DocTotal,T0.DocTotalFC ");
+                    tableName2.AppendFormat(" union ");
+                    tableName2.AppendFormat("select Tk.DocEntry,Tk.U_XSDD as SaleNo,Tk.DocTotal,Tk.DocTotalFC");
+                    tableName2.AppendFormat(" from " + sboname + ".dbo." + "ORCT Tk where Tk.Canceled='N' and Tk.U_XSDD='" + saleOrdrs.FirstOrDefault().DocEntry + "'");
+                    tableName2.AppendFormat(") v1 group by saleNo");
+                    DataTable dTable = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, tableName2.ToString(), CommandType.Text, null);
+                    List<SaleOrderORCT> saleOrderORCTs = dTable.Tolist<SaleOrderORCT>();
+                    if (saleOrderORCTs.Count != 0)
+                    {
+                        if (saleOrdrs.FirstOrDefault().DocTotal == saleOrderORCTs.FirstOrDefault().sum_DocTotal)
+                        {
+                            saleOrderFlowSKHelp.DataTime = saleOrdrs.FirstOrDefault().UpdateDate;
+                            saleOrderFlowSKHelp.Flag = true;
+                        }
+                        else
+                        {
+                            saleOrderFlowSKHelp.DataTime = saleOrdrs.FirstOrDefault().CreateDate;
+                        }
+                    }
+                }
+
+                saleOrderFlowHelps.Add(saleOrderFlowSKHelp);
+                #endregion
+
+                #region 完成
+                SaleOrderFlowHelp saleOrderFlowComHelp = new SaleOrderFlowHelp();
+                saleOrderFlowComHelp.ModelName = "完成";
+                saleOrderFlowComHelp.Name = "";
+                saleOrderFlowComHelp.Dept = "";
+                saleOrderFlowComHelp.DataTime = DateTime.Now;
+                saleOrderFlowComHelp.Flag = (saleOrderFlowGCHelp.Flag && saleOrderFlowHelp.Flag && saleOrderFlowSCHelp.Flag && saleOrderFlowJHHelp.Flag && saleOrderFlowSKHelp.Flag) ? true : false;
+                saleOrderFlowHelps.Add(saleOrderFlowComHelp);
+                #endregion
+
+                result.Data = saleOrderFlowHelps;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取采购进度
+        /// </summary>
+        /// <param name="saleId">销售订单Id</param>
+        /// <returns>返回采购订单进度信息</returns>
+        public async Task<TableData> GetSaleBuy(int saleId)
+        {
+            var result = new TableData();
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("select d.ItemCode,c.DocEntry,c.U_YGMD,c.CreateDate,c.DocDueDate ");
+            strSql.AppendFormat("from nsap_bone.sale_ordr a ");
+            strSql.AppendFormat("left join nsap_bone.buy_porrel b on a.Docentry = b.RelDoc_Entry ");
+            strSql.AppendFormat("left join nsap_bone.buy_opor c on b.POR_Entry = c.Docentry ");
+            strSql.AppendFormat("left join nsap_bone.buy_por1 d on c.Docentry = d.DocEntry ");
+            strSql.AppendFormat("where a.docentry = "+ saleId +"");
+            DataTable dTable = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
+            result.Data = dTable.Tolist<SaleBuyOPOR>();
+            return result;
+        }
+
+        public async Task<TableData> GetSaleProduct(int saleId)
+        {
+            var result = new TableData();
+  
+
+            return result;
+        }
+
+        public async Task<TableData> GetSaleODLN(int saleId)
+        {
+            var result = new TableData();
+
 
             return result;
         }
