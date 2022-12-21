@@ -18,7 +18,7 @@ using OpenAuth.App.Order;
 using OpenAuth.App.Response;
 using OpenAuth.App.Serve.Request;
 using OpenAuth.App.Order.Request;
-using OpenAuth.Repository;
+using OpenAuth.App.CommonHelp;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 
@@ -26,13 +26,16 @@ namespace OpenAuth.App.ContractManager
 {
     public class ContractSealApp : OnlyUnitWorkBaeApp
     {
+        private UserDepartMsgHelp _userDepartMsgHelp;
+
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public ContractSealApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        public ContractSealApp(UserDepartMsgHelp userDepartMsgHelp, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
+            _userDepartMsgHelp = userDepartMsgHelp;
         }
 
         /// <summary>
@@ -50,7 +53,7 @@ namespace OpenAuth.App.ContractManager
 
             var loginUser = loginContext.User;
             var result = new TableData();
-            var objs = UnitWork.Find<ContractSeal>(null).Include( r => r.contractSealOperationHistoryList);
+            var objs = UnitWork.Find<ContractSeal>(null).Include(r => r.contractSealOperationHistoryList);
             var contractSeal = objs.WhereIf(!string.IsNullOrWhiteSpace(request.SealNo), r => r.SealNo.Contains(request.SealNo))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserId), r => r.CreateUserId.Contains(request.CreateUserId))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.Remark), r => r.Remark.Contains(request.Remark))
@@ -63,7 +66,7 @@ namespace OpenAuth.App.ContractManager
             var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
             var categorySealTypeList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractSealType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
             List<string> fileids = contractSeal.Select(r => r.SealImageFileId).ToList();
-            var contractFileList = await UnitWork.Find<UploadFile>(r => fileids.Contains(r.Id)).Select(u => new { u.FileName, u.Id, u.FilePath, u.FileType, u.FileSize, u.Extension, u.Enable, u.SortCode}).ToListAsync();
+            var contractFileList = await UnitWork.Find<UploadFile>(r => fileids.Contains(r.Id)).Select(u => new { u.FileName, u.Id, u.FilePath, u.FileType, u.FileSize, u.Extension, u.Enable, u.SortCode }).ToListAsync();
             var contractSealList = await contractSeal.Skip((request.page - 1) * request.limit)
               .Take(request.limit).ToListAsync();
             var contractSealReq = from a in contractSealList
@@ -81,8 +84,12 @@ namespace OpenAuth.App.ContractManager
                                       a.SealImageFileId,
                                       a.IsEnable,
                                       a.CreateUserId,
+                                      CreateUserName = a.CreateUserName,
+                                      CreateDeptName = _userDepartMsgHelp.GetUserOrgName(a.CreateUserId),
                                       a.CreateTime,
                                       a.UpdateUserId,
+                                      UpdateUserName = a.UpdateUserName,
+                                      UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(a.UpdateUserId),
                                       a.UpdateTime,
                                       a.Remark,
                                       LastUserName = a.contractSealOperationHistoryList.Count() == 0 ? "" : a.contractSealOperationHistoryList.OrderByDescending(r => r.CreateTime).FirstOrDefault().CreateUserId,
@@ -123,7 +130,6 @@ namespace OpenAuth.App.ContractManager
             try
             {
                 var contractSealModel = UnitWork.Find<ContractSeal>(r => r.Id == sealId).ToList();
-                var contractSealOperationHistoryList = await UnitWork.Find<ContractSealOperationHistory>(r => r.ContractSealId == sealId).OrderByDescending(r => r.CreateTime).ToListAsync();
                 if (contractSealModel != null)
                 {
                     var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
@@ -144,6 +150,11 @@ namespace OpenAuth.App.ContractManager
                                               a.SealImageFileId,
                                               a.IsEnable,
                                               a.CreateUserId,
+                                              CreateUserName = a.CreateUserName,
+                                              CreateDeptName = _userDepartMsgHelp.GetUserOrgName(a.CreateUserId),
+                                              a.UpdateUserId,
+                                              UpdateUserName = a.UpdateUserName,
+                                              UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(a.UpdateUserId),
                                               a.CreateTime,
                                               a.UpdateTime,
                                               a.Remark,
@@ -159,10 +170,9 @@ namespace OpenAuth.App.ContractManager
                                               SortCode = d == null ? 0 : d.SortCode
                                           };
 
-                    result.Data = new 
+                    result.Data = new
                     {
-                        contractSeal = contractSealReq,
-                        ContractSealOperationHistoryList = contractSealOperationHistoryList
+                        contractSeal = contractSealReq
                     };
                 }
                 else
@@ -173,6 +183,42 @@ namespace OpenAuth.App.ContractManager
             catch (Exception ex)
             {
                 result.Message = ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 查询印章操作历史记录
+        /// </summary>
+        /// <param name="req">印章操作历史记录实体</param>
+        /// <returns>返回印章操作记录</returns>
+        public async Task<TableData> GetSealOperationHistory(QuerySealHistoryReq req)
+        {
+            var result = new TableData();
+            if (!string.IsNullOrEmpty(req.SealId))
+            {
+                //查询印章历史记录
+                var contractSealOperationHistoryList = await UnitWork.Find<ContractSealOperationHistory>(r => r.ContractSealId == req.SealId).OrderByDescending(r => r.CreateTime).ToListAsync();
+
+                //按照创建时间倒序排序
+                contractSealOperationHistoryList = contractSealOperationHistoryList.OrderByDescending(r => r.CreateTime).ToList();
+                result.Count = contractSealOperationHistoryList.Count();
+                contractSealOperationHistoryList = contractSealOperationHistoryList.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+                var contractSealOperationHistorys = contractSealOperationHistoryList.Select(r => new
+                {
+                    r.Id,
+                    r.ContractSealId,
+                    r.ContractNo,
+                    r.ContractFinalNum,
+                    r.CreateUserId,
+                    r.CreateTime,
+                    r.CreateUserName,
+                    CreateDeptName = _userDepartMsgHelp.GetUserOrgName(r.CreateUserId),
+                    r.OperationType
+                });
+
+                result.Data = contractSealOperationHistorys;
             }
 
             return result;
@@ -197,17 +243,19 @@ namespace OpenAuth.App.ContractManager
             {
                 try
                 {
-                    obj.Id = Guid.NewGuid().ToString();                    
+                    obj.Id = Guid.NewGuid().ToString();
                     obj.CreateTime = DateTime.Now;
-                    obj.CreateUserId = loginUser.Name;
+                    obj.CreateUserId = loginUser.Id;
+                    obj.CreateUserName = loginUser.Name;
                     obj.UpdateUserId = null;
+                    obj.UpdateUserName = null;
                     obj.UpdateTime = null;
 
                     //印章编号唯一
                     var maxSealNo = UnitWork.Find<ContractSeal>(null).OrderByDescending(r => r.SealNo).Select(r => r.SealNo).FirstOrDefault();
                     if (!string.IsNullOrEmpty(maxSealNo))
                     {
-                        maxSealNo = "YZ-"+ (Convert.ToInt32(maxSealNo.Split('-')[1]) + 1).ToString().PadLeft(4, '0');
+                        maxSealNo = "YZ-" + (Convert.ToInt32(maxSealNo.Split('-')[1]) + 1).ToString().PadLeft(4, '0');
                     }
                     else
                     {
@@ -251,7 +299,8 @@ namespace OpenAuth.App.ContractManager
                     await UnitWork.UpdateAsync<ContractSeal>(r => r.Id == obj.Id, r => new ContractSeal
                     {
                         UpdateTime = DateTime.Now,
-                        UpdateUserId = loginContext.User.Name,
+                        UpdateUserId = loginContext.User.Id,
+                        UpdateUserName = loginContext.User.Name,
                         SealNo = obj.SealNo,
                         SealName = obj.SealName,
                         CompanyType = obj.CompanyType,
@@ -260,6 +309,7 @@ namespace OpenAuth.App.ContractManager
                         IsEnable = obj.IsEnable,
                         Remark = obj.Remark,
                         CreateUserId = obj.CreateUserId,
+                        CreateUserName = obj.CreateUserName,
                         CreateTime = obj.CreateTime
                     });
 
@@ -309,7 +359,7 @@ namespace OpenAuth.App.ContractManager
                 else
                 {
                     throw new Exception("删除失败，该印章不存在。");
-                }              
+                }
             }
         }
 

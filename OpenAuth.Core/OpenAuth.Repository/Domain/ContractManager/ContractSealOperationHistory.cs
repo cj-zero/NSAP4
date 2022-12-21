@@ -41,7 +41,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("合同申请单编号")]
         public string ContractNo { get; set; }
-        
+
         /// <summary>
         /// 最终合同数量
         /// </summary>
@@ -49,10 +49,16 @@ namespace OpenAuth.Repository.Domain
         public int? ContractFinalNum { get; set; }
 
         /// <summary>
+        /// 申请人Id
+        /// </summary>
+        [Description("申请人Id")]
+        public string CreateUserId { get; set; }
+
+        /// <summary>
         /// 申请人
         /// </summary>
         [Description("申请人")]
-        public string CreateUserId { get; set; }
+        public string CreateUserName { get; set; }
 
         /// <summary>
         /// 申请时间

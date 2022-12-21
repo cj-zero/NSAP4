@@ -21,9 +21,44 @@ namespace OpenAuth.App.SaleBusiness.Request
         public string ModelNum { get; set; }
 
         /// <summary>
+        /// 模块总数
+        /// </summary>
+        public string ModelCount { get; set; }
+
+        /// <summary>
         /// 模块路径
         /// </summary>
         public string Url { get; set; }
+
+        /// <summary>
+        /// 模块子数据文本1
+        /// </summary>
+        public string ModelChildTextOne { get; set; }
+
+        /// <summary>
+        /// 模块子数据文本2
+        /// </summary>
+        public string ModelChildTextTwo { get; set; }
+
+        /// <summary>
+        /// 模块子数据1
+        /// </summary>
+        public string ModelChildNumOne { get; set; }
+
+        /// <summary>
+        /// 模块子数据2
+        /// </summary>
+        public string ModelChildNumTwo { get; set; }
+
+        /// <summary>
+        /// 模块子数据总数1
+        /// </summary>
+        public string ModelChildCountOne { get; set; }
+
+        /// <summary>
+        /// 模块子数据总数2
+        /// </summary>
+        public string ModelChildCountTwo { get; set; }
     }
 
     /// <summary>
@@ -82,17 +117,17 @@ namespace OpenAuth.App.SaleBusiness.Request
     /// 分页查询库存实体
     /// </summary>
     public class QueryWareHouse : PageReq
-    { 
+    {
         /// <summary>
         /// 物料编码
         /// </summary>
         public string ItemCode { get; set; }
-        
+
         /// <summary>
         /// 仓库编码
         /// </summary>
         public string WhsCode { get; set; }
-        
+
         /// <summary>
         /// 物料描述
         /// </summary>
@@ -113,7 +148,7 @@ namespace OpenAuth.App.SaleBusiness.Request
     /// OINV实体
     /// </summary>
     public class QueryOINV
-    { 
+    {
         /// <summary>
         /// 应收款数据
         /// </summary>
@@ -172,7 +207,7 @@ namespace OpenAuth.App.SaleBusiness.Request
     /// SlpCode查询实体
     /// </summary>
     public class QuerySlpCode
-    { 
+    {
         /// <summary>
         /// 业务员编码
         /// </summary>
@@ -183,7 +218,7 @@ namespace OpenAuth.App.SaleBusiness.Request
     /// 部门排名查询实体
     /// </summary>
     public class QueryRank
-    { 
+    {
         /// <summary>
         /// 业务员编码
         /// </summary>

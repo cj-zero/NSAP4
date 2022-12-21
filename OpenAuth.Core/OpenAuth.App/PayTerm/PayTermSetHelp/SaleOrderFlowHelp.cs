@@ -110,88 +110,131 @@ namespace OpenAuth.App.PayTerm.PayTermSetHelp
         /// <summary>
         /// 计划数量
         /// </summary>
-        public decimal? PlanNum { get; set; }
+        public decimal? PlannedQty { get; set; }
 
         /// <summary>
         /// 完成数量
         /// </summary>
-        public decimal? ComNum { get; set; }
+        public decimal? CmpltQty { get; set; }
 
         /// <summary>
         /// 生产订单审批状态
         /// </summary>
-        public string ProductStatus { get; set; }
+        public string Status { get; set; }
+
+        /// <summary>
+        /// 生产订单审批状态名称
+        /// </summary>
+        public string StatusName { get; set; }
 
         /// <summary>
         /// 生产订单创建时间
         /// </summary>
-        public DateTime? CreateTime { get; set; }
+        public DateTime? CreateDate { get; set; }
 
         /// <summary>
         /// 生产部门
         /// </summary>
-        public string ProductDept { get; set; }
+        public string U_WO_LTDW { get; set; }
 
         /// <summary>
         /// 生产收货单号
         /// </summary>
-        public string ProductReceNum { get; set; }
+        public int DocNum { get; set; }
 
         /// <summary>
         /// 仓库
         /// </summary>
-        public string WareHouse { get; set; }
+        public string WhsCode { get; set; }
     }
 
-    public class SaleReceORCT 
+    public class SaleODLN
     {
         /// <summary>
-        /// 单据编码
+        /// 物料编码
         /// </summary>
-        public string ReceNum { get; set; }
+        public string ItemCode { get; set; }
 
         /// <summary>
-        /// 销售单号
+        /// 数量
         /// </summary>
-        public string SaleNum { get; set; }
+        public decimal? Quantity { get; set; }
 
         /// <summary>
-        /// 合同号
+        /// 交货单编号
         /// </summary>
-        public string ContractNo { get; set; }
-
-        /// <summary>
-        /// 合同金额
-        /// </summary>
-        public string ContractMoney { get; set; }
-
-        /// <summary>
-        /// 已收金额
-        /// </summary>
-        public string ReceMoney { get; set; }
-
-        /// <summary>
-        /// 未收金额
-        /// </summary>
-        public string NoReceMoney { get; set; }
-    }
-
-    public class SaleReturnGoods 
-    {
-        /// <summary>
-        /// 退货单号
-        /// </summary>
-        public string ReturnNum { get; set; }
+        public int DocEntry { get; set; }
 
         /// <summary>
         /// 创建时间
         /// </summary>
-        public DateTime? CreatTime { get; set; }
+        public DateTime? CreateDate { get; set; }
+
+        /// <summary>
+        /// 物流公司名称
+        /// </summary>
+        public string TransportName { get; set; }
+
+        /// <summary>
+        /// 运输单号
+        /// </summary>
+        public string TransportID { get; set; }
+    }
+
+    public class SaleReceORCT
+    {
+        /// <summary>
+        /// 单据编码
+        /// </summary>
+        public int DocEntry { get; set; }
+
+        /// <summary>
+        /// 销售单号
+        /// </summary>
+        public int OrderNo { get; set; }
+
+        /// <summary>
+        /// 合同号
+        /// </summary>
+        public int U_XSDD { get; set; }
+
+        /// <summary>
+        /// 合同金额
+        /// </summary>
+        public decimal? SEDocTotal { get; set; }
+
+        /// <summary>
+        /// 已收金额
+        /// </summary>
+        public decimal? DocTotal { get; set; }
+
+        /// <summary>
+        /// 未收金额
+        /// </summary>
+        public decimal? NoReceMoney { get; set; }
+    }
+
+    public class SaleReturnGoods
+    {
+        /// <summary>
+        /// 退货单号
+        /// </summary>
+        public int DocEntry { get; set; }
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public DateTime? CreateDate { get; set; }
 
         /// <summary>
         /// 审核状态
         /// </summary>
-        public string AuditStatus { get; set; }
+        public string DocStatus { get; set; }
+
+        /// <summary>
+        /// 状态名称
+        /// </summary>
+        public string StatusName { get; set; }
 
         /// <summary>
         /// 物料编码
@@ -201,16 +244,16 @@ namespace OpenAuth.App.PayTerm.PayTermSetHelp
         /// <summary>
         /// 数量
         /// </summary>
-        public decimal? Number { get; set; }
+        public decimal? Quantity { get; set; }
 
         /// <summary>
         /// 单价
         /// </summary>
-        public string Price { get; set; }
+        public decimal? Price { get; set; }
 
         /// <summary>
         /// 金额
         /// </summary>
-        public string Money { get; set; }
+        public decimal? DocTotal { get; set; }
     }
 }

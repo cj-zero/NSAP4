@@ -102,6 +102,11 @@ namespace OpenAuth.App.Request
     public class ContractMsgHelp
     {
         /// <summary>
+        /// Id
+        /// </summary>
+        public string Id { get; set; }
+
+        /// <summary>
         /// 合同编号
         /// </summary>
         public string ContractNo { get; set; }
@@ -117,9 +122,19 @@ namespace OpenAuth.App.Request
         public string FileTypeName { get; set; }
 
         /// <summary>
+        /// 创建人Id
+        /// </summary>
+        public string CreateId { get; set; }
+
+        /// <summary>
         /// 申请人
         /// </summary>
         public string CreateName { get; set; }
+
+        /// <summary>
+        /// 部门名称
+        /// </summary>
+        public string DeptName { get; set; }
 
         /// <summary>
         /// 创建时间
@@ -168,6 +183,11 @@ namespace OpenAuth.App.Request
         /// 合同类型名称
         /// </summary>
         public string ContractTypeName { get; set; }
+
+        /// <summary>
+        /// 创建人Id
+        /// </summary>
+        public string CreateId { get; set; }
 
         /// <summary>
         /// 申请人
@@ -239,5 +259,68 @@ namespace OpenAuth.App.Request
         /// 操作时间
         /// </summary>
         public string CreateTime { get; set; }
-    }  
+
+        /// <summary>
+        /// 部门名称
+        /// </summary>
+        public string DeptName { get; set; }
+    }
+
+    public class ContractHistory
+    {
+        /// <summary>
+        /// Id
+        /// </summary>
+        public string Id { get; set; }
+
+        /// <summary>
+        /// 合同申请单ID
+        /// </summary>
+        public string ContractApplyId { get; set; }
+
+        /// <summary>
+        /// 操作行为
+        /// </summary>
+        public string Action { get; set; }
+
+        /// <summary>
+        /// 操作人
+        /// </summary>
+        public string CreateUser { get; set; }
+
+        /// <summary>
+        /// 操作人Id
+        /// </summary>
+        public string CreateUserId { get; set; }
+
+        /// <summary>
+        /// 操作时间
+        /// </summary>
+        public System.DateTime? CreateTime { get; set; }
+
+        /// <summary>
+        /// 审批时长(分钟)
+        /// </summary>
+        public int? IntervalTime { get; set; }
+
+        /// <summary>
+        /// 审批结果
+        /// </summary>
+        public string ApprovalResult { get; set; }
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Remark { get; set; }
+
+        /// <summary>
+        /// 审批阶段
+        /// </summary>
+        public string ApprovalStage { get; set; }
+
+        /// <summary>
+        /// 部门名称
+        /// </summary>
+        public string DeptName { get; set; }
+    }
 }

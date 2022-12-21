@@ -59,7 +59,7 @@ namespace OpenAuth.WebApi.Controllers.PayTerm
             var result = new TableData();
             try
             {
-                 return await _payTermApp.GetPayTermSetList();
+                return await _payTermApp.GetPayTermSetList();
             }
             catch (Exception ex)
             {
@@ -189,7 +189,7 @@ namespace OpenAuth.WebApi.Controllers.PayTerm
                 decimal totalPro = Convert.ToDecimal(obj.PrepaPro + obj.BefShipPro + obj.GoodsToPro + obj.AcceptancePayPro + obj.QualityAssurancePro);
                 if (totalPro == 100m)
                 {
-                    result = await _payTermApp.PayTermSave(obj);                  
+                    result = await _payTermApp.PayTermSave(obj);
                 }
                 else
                 {
@@ -1076,6 +1076,98 @@ namespace OpenAuth.WebApi.Controllers.PayTerm
             try
             {
                 return await _payTermApp.GetSaleBuy(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{Id.ToJson()} 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 生产订单
+        /// </summary>
+        /// <param name="Id">销售订单Id</param>
+        /// <returns>返回生产订单信息</returns>
+        [HttpGet]
+        public async Task<TableData> GetSaleProduct(int Id)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _payTermApp.GetSaleProduct(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{Id.ToJson()} 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 交货单
+        /// </summary>
+        /// <param name="Id">销售订单Id</param>
+        /// <returns>返回交货单信息</returns>
+        [HttpGet]
+        public async Task<TableData> GetSaleODLN(int Id)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _payTermApp.GetSaleODLN(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{Id.ToJson()} 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 收款单
+        /// </summary>
+        /// <param name="Id">销售订单Id</param>
+        /// <returns>返回收款单列表信息</returns>
+        [HttpGet]
+        public async Task<TableData> GetSaleORCT(int Id)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _payTermApp.GetSaleORCT(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{Id.ToJson()} 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 退货/贷项凭证
+        /// </summary>
+        /// <param name="Id">销售订单Id</param>
+        /// <returns>返回退货/应收贷项凭证信息</returns>
+        [HttpGet]
+        public async Task<TableData> GetSaleORDNorORIN(int Id)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _payTermApp.GetSaleORDNorORIN(Id);
             }
             catch (Exception ex)
             {

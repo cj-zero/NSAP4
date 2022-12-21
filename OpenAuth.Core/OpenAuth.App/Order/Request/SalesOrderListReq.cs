@@ -16,6 +16,7 @@ namespace OpenAuth.App.Order.Request
         public string SlpName { get; set; }
         public string ToCompany { get; set; }
         public string ReceiptStatus { get; set; }
+        public string IsContract { get; set; }
         public string sortname { get; set; }
         public string sortorder { get; set; }
     }

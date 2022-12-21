@@ -41,6 +41,17 @@ namespace OpenAuth.App.Order
         /// 创建日期
         /// </summary>
         public DateTime CreateDate { get; set; }
+
+        /// <summary>
+        /// 业务员编码
+        /// </summary>
+        public int SlpCode { get; set; }
+
+        /// <summary>
+        /// 部门编码
+        /// </summary>
+        public string DeptName { get; set; }
+
         /// <summary>
         /// 销售员
         /// </summary>
@@ -74,6 +85,11 @@ namespace OpenAuth.App.Order
         /// 终端
         /// </summary>
         public string Terminals { get; set; }
+
+        /// <summary>
+        /// 标识
+        /// </summary>
+        public bool ContractFlag { get; set; }
     }
 
     /// <summary>
@@ -464,7 +480,7 @@ namespace OpenAuth.App.Order
         public int sync_sap { get; set; }
     }
 
-    public class SaleDeptSubToMe 
+    public class SaleDeptSubToMe
     {
         public int RowNum { get; set; }
 
@@ -736,6 +752,155 @@ namespace OpenAuth.App.Order
         /// </summary>
         public string buyunitmsr { get; set; }
 
+        /// <summary>
+        /// 物料子集
+        /// </summary>
+        public List<SaleItemDtoChild> Children { get; set; }
+
+    }
+
+    public class SaleItemDtoChild
+    {
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// 物料描述
+        /// </summary>
+        public string ItemName { get; set; }
+        /// <summary>
+        /// 零售价
+        /// </summary>
+        public decimal High_Price { get; set; }
+        /// <summary>
+        /// 批发价
+        /// </summary>
+        public decimal Low_Price { get; set; }
+        /// <summary>
+        /// 当前库存
+        /// </summary>
+        public decimal OnHand { get; set; }
+        /// <summary>
+        /// 总库存量
+        /// </summary>
+        public decimal SumOnHand { get; set; }
+        /// <summary>
+        /// 已订购
+        /// </summary>
+        public decimal IsCommited { get; set; }
+        /// <summary>
+        /// 已承诺
+        /// </summary>
+        public decimal OnOrder { get; set; }
+        /// <summary>
+        /// 当前可用量
+        /// </summary>
+        public decimal OnAvailable { get; set; }
+        /// <summary>
+        /// 总可用量
+        /// </summary>
+        public decimal Available { get; set; }
+        /// <summary>
+        /// 配置描述:为空显示为非标配物料
+        /// </summary>
+        public string Item_Desp { get; set; }
+        /// <summary>
+        ///仓库
+        /// </summary>
+        public string WhsCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal Factor_1 { get; set; }
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public decimal Factor_2 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal Factor_3 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string U_TDS { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string U_DL { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string U_DY { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal U_JGF { get; set; }
+        /// <summary>
+        /// 物料成本
+        /// </summary>
+        public decimal LastPurPrc { get; set; }
+        /// <summary>
+        /// 物料配置
+        /// </summary>
+        public int item_cfg_id { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double QryGroup { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double QryGroup2 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string QryGroup3 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double QryGroup1 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public int U_US { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal U_FS { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal SVolume { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal SWeight1 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal U_JGF1 { get; set; }
+        /// <summary>
+        /// 运费成本
+        /// </summary>
+        public decimal U_YFCB { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal MinLevel { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal PurPackUn { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal item_counts { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string buyunitmsr { get; set; }
     }
     /// <summary>
     /// 

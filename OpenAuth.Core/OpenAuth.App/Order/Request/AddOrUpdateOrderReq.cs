@@ -322,6 +322,11 @@ namespace OpenAuth.App.Order.Request
         /// <summary>
         /// 如果是商城订单记录商城单号
         public string U_EshopNo { get; set; }
+
+        /// <summary>
+        /// 商城过来的报价单是2
+        /// </summary>
+        public string U_ERPFrom { get; set; }
         /// <summary>
         /// 单据关联单号
         /// </summary>

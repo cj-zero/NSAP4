@@ -19,21 +19,24 @@ using OpenAuth.App.Response;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
+using OpenAuth.App.CommonHelp;
 
 namespace OpenAuth.App.ContractManager
 {
     public class ContractTemplateApp : OnlyUnitWorkBaeApp
     {
         private IFileStore _fileStore;
+        private UserDepartMsgHelp _userDepartMsgHelp;
 
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public ContractTemplateApp(IUnitWork unitWork, IAuth auth, IFileStore fileStore) : base(unitWork, auth)
+        public ContractTemplateApp(UserDepartMsgHelp userDepartMsgHelp, IUnitWork unitWork, IAuth auth, IFileStore fileStore) : base(unitWork, auth)
         {
             _fileStore = fileStore;
+            _userDepartMsgHelp = userDepartMsgHelp;
         }
 
         /// <summary>
@@ -76,16 +79,20 @@ namespace OpenAuth.App.ContractManager
                                               a.TemplateRemark,
                                               a.TemplateFileId,
                                               a.CreateUserId,
+                                              CreateUserName = a.CreateUserName,
+                                              CreateDeptName = _userDepartMsgHelp.GetUserOrgName(a.CreateUserId),
                                               a.CreateTime,
                                               a.UpdateTime,
                                               a.UpdateUserId,
+                                              UpdateUserName = a.UpdateUserName,
+                                              UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(a.UpdateUserId),
                                               a.DownLoadNum,
                                               CompanyValue = b.DtValue,
                                               CompanyName = b.Name,
                                               FileName = c == null ? "" : c.FileName,
                                               FileId = c == null ? "" : c.Id,
                                               FilePath = c == null ? "" : c.FilePath
-                                           };
+                                          };
 
             result.Count = await contractTemplate.CountAsync();
             result.Data = contractTemplateListReq;
@@ -117,23 +124,27 @@ namespace OpenAuth.App.ContractManager
                                           join c in contractFileList on a.TemplateFileId equals c.Id into ac
                                           from c in ac.DefaultIfEmpty()
                                           select new
-                                         {
-                                             a.Id,
-                                             a.CompanyType,
-                                             a.TemplateNo,
-                                             a.TemplateRemark,
-                                             a.TemplateFileId,
-                                             a.CreateUserId,
-                                             a.CreateTime,
-                                             a.UpdateUserId,
-                                             a.UpdateTime,
-                                             a.DownLoadNum,
-                                             CompanyValue = b.DtValue,
-                                             CompanyName = b.Name,
-                                             FileId = c == null ? "" : c.Id,
-                                             FileName = c == null ? "" : c.FileName,
-                                             FilePath = c == null ? "" : c.FilePath
-                                         };
+                                          {
+                                              a.Id,
+                                              a.CompanyType,
+                                              a.TemplateNo,
+                                              a.TemplateRemark,
+                                              a.TemplateFileId,
+                                              a.CreateUserId,
+                                              CreateUserName = a.CreateUserName,
+                                              CreateDeptName = _userDepartMsgHelp.GetUserOrgName(a.CreateUserId),
+                                              a.CreateTime,
+                                              a.UpdateUserId,
+                                              UpdateUserName = a.UpdateUserName,
+                                              UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(a.UpdateUserId),
+                                              a.UpdateTime,
+                                              a.DownLoadNum,
+                                              CompanyValue = b.DtValue,
+                                              CompanyName = b.Name,
+                                              FileId = c == null ? "" : c.Id,
+                                              FileName = c == null ? "" : c.FileName,
+                                              FilePath = c == null ? "" : c.FilePath
+                                          };
 
                 result.Data = contractTempalteReq;
             }
@@ -166,7 +177,8 @@ namespace OpenAuth.App.ContractManager
                 {
                     obj.Id = Guid.NewGuid().ToString();
                     obj.CreateTime = DateTime.Now;
-                    obj.CreateUserId = loginUser.Name;
+                    obj.CreateUserId = loginUser.Id;
+                    obj.CreateUserName = loginUser.Name;
                     obj.UpdateTime = null;
 
                     //模板编号唯一
@@ -217,12 +229,14 @@ namespace OpenAuth.App.ContractManager
                     await UnitWork.UpdateAsync<ContractTemplate>(r => r.Id == obj.Id, r => new ContractTemplate
                     {
                         UpdateTime = DateTime.Now,
-                        UpdateUserId = loginContext.User.Name,
+                        UpdateUserId = loginContext.User.Id,
+                        UpdateUserName = loginContext.User.Name,
                         TemplateNo = obj.TemplateNo,
                         TemplateFileId = obj.TemplateFileId,
                         TemplateRemark = obj.TemplateRemark,
                         DownLoadNum = obj.DownLoadNum,
-                        CreateUserId = obj.CreateUserId,                       
+                        CreateUserId = obj.CreateUserId,
+                        CreateUserName = obj.CreateUserName,
                         CreateTime = obj.CreateTime
                     });
 
@@ -310,7 +324,7 @@ namespace OpenAuth.App.ContractManager
             var objs = await UnitWork.Find<ContractTemplate>(r => r.Id == contractId).FirstOrDefaultAsync();
             try
             {
-                string sql = string.Format("UPDATE erp4_serve.contracttemplate SET DownLoadNum={0},UpdateUserId='{1}',UpdateTime='{2}' WHERE Id= '" + contractId + "'", objs.DownLoadNum + 1,loginUser.Name,DateTime.Now);
+                string sql = string.Format("UPDATE erp4_serve.contracttemplate SET DownLoadNum={0},UpdateUserId='{1}',UpdateTime='{2}' WHERE Id= '" + contractId + "'", objs.DownLoadNum + 1, loginUser.Name, DateTime.Now);
                 int resultCountJob = UnitWork.ExecuteSql(sql, ContextType.NsapBaseDbContext);
                 if (resultCountJob > 0)
                 {

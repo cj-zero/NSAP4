@@ -48,7 +48,7 @@ namespace OpenAuth.App.PayTerm
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public PayTermApp(IUnitWork unitWork, IAuth auth, ICapPublisher capBus,UserDepartMsgHelp userDepartMsgHelp, SaleBusinessMethodHelp saleBusinessMethodHelp, ServiceBaseApp serviceBaseApp, ServiceSaleOrderApp serviceSaleOrderApp, DDVoiceApp dDVoiceApp, ManageAccBindApp manageAccBindApp) : base(unitWork, auth)
+        public PayTermApp(IUnitWork unitWork, IAuth auth, ICapPublisher capBus, UserDepartMsgHelp userDepartMsgHelp, SaleBusinessMethodHelp saleBusinessMethodHelp, ServiceBaseApp serviceBaseApp, ServiceSaleOrderApp serviceSaleOrderApp, DDVoiceApp dDVoiceApp, ManageAccBindApp manageAccBindApp) : base(unitWork, auth)
         {
             _UnitWork = unitWork;
             _auth = auth;
@@ -1501,7 +1501,7 @@ namespace OpenAuth.App.PayTerm
                     }
                 }
             }
-          
+
             return result;
         }
 
@@ -1516,7 +1516,7 @@ namespace OpenAuth.App.PayTerm
             var crmOctgs = await UnitWork.Find<crm_octg>(r => r.PymntGroup == groupNum && r.sbo_id == Define.SBO_ID).ToListAsync();
             if (crmOctgs != null && crmOctgs.Count() > 0)
             {
-                result.Data = new { Id = crmOctgs.FirstOrDefault().GroupNum, GroupNum = groupNum};
+                result.Data = new { Id = crmOctgs.FirstOrDefault().GroupNum, GroupNum = groupNum };
             }
 
             return result;
@@ -1597,7 +1597,7 @@ namespace OpenAuth.App.PayTerm
                         GroupNum = GetGroupName(obj.payTermSave),
                         UpdateTime = DateTime.Now
                     });
-                  
+
                     await UnitWork.SaveAsync();
                     await transaction.CommitAsync();
                     result.Message = "修改成功";
@@ -2055,7 +2055,7 @@ namespace OpenAuth.App.PayTerm
                     result.Message = "付款条件不符合规则，请重试";
                 }
             }
-            else 
+            else
             {
                 result.Message = "付款条件不符合规则，请重试";
             }
@@ -2344,7 +2344,7 @@ namespace OpenAuth.App.PayTerm
                                     CreateUserName = "超级管理员",
                                     CreateTime = DateTime.Now
                                 });
-                            }                               
+                            }
                         }
                     }
 
@@ -2483,10 +2483,10 @@ namespace OpenAuth.App.PayTerm
                                 //查询绑定的钉钉用户Id
                                 var ddBindUsers = await UnitWork.Find<DDBindUser>(r => (users1.Select(r => r.Id).ToList()).Contains(r.UserId)).ToListAsync();
                                 var ddSendSales = (from a in willFreezeCurtomers
-                                                   join b in slpCodes1 on a.CardCode equals b.CardCode 
-                                                   join c in userIds1 on b.SlpCode equals c.sale_id 
-                                                   join d in users1 on c.user_id equals d.User_Id 
-                                                   join e in ddBindUsers on d.Id equals e.UserId 
+                                                   join b in slpCodes1 on a.CardCode equals b.CardCode
+                                                   join c in userIds1 on b.SlpCode equals c.sale_id
+                                                   join d in users1 on c.user_id equals d.User_Id
+                                                   join e in ddBindUsers on d.Id equals e.UserId
                                                    select new DDSendSale
                                                    {
                                                        CardCode = a.CardCode,
@@ -2504,7 +2504,7 @@ namespace OpenAuth.App.PayTerm
                                         StringBuilder remarks = new StringBuilder();
                                         foreach (DDSendSale dDSendSale in cardCodes)
                                         {
-                                             remarks.Append("客户编码为" + dDSendSale.CardCode + "的客户 " + dDSendSale.CardName + ",将在" + dDSendSale.FreezeDateTime + " 即将冻结 ");
+                                            remarks.Append("客户编码为" + dDSendSale.CardCode + "的客户 " + dDSendSale.CardName + ",将在" + dDSendSale.FreezeDateTime + " 即将冻结 ");
                                         }
 
                                         await _dDVoice.DDSendMsg("text", remarks.ToString(), item);
@@ -2580,7 +2580,7 @@ namespace OpenAuth.App.PayTerm
                                             StringBuilder remarks = new StringBuilder();
                                             foreach (DDSendSale dDSendSale in cardCodes)
                                             {
-                                                 remarks.Append("客户编码为" + dDSendSale.CardCode + "的客户 " + dDSendSale.CardName + ",在" + dDSendSale.FreezeDateTime + "已冻结 ");
+                                                remarks.Append("客户编码为" + dDSendSale.CardCode + "的客户 " + dDSendSale.CardName + ",在" + dDSendSale.FreezeDateTime + "已冻结 ");
                                                 cardCodeLists.Add(dDSendSale.CardCode);
                                             }
 
@@ -2614,7 +2614,7 @@ namespace OpenAuth.App.PayTerm
                                             SendCount = 1
                                         });
                                     }
-                                    
+
                                     await UnitWork.SaveAsync();
                                 }
                             }
@@ -2655,7 +2655,7 @@ namespace OpenAuth.App.PayTerm
             int totalPage = Convert.ToInt32((rowCount / 500)) + 1;
             for (int i = 0; i < totalPage; i++)
             {
-               ruleCustomerList.InsertRange(ruleCustomerList.Count(), GetClientList(500, i + 1, filedStrig, out int rowCounts));
+                ruleCustomerList.InsertRange(ruleCustomerList.Count(), GetClientList(500, i + 1, filedStrig, out int rowCounts));
             }
 
             if (ruleCustomerList != null && ruleCustomerList.Count() > 0)
@@ -2964,7 +2964,7 @@ namespace OpenAuth.App.PayTerm
             {
                 result.Message = "error:" + ex.Message.ToString();
             }
-           
+
             return result;
         }
         #endregion
@@ -3353,7 +3353,7 @@ namespace OpenAuth.App.PayTerm
         /// <param name="filedString">条件</param>
         /// <param name="rowCounts">总数</param>
         /// <returns>返回客户信息</returns>
-        public List<RuleCustomer> GetClientList(int limit, int page, string filedString,out int rowCounts)
+        public List<RuleCustomer> GetClientList(int limit, int page, string filedString, out int rowCounts)
         {
             DataTable clientTable = new DataTable();
             StringBuilder tableName = new StringBuilder();
@@ -3446,7 +3446,7 @@ namespace OpenAuth.App.PayTerm
             var result = new TableData();
 
             //查询vip客户详情
-            var vIPCustomers = await UnitWork.Find<PayVIPCustomer>(r => r.Id == Id).Select(r => new 
+            var vIPCustomers = await UnitWork.Find<PayVIPCustomer>(r => r.Id == Id).Select(r => new
             {
                 r.Id,
                 r.CardCode,
@@ -3557,7 +3557,7 @@ namespace OpenAuth.App.PayTerm
                     {
                         CardCode = obj.CardCode,
                         CardName = obj.CardName,
-                        SaleId =  string.IsNullOrEmpty(obj.SaleId) ? "0" : obj.SaleId,
+                        SaleId = string.IsNullOrEmpty(obj.SaleId) ? "0" : obj.SaleId,
                         SaleName = obj.SaleName,
                         ListName = obj.ListName,
                         Remark = obj.Remark,
@@ -4184,6 +4184,7 @@ namespace OpenAuth.App.PayTerm
                     saleOrderFlowSCHelp.Name = await UnitWork.Find<base_user>(r => r.user_id == userids).Select(r => r.user_nm).FirstOrDefaultAsync();
                     saleOrderFlowSCHelp.Dept = _userDepartMsgHelp.GetUserIdDepart(Convert.ToInt32(userids));
 
+                    //获取数据库名
                     string strSql = string.Format("SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM {0}.sbo_info WHERE sbo_id={1}", "nsap_base", Define.SBO_ID);
                     DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
                     string sboname = dt.Rows[0][0].ToString();
@@ -4252,25 +4253,294 @@ namespace OpenAuth.App.PayTerm
             strSql.AppendFormat("left join nsap_bone.buy_porrel b on a.Docentry = b.RelDoc_Entry ");
             strSql.AppendFormat("left join nsap_bone.buy_opor c on b.POR_Entry = c.Docentry ");
             strSql.AppendFormat("left join nsap_bone.buy_por1 d on c.Docentry = d.DocEntry ");
-            strSql.AppendFormat("where a.docentry = "+ saleId +"");
+            strSql.AppendFormat("where a.docentry = " + saleId + "");
             DataTable dTable = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
             result.Data = dTable.Tolist<SaleBuyOPOR>();
             return result;
         }
 
+        /// <summary>
+        /// 获取生产订单
+        /// </summary>
+        /// <param name="saleId">销售订单Id</param>
+        /// <returns>返回生产订单信息</returns>
         public async Task<TableData> GetSaleProduct(int saleId)
         {
             var result = new TableData();
-  
+            int userId = _serviceBaseApp.GetUserNaspId();
+            if (userId > 0)
+            {
+                //列出"BOM类别权限分配"所对应的产品编码的生产单
+                StringBuilder strBomSql = new StringBuilder();
+                strBomSql.AppendFormat("select type_id,type_code FROM nsap_bone.store_item_type_user_map WHERE user_id= " + userId + " ");
+                DataTable ittab = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strBomSql.ToString(), CommandType.Text, null);
+                var code = string.Empty; var code28 = string.Empty;
+                foreach (DataRow item in ittab.Rows)
+                {
+                    if (item[1].ToString().Equals("R21"))
+                    {
+                        code = item[1].ToString();
+                    }
+
+                    if (item[1].ToString().Equals("R28"))
+                    {
+                        code28 = item[1].ToString();
+                    }
+                }
+
+                //获取生产单
+                StringBuilder strSql = new StringBuilder();
+                strSql.AppendFormat("SELECT a.DocEntry ,a.ItemCode,a.PlannedQty,a.CmpltQty,a.Status, ");
+                strSql.AppendFormat("(CASE a.Status WHEN 'P' THEN '已计划' WHEN 'R' THEN '已审核' WHEN 'C' THEN '已取消' ELSE '已清' END) as StatusName, ");
+                strSql.AppendFormat("a.CreateDate,a.U_WO_LTDW,c.DocEntry as DocNum,c.WhsCode ");
+                strSql.AppendFormat("FROM nsap_bone.product_owor as a ");
+                strSql.AppendFormat("LEFT JOIN nsap_bone.sale_ordr AS b ON a.OriginAbs = b.DocEntry  and a.sbo_id = b.sbo_id ");
+                strSql.AppendFormat("LEFT JOIN nsap_bone.product_ign1 as c on a.DocEntry = c.BaseEntry and a.sbo_id = c.sbo_id ");
+                strSql.AppendFormat("LEFT JOIN nsap_bone.product_oign as d on c.docEntry  = d.DocEntry and c.sbo_id = d.sbo_id ");
+                strSql.AppendFormat("WHERE 1=1 AND a.sbo_id = " + Define.SBO_ID + " AND b.DocEntry = " + saleId + " ");
+                if (ittab != null && ittab.Rows.Count > 0)
+                {
+                    strSql.AppendFormat("AND ( EXISTS (select 1 from nsap_bone.store_item_type_user_map m WHERE m.user_id=" + userId + " and left(a.itemcode,LENGTH(m.type_code))=m.type_code)");
+                    if (code.Equals("R21"))
+                    {
+                        strSql.AppendFormat(" OR w.ItemCode LIKE '%R21' ");
+                    }
+
+                    if (code28.Equals("R28"))
+                    {
+                        strSql.AppendFormat(" OR w.ItemCode LIKE '%R28%' ");
+                    }
+
+                    strSql.AppendFormat(") ");
+                }
+
+                strSql.AppendFormat("order by a.docentry DESC ");
+                DataTable dTable = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
+                result.Data = dTable.Tolist<SaleProductOWOR>();
+            }
 
             return result;
         }
 
+        /// <summary>
+        /// 获取交货单信息
+        /// </summary>
+        /// <param name="saleId">销售订单Id</param>
+        /// <returns>返回交货单信息</returns>
         public async Task<TableData> GetSaleODLN(int saleId)
         {
             var result = new TableData();
 
+            //获取数据库名
+            string strTableName = string.Format("SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM {0}.sbo_info WHERE sbo_id={1}", "nsap_base", Define.SBO_ID);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strTableName, CommandType.Text, null);
+            string sboname = dt.Rows[0][0].ToString();
 
+            //获取交货单
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("SELECT a.DocEntry,CASE WHEN 1 = 1 THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = 1 THEN a.DocTotal ELSE 0 END AS DocTotal,");
+            strSql.AppendFormat("'' AS BuyDocEntry,'' AS TransportName,'' AS TransportID,'' AS TransportSum,");
+            strSql.AppendFormat("a.DocDate ,b.ItemCode,b.Quantity,a.CreateDate ");
+            strSql.AppendFormat("FROM " + sboname + ".dbo.ODLN a LEFT JOIN " + sboname + ".dbo.DLN1 b on a.DocEntry = b.DocEntry ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.OSLP c ON a.SlpCode = c.SlpCode ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.OCRD d ON a.CardCode = d.CardCode ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.OCTG e ON a.GroupNum = e.GroupNum WHERE b.BaseEntry = " + saleId + " ORDER BY a.docentry DESC");
+            DataTable thistab = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+            thistab.Columns[3].MaxLength = -1;
+            thistab.Columns[4].MaxLength = -1;
+            thistab.Columns[5].MaxLength = -1;
+            thistab.Columns[6].MaxLength = -1;
+
+            //获取物流公司和运输单号
+            foreach (DataRow odlnrow in thistab.Rows)
+            {
+                string docnum = odlnrow["DocEntry"].ToString();
+                DataTable thist = GetSalesDelivery_PurchaseOrderList(docnum, Define.SBO_ID.ToString());
+                string buyentry = "";
+                string transname = "";
+                string transid = "";
+                double transsum = 0.00;
+                string tempname = "";
+                string transDocTotal = "";
+                for (int i = 0; i < thist.Rows.Count; i++)
+                {
+                    transsum += double.Parse(thist.Rows[i]["DocTotal"].ToString());// 交货对应采购单总金额
+
+                    //快递单号，对应采购单编号
+                    if (string.IsNullOrEmpty(buyentry))
+                    {
+                        buyentry = thist.Rows[i]["Buy_DocEntry"].ToString();
+                        transid = string.IsNullOrEmpty(thist.Rows[i]["LicTradNum"].ToString()) ? "000000000" : thist.Rows[i]["LicTradNum"].ToString();
+                        tempname = thist.Rows[i]["CardName"].ToString();
+                        transname = tempname;
+                        transDocTotal = thist.Rows[i]["DocTotal"].ToString();
+                    }
+                    else
+                    {
+                        buyentry += ";" + thist.Rows[i]["Buy_DocEntry"].ToString();
+                        transid += ";" + (string.IsNullOrEmpty(thist.Rows[i]["LicTradNum"].ToString()) ? "000000000" : thist.Rows[i]["LicTradNum"].ToString());
+
+                        //物流公司名称如果连续重复，则只显示第一个
+                        if (tempname != thist.Rows[i]["CardName"].ToString())
+                        {
+                            tempname = thist.Rows[i]["CardName"].ToString();
+                        }
+                        else
+                        {
+                            tempname = "";
+                        }
+
+                        transname += ";;" + tempname;
+                        transDocTotal += ";" + thist.Rows[i]["DocTotal"].ToString();
+                    }
+                }
+
+                odlnrow["BuyDocEntry"] = buyentry.ToString();
+                odlnrow["TransportName"] = transname.ToString();
+                odlnrow["TransportID"] = transid;
+                odlnrow["TransportSum"] = transsum.ToString() + ";" + transDocTotal;
+            }
+
+            //数据集映射实体
+            result.Data = thistab.Tolist<SaleODLN>();
+            return result;
+        }
+
+        /// <summary>
+        /// 获取交货订单运输信息
+        /// </summary>
+        /// <param name="DeliveryId">交货单单据编号</param>
+        /// <param name="SboId">账套Id</param>
+        /// <returns>返回交货订单信息</returns>
+        public DataTable GetSalesDelivery_PurchaseOrderList(string DeliveryId, string SboId)
+        {
+            string lstr = string.Format(@"select t0.Buy_DocEntry,t1.CardCode,t1.CardName,t1.DocTotal,t1.LicTradNum from {0}.sale_transport t0 INNER JOIN {0}.buy_opor t1 on t1.DocEntry=t0.Buy_DocEntry and t1.sbo_id=t0.SboId and t1.CANCELED='N' WHERE t0.Base_DocType=24 and t0.Base_DocEntry={1} and t0.SboId={2} ", "nsap_bone", DeliveryId, SboId);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, lstr, CommandType.Text, null);
+        }
+
+        /// <summary>
+        /// 获取收款单信息
+        /// </summary>
+        /// <param name="saleId">销售订单Id</param>
+        /// <returns>返回销售收款信息</returns>
+        public async Task<TableData> GetSaleORCT(int saleId)
+        {
+            var result = new TableData();
+
+            //获取数据库名
+            string strTableName = string.Format("SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM {0}.sbo_info WHERE sbo_id={1}", "nsap_base", Define.SBO_ID);
+            DataTable dtable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strTableName, CommandType.Text, null);
+            string sboname = dtable.Rows[0][0].ToString();
+
+            //获取销售收款单
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("SELECT T0.DocEntry,(SELECT TOP 1 T2.BaseEntry FROM " + sboname + ".dbo.RCT2 AS T4 LEFT JOIN neware_202005.dbo.INV1 AS T1 ON T4.DocEntry = T1.DocEntry LEFT JOIN " + sboname + ".dbo.DLN1 AS T2 ON T1.BaseEntry = T2.DocEntry AND T1.BaseLine = T2.LineNum AND T1.BaseType = 15 WHERE T4.DocNum = T0.DocEntry AND T2.BaseType = 17) AS OrderNo,T0.TransId,T0.DocTotal,T0.OpenBal,T0.U_XSDD,'' AS SettleType,T0.DocCurr,T0.DocTotalFC,T0.OpenBalFc, ");
+            strSql.AppendFormat("SE.DocCur SEDocCur,SE.DocTotal AS SEDocTotal,SE.DocTotalFC AS SEDocTotalFC,0 AS sum_DocTotal,0 AS sum_DocTotalFC ");
+            strSql.AppendFormat("FROM " + sboname + ".dbo.ORCT AS T0 LEFT OUTER JOIN " + sboname + ".dbo.ORDR AS SE ON T0.U_XSDD = SE.DocEntry WHERE ");
+            strSql.AppendFormat("SE.DocEntry = " + saleId + " ORDER BY t0.updatedate DESC");
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+            dt.Columns[6].MaxLength = -1;
+            if (dt != null && dt.Rows.Count > 0)
+            {
+                foreach (DataRow tRow in dt.Rows)
+                {
+                    tRow["SettleType"] = GetMyFieldValueForSalesReceive("U_SettleType", tRow["DocEntry"].ToString(), Define.SBO_ID.ToString());
+                    DataTable sumtab = GetSumSalesReceiveForOrder(tRow["U_XSDD"].ToString(), sboname);
+                    if (sumtab != null && sumtab.Rows.Count > 0)
+                    {
+                        tRow["sum_DocTotal"] = sumtab.Rows[0]["sum_DocTotal"];
+                        tRow["sum_DocTotalFC"] = sumtab.Rows[0]["sum_DocTotalFC"];
+                    }
+                }
+            }
+
+            //列表获取未收金额
+            List<SaleReceORCT> saleReceORCTs = dt.Tolist<SaleReceORCT>();
+            foreach (SaleReceORCT item in saleReceORCTs)
+            {
+                item.NoReceMoney = item.SEDocTotal - item.DocTotal;
+            }
+
+            result.Data = saleReceORCTs;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取设置类型
+        /// </summary>
+        /// <param name="fieldName">设置类型</param>
+        /// <param name="docentry">单据编号</param>
+        /// <param name="sboid">账套id</param>
+        /// <returns>返回设置类型</returns>
+        public string GetMyFieldValueForSalesReceive(string fieldName, string docentry, string sboid)
+        {
+            string selsql = string.Format("select {0} from {1}.finance_orct where docentry={2} and sbo_id={3}", fieldName, "nsap_bone", docentry, sboid);
+            object obj = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, selsql, CommandType.Text, null);
+            return obj == null ? "" : obj.ToString();
+        }
+
+        /// <summary>
+        /// 获取实收总金额
+        /// </summary>
+        /// <param name="OrderNo">销售订单号</param>
+        /// <param name="sboname">数据库名</param>
+        /// <returns>返回收款实际总金额</returns>
+        public DataTable GetSumSalesReceiveForOrder(string OrderNo, string sboname)
+        {
+            StringBuilder tableName2 = new StringBuilder();
+            tableName2.Append("select SaleNo,sum(DocTotal) as sum_DocTotal,sum(DocTotalFC) as sum_DocTotalFC from (");
+            tableName2.AppendFormat("SELECT T0.DocEntry,T3.DocEntry AS SaleNo,T0.DocTotal,T0.DocTotalFC ");
+            tableName2.AppendFormat(" FROM " + sboname + ".dbo." + "ORCT AS T0 ");
+            tableName2.AppendFormat("LEFT JOIN " + sboname + ".dbo." + "RCT2 AS T4 ON T0.DocEntry = T4.DocNum ");
+            tableName2.AppendFormat("LEFT JOIN " + sboname + ".dbo." + "INV1 AS T1 ON T4.DocEntry = T1.DocEntry ");
+            tableName2.AppendFormat("LEFT JOIN " + sboname + ".dbo." + "DLN1 AS T2 ON T1.BaseEntry = T2.DocEntry AND T1.BaseLine = T2.LineNum AND T1.BaseType = 15 ");
+            tableName2.AppendFormat("LEFT JOIN " + sboname + ".dbo." + "RDR1 AS T3 ON T2.BaseEntry = T3.DocEntry AND T2.BaseLine = T3.LineNum AND T2.BaseType = 17 ");
+            tableName2.AppendFormat(" WHERE T0.Canceled='N' AND T3.DocEntry='" + OrderNo + "'");
+            tableName2.AppendFormat(" group by T0.DocEntry,T3.DocEntry,T0.DocTotal,T0.DocTotalFC ");
+            tableName2.AppendFormat(" union ");
+            tableName2.AppendFormat("select Tk.DocEntry,Tk.U_XSDD as SaleNo,Tk.DocTotal,Tk.DocTotalFC");
+            tableName2.AppendFormat(" from " + sboname + ".dbo." + "ORCT Tk where Tk.Canceled='N' and Tk.U_XSDD='" + OrderNo + "'");
+            tableName2.AppendFormat(") v1 group by saleNo");
+            DataTable tempTab = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, tableName2.ToString(), CommandType.Text, null);
+            return tempTab;
+        }
+
+        /// <summary>
+        /// 获取退货/贷项凭证信息
+        /// </summary>
+        /// <param name="saleId"></param>
+        /// <returns>返回销售退货/应收贷项凭证信息</returns>
+        public async Task<TableData> GetSaleORDNorORIN(int saleId)
+        {
+            var result = new TableData();
+
+            //获取数据库名
+            string strTableName = string.Format("SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM {0}.sbo_info WHERE sbo_id={1}", "nsap_base", Define.SBO_ID);
+            DataTable dtable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strTableName, CommandType.Text, null);
+            string sboname = dtable.Rows[0][0].ToString();
+
+            //获取销售退货和贷项凭证
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("SELECT a.DocEntry,a.CreateDate,a.DocStatus,(CASE a.DocStatus WHEN 'O' THEN '未清' ELSE '已清' END) as StatusName,");
+            strSql.AppendFormat("b.ItemCode,b.Quantity,b.Price,b.Quantity * b.Price AS DocTotal ");
+            strSql.AppendFormat("FROM " + sboname + ".dbo.ORDN a ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.RDN1 b ON a.DocEntry = b.DocEntry ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.ODLN c ON b.BaseEntry = c.DocEntry ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.DLN1 d ON c.DocEntry = d.DocEntry ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.ORDR e ON d.BaseEntry = e.DocEntry ");
+            strSql.AppendFormat("WHERE a.CANCELED = 'N' AND a.DocEntry = " + saleId + " UNION ");
+            strSql.AppendFormat("SELECT a.DocEntry,a.CreateDate,a.DocStatus,(CASE a.DocStatus WHEN 'O' THEN '未清' ELSE '已清' END) as StatusName,");
+            strSql.AppendFormat("b.ItemCode,b.Price,b.Quantity,b.Quantity * b.Price AS DocTotal ");
+            strSql.AppendFormat("FROM " + sboname + ".dbo.ORIN a ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.RIN1 b ON a.DocEntry = b.DocEntry ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.OINV c ON b.BaseEntry = c.DocEntry ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.INV1 d ON c.DocEntry = d.DocEntry ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.ODLN e ON d.BaseEntry = e.DocEntry ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.DLN1 f ON e.DocEntry = f.DocEntry ");
+            strSql.AppendFormat("LEFT JOIN " + sboname + ".dbo.ORDR g ON f.BaseEntry = g.DocEntry ");
+            strSql.AppendFormat("WHERE a.CANCELED = 'N' AND a.DocEntry = " + saleId + "");
+            DataTable tempTab = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+            result.Data = tempTab.Tolist<SaleReturnGoods>();
             return result;
         }
         #endregion

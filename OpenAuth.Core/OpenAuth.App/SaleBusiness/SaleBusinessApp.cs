@@ -17,11 +17,13 @@ using OpenAuth.Repository.Interface;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.SaleBusiness.Common;
+using OpenAuth.App.Order.Request;
 using Microsoft.EntityFrameworkCore;
+using OpenAuth.Repository.Extensions;
 
 namespace OpenAuth.App.SaleBusiness
 {
-    public class SaleBusinessApp: OnlyUnitWorkBaeApp
+    public class SaleBusinessApp : OnlyUnitWorkBaeApp
     {
         private IUnitWork _UnitWork;
         private IAuth _auth;
@@ -73,68 +75,114 @@ namespace OpenAuth.App.SaleBusiness
 
             List<QuerySaleBusinessRequest> saleList = new List<QuerySaleBusinessRequest>();
             QueryTime qt = _saleBusinessMethodHelp.TimeRange(timeRange);
+            GetICreatedReq model = new GetICreatedReq()
+            {
+                Applicator = "",
+                Base_entry = "",
+                Customer = "",
+                Job_Id = "",
+                Job_nm = "",
+                Job_state = "1",
+                key = "",
+                limit = 10000,
+                page = 1,
+                qtype = "",
+                query = "",
+                Remarks = "",
+                Sbo_itf_return = "",
+                sortname = "upd_dt",
+                sortorder = "desc",
+                types = ""
+            };
+
             if (qt == null || qt.endTime == null || qt.startTime == null)
             {
                 saleList.Add(await GetCustomer("", "", slpCode));//获取全部新增客户
-                saleList.Add(await GetSaleTypeDocTotal(OQUT, "", "", slpCode));//获取销售报价单总金额
-                saleList.Add(await GetSaleTypeDocTotal(ORDR, "", "", slpCode));//获取销售订单总金额
-                saleList.Add(await GetSaleTypeDocTotal(ODLN, "", "", slpCode));//获取销售交货单总金额
-                saleList.Add(await GetSaleTypeDocTotal(OINV, "", "", slpCode));//获取应收发票总金额
+                saleList.Add(await GetSaleTypeDocTotal(OQUT, "", "", slpCode, model));//获取销售报价单总金额
+                saleList.Add(await GetSaleTypeDocTotal(ORDR, "", "", slpCode, model));//获取销售订单总金额
+                saleList.Add(await GetSaleTypeDocTotal(ODLN, "", "", slpCode, model));//获取销售交货单总金额
+                saleList.Add(await GetSaleTypeDocTotal(OINV, "", "", slpCode, model));//获取应收发票总金额
                 saleList.Add(await GetSaleReceivables("", "", slpCode));//获取销售收款总金额
-                saleList.Add(await GetClue("", "", loginUser));//获取全部新增线索            
+                saleList.Add(await GetClue("", "", loginUser));//获取全部新增机会            
                 saleList.Add(await GetProductList("", "", slpCode));//获取生产订单个数             
                 saleList.Add(await GetBillApplication("", "", slpCode));//获取增值税发票总金额
-                saleList.Add(await GetSaleTypeDocTotal(ORDN, "", "", slpCode));//获取销售退货单总金额
-                saleList.Add(await GetSaleTypeDocTotal(ORIN, "", "", slpCode));//获取应收贷项凭证总金额               
+                saleList.Add(await GetSaleTypeDocTotal(ORDN, "", "", slpCode, model));//获取销售退货单总金额
+                saleList.Add(await GetSaleTypeDocTotal(ORIN, "", "", slpCode, model));//获取应收贷项凭证总金额               
             }
             else
             {
                 saleList.Add(await GetCustomer(qt.startTime, qt.endTime, slpCode));//获取时间范围内新增客户
-                saleList.Add(await GetSaleTypeDocTotal(OQUT, qt.startTime, qt.endTime, slpCode));//获取时间范围内销售报价单总金额
-                saleList.Add(await GetSaleTypeDocTotal(ORDR, qt.startTime, qt.endTime, slpCode));//获取时间范围内销售订单总金额
-                saleList.Add(await GetSaleTypeDocTotal(ODLN, qt.startTime, qt.endTime, slpCode));//获取时间范围内销售交货单总金额
-                saleList.Add(await GetSaleTypeDocTotal(OINV, qt.startTime, qt.endTime, slpCode));//获取时间范围内应收发票总金额
+                saleList.Add(await GetSaleTypeDocTotal(OQUT, qt.startTime, qt.endTime, slpCode, model));//获取时间范围内销售报价单总金额
+                saleList.Add(await GetSaleTypeDocTotal(ORDR, qt.startTime, qt.endTime, slpCode, model));//获取时间范围内销售订单总金额
+                saleList.Add(await GetSaleTypeDocTotal(ODLN, qt.startTime, qt.endTime, slpCode, model));//获取时间范围内销售交货单总金额
+                saleList.Add(await GetSaleTypeDocTotal(OINV, qt.startTime, qt.endTime, slpCode, model));//获取时间范围内应收发票总金额
                 saleList.Add(await GetSaleReceivables(qt.startTime, qt.endTime, slpCode));//获取时间范围内销售收款总金额
-                saleList.Add(await GetClue(qt.startTime, qt.endTime, loginUser));//获取时间范围内新增线索
+                saleList.Add(await GetClue(qt.startTime, qt.endTime, loginUser));//获取时间范围内新增机会
                 saleList.Add(await GetProductList(qt.startTime, qt.endTime, slpCode));//获取时间范围内生产订单个数
                 saleList.Add(await GetBillApplication(qt.startTime, qt.endTime, slpCode));//获取时间范围内增值税发票总金额             
-                saleList.Add(await GetSaleTypeDocTotal(ORDN, qt.startTime, qt.endTime, slpCode));//获取时间范围内销售退货单总金额
-                saleList.Add(await GetSaleTypeDocTotal(ORIN, qt.startTime, qt.endTime, slpCode));//获取时间范围内应收贷项凭证总金额               
+                saleList.Add(await GetSaleTypeDocTotal(ORDN, qt.startTime, qt.endTime, slpCode, model));//获取时间范围内销售退货单总金额
+                saleList.Add(await GetSaleTypeDocTotal(ORIN, qt.startTime, qt.endTime, slpCode, model));//获取时间范围内应收贷项凭证总金额               
             }
 
-            result.Data = new { saleList = saleList, moduleSize = "1"};
+            result.Data = new { saleList = saleList, moduleSize = "1" };
             return result;
         }
 
         /// <summary>
-        /// 获取新增线索
+        /// 获取新增机会
         /// </summary>
         /// <param name="startTime">开始时间</param>
         /// <param name="endTime">结束时间</param>
         /// <param name="loginUser">当前登陆者信息</param>
-        /// <returns>返回新增线索概况信息</returns>
+        /// <returns>返回新增机会概况信息</returns>
         public async Task<QuerySaleBusinessRequest> GetClue(string startTime, string endTime, User loginUser)
         {
             string modelNum;
+            string modelChildCountOne = "0";
+            string modelChildCountTwo = "0";
             QuerySaleBusinessRequest clueBusiness = new QuerySaleBusinessRequest();
             if (startTime == "" || endTime == "")
             {
-                var clueList = await UnitWork.Find<OpenAuth.Repository.Domain.Serve.Clue>(r => r.CreateUser == loginUser.Name).CountAsync();
-                modelNum = clueList.ToString();
+                var clueList = await UnitWork.Find<OpenAuth.Repository.Domain.Serve.Clue>(r => r.CreateUser == loginUser.Name).Select(r => r.Id).ToListAsync();
+                if (clueList != null && clueList.Count() > 0)
+                {
+                    var clueFollowUps = await UnitWork.Find<OpenAuth.Repository.Domain.Serve.ClueFollowUp>(r => clueList.Contains(r.ClueId)).GroupBy(r => new { r.ClueId }).Select(r => r.Key.ClueId).ToListAsync();
+
+                    modelChildCountOne = (clueList.Count() - clueFollowUps.Count()).ToString();
+                    modelChildCountTwo = clueFollowUps.Count().ToString();
+                }
+
+                modelNum = clueList.Count().ToString();
             }
             else
             {
                 var clueList = await UnitWork.Find<OpenAuth.Repository.Domain.Serve.Clue>(r => r.CreateUser == loginUser.Name)
                                              .WhereIf(startTime != "", r => r.CreateTime >= Convert.ToDateTime(startTime))
                                              .WhereIf(endTime != "", r => r.CreateTime <= Convert.ToDateTime(endTime))
-                                             .CountAsync();
+                                             .Select(r => r.Id)
+                                             .ToListAsync();
 
-                modelNum = clueList.ToString();
+                if (clueList != null && clueList.Count() > 0)
+                {
+                    var clueFollowUps = await UnitWork.Find<OpenAuth.Repository.Domain.Serve.ClueFollowUp>(r => clueList.Contains(r.ClueId)).GroupBy(r => new { r.ClueId }).Select(r => r.Key.ClueId).ToListAsync();
+
+                    modelChildCountOne = (clueList.Count() - clueFollowUps.Count()).ToString();
+                    modelChildCountTwo = clueFollowUps.Count().ToString();
+                }
+
+                modelNum = clueList.Count().ToString();
             }
 
-            clueBusiness.ModelName = "新增线索";
-            clueBusiness.ModelNum = modelNum + "个";
+            clueBusiness.ModelName = "新增机会";
+            clueBusiness.ModelNum = "";
+            clueBusiness.ModelCount = modelNum + "个";
             clueBusiness.Url = "api/Clue/Clue/GetClueListAsync";
+            clueBusiness.ModelChildNumOne = "";
+            clueBusiness.ModelChildNumTwo = "";
+            clueBusiness.ModelChildCountOne = modelChildCountOne + "个";
+            clueBusiness.ModelChildCountTwo = modelChildCountTwo + "个";
+            clueBusiness.ModelChildTextOne = "未跟进";
+            clueBusiness.ModelChildTextTwo = "已跟进";
             return clueBusiness;
         }
 
@@ -148,21 +196,38 @@ namespace OpenAuth.App.SaleBusiness
         public async Task<QuerySaleBusinessRequest> GetCustomer(string startTime, string endTime, int? slpCode)
         {
             string modelNum;
+            string modelChildNumOne = "0";
+            string modelChildNumTwo = "0";
             QuerySaleBusinessRequest customerBusiness = new QuerySaleBusinessRequest();
             if (startTime == "" || endTime == "")
             {
                 var customerList = await UnitWork.Find<OCRD>(r => r.SlpCode == slpCode).Select(r => r.CardCode).CountAsync();
+                int willFreeze = (await UnitWork.Find<PayWillFreezeCustomer>(null).ToListAsync()).Count();
+                int freeze = (await UnitWork.Find<PayFreezeCustomer>(null).ToListAsync()).Count();
                 modelNum = customerList.ToString();
+                modelChildNumOne = willFreeze.ToString();
+                modelChildNumTwo = freeze.ToString();
             }
             else
             {
                 int count = await _saleBusinessMethodHelp.GetTimeRangCustomer(startTime, endTime, slpCode);
+                int willFreeze = (await UnitWork.Find<PayWillFreezeCustomer>(r => r.CreateTime >= Convert.ToDateTime(startTime) && r.CreateTime <= Convert.ToDateTime(endTime)).ToListAsync()).Count();
+                int freeze = (await UnitWork.Find<PayFreezeCustomer>(r => r.CreateTime >= Convert.ToDateTime(startTime) && r.CreateTime <= Convert.ToDateTime(endTime)).ToListAsync()).Count();
                 modelNum = count.ToString();
+                modelChildNumOne = willFreeze.ToString();
+                modelChildNumTwo = freeze.ToString();
             }
 
             customerBusiness.ModelName = "新增客户";
-            customerBusiness.ModelNum = modelNum + "个";
+            customerBusiness.ModelCount = modelNum + "个";
+            customerBusiness.ModelNum = "";
             customerBusiness.Url = "api/v1/Client/View";
+            customerBusiness.ModelChildTextOne = "即将冻结客户";
+            customerBusiness.ModelChildTextTwo = "冻结客户";
+            customerBusiness.ModelChildNumOne = "";
+            customerBusiness.ModelChildNumTwo = "";
+            customerBusiness.ModelChildCountOne = modelChildNumOne + "个";
+            customerBusiness.ModelChildCountTwo = modelChildNumTwo + "个";
             return customerBusiness;
         }
 
@@ -174,11 +239,20 @@ namespace OpenAuth.App.SaleBusiness
         /// <param name="endTime">结束时间</param>
         /// <param name="slpCode">业务员编码</param>
         /// <returns>返回各销售类型总金额</returns>
-        public async Task<QuerySaleBusinessRequest> GetSaleTypeDocTotal(string type, string startTime, string endTime, int? slpCode)
+        public async Task<QuerySaleBusinessRequest> GetSaleTypeDocTotal(string type, string startTime, string endTime, int? slpCode, GetICreatedReq model)
         {
             decimal modelNum = 0;
+            string modelCount = "";
             string modelName = "";
+            decimal modelChildNumOne = 0;
+            decimal modelChildNumTwo = 0;
+            string modelChildCountOne = "0";
+            string modelChildCountTwo = "0";
+            string modelChildTextOne = "";
+            string modelChildTextTwo = "";
             string url = "";
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            int rowCount = 0;
             QuerySaleBusinessRequest customerBusiness = new QuerySaleBusinessRequest();
             if (!string.IsNullOrEmpty(type))
             {
@@ -187,20 +261,49 @@ namespace OpenAuth.App.SaleBusiness
                 {
                     modelName = "销售报价单";
                     url = "api/Order/OrderDraft/sales";
+                    modelChildTextOne = "待审核";
+                    modelChildTextTwo = "未清";
                     if (startTime == "" || endTime == "")
                     {
+                        model.BeginDate = "";
+                        model.EndDate = "";
+                        model.Job_Type_nm = "销售报价单";
                         var oqutList = await UnitWork.Find<OQUT>(r => r.SlpCode == slpCode).Where(r => r.CANCELED == "N").ToListAsync();
+
+                        //查询我的创建审核中的销售报价单信息
+                        DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount, model, UserID, true, true);
+                        List<SaleMyCreates> saleMyCreates = dt.Tolist<SaleMyCreates>();
+
+                        //模块数据
                         modelNum = oqutList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = (oqutList.Count()).ToString();
+                        modelChildNumOne = saleMyCreates.Sum(r => Convert.ToDecimal(string.IsNullOrEmpty(r.DocTotal) ? "0" : r.DocTotal));
+                        modelChildNumTwo = (decimal)oqutList.Where(r => r.DocStatus == "O").Sum(r => r.DocTotal);
+                        modelChildCountOne = rowCount.ToString();
+                        modelChildCountTwo = oqutList.Where(r => r.DocStatus == "O").Count().ToString();
                     }
                     else
                     {
+                        model.BeginDate = startTime;
+                        model.EndDate = endTime;
+                        model.Job_Type_nm = "销售报价单";
                         var oqutList = await UnitWork.Find<OQUT>(r => r.SlpCode == slpCode)
                                                .WhereIf(startTime != "", r => r.CreateDate >= Convert.ToDateTime(startTime))
                                                .WhereIf(endTime != "", r => r.CreateDate <= Convert.ToDateTime(endTime))
                                                .Where(r => r.CANCELED == "N")
                                                .ToListAsync();
 
+                        //查询我的创建审核中的销售报价单信息
+                        DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount, model, UserID, true, true);
+                        List<SaleMyCreates> saleMyCreates = dt.Tolist<SaleMyCreates>();
+
+                        //模块数据
                         modelNum = oqutList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = (oqutList.Count()).ToString();
+                        modelChildNumOne = saleMyCreates.Sum(r => Convert.ToDecimal(string.IsNullOrEmpty(r.DocTotal) ? "0" : r.DocTotal));
+                        modelChildNumTwo = (decimal)oqutList.Where(r => r.DocStatus == "O").Sum(r => r.DocTotal);
+                        modelChildCountOne = rowCount.ToString();
+                        modelChildCountTwo = oqutList.Where(r => r.DocStatus == "O").Count().ToString();
                     }
                 }
 
@@ -209,20 +312,49 @@ namespace OpenAuth.App.SaleBusiness
                 {
                     modelName = "销售订单";
                     url = "api/Order/SalesOrder/GridDataBind";
+                    modelChildTextOne = "待审核";
+                    modelChildTextTwo = "未清";
                     if (startTime == "" || endTime == "")
                     {
+                        model.BeginDate = "";
+                        model.EndDate = "";
+                        model.Job_Type_nm = "销售订单";
                         var ordrList = await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Where(r => r.CANCELED == "N").ToListAsync();
+
+                        //查询我的创建审核中的销售订单信息
+                        DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount, model, UserID, true, true);
+                        List<SaleMyCreates> saleMyCreates = dt.Tolist<SaleMyCreates>();
+
+                        //模块数据
                         modelNum = ordrList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = ordrList.Count().ToString();
+                        modelChildNumOne = saleMyCreates.Sum(r => Convert.ToDecimal(string.IsNullOrEmpty(r.DocTotal) ? "0" : r.DocTotal));
+                        modelChildNumTwo = (decimal)ordrList.Where(r => r.DocStatus == "O").Sum(r => r.DocTotal);
+                        modelChildCountOne = rowCount.ToString();
+                        modelChildCountTwo = ordrList.Where(r => r.DocStatus == "O").Count().ToString();
                     }
                     else
                     {
+                        model.BeginDate = startTime;
+                        model.EndDate = endTime;
+                        model.Job_Type_nm = "销售订单";
                         var ordrList = await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode)
                                                .WhereIf(startTime != "", r => r.CreateDate >= Convert.ToDateTime(startTime))
                                                .WhereIf(endTime != "", r => r.CreateDate <= Convert.ToDateTime(endTime))
                                                .Where(r => r.CANCELED == "N")
                                                .ToListAsync();
 
+                        //查询我的创建审核中的销售订单信息
+                        DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount, model, UserID, true, true);
+                        List<SaleMyCreates> saleMyCreates = dt.Tolist<SaleMyCreates>();
+
+                        //模块数据
                         modelNum = ordrList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = (ordrList.Count()).ToString();
+                        modelChildNumOne = saleMyCreates.Sum(r => Convert.ToDecimal(string.IsNullOrEmpty(r.DocTotal) ? "0" : r.DocTotal));
+                        modelChildNumTwo = (decimal)ordrList.Where(r => r.DocStatus == "O").Sum(r => r.DocTotal);
+                        modelChildCountOne = rowCount.ToString();
+                        modelChildCountTwo = ordrList.Where(r => r.DocStatus == "O").Count().ToString();
                     }
                 }
 
@@ -231,20 +363,49 @@ namespace OpenAuth.App.SaleBusiness
                 {
                     modelName = "销售交货";
                     url = "api/Order/SalesDelivery/GridDataBind";
+                    modelChildTextOne = "待审核";
+                    modelChildTextTwo = "未清";
                     if (startTime == "" || endTime == "")
                     {
+                        model.BeginDate = "";
+                        model.EndDate = "";
+                        model.Job_Type_nm = "销售交货";
                         var odlnList = await UnitWork.Find<ODLN>(r => r.SlpCode == slpCode).Where(r => r.CANCELED == "N").ToListAsync();
+
+                        //查询我的创建审核中的销售交货单信息
+                        DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount, model, UserID, true, true);
+                        List<SaleMyCreates> saleMyCreates = dt.Tolist<SaleMyCreates>();
+
+                        //模块数据
                         modelNum = odlnList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = odlnList.Count().ToString();
+                        modelChildNumOne = saleMyCreates.Sum(r => Convert.ToDecimal(string.IsNullOrEmpty(r.DocTotal) ? "0" : r.DocTotal));
+                        modelChildNumTwo = (decimal)odlnList.Where(r => r.DocStatus == "O").Sum(r => r.DocTotal);
+                        modelChildCountOne = rowCount.ToString();
+                        modelChildCountTwo = odlnList.Where(r => r.DocStatus == "O").Count().ToString();
                     }
                     else
                     {
+                        model.BeginDate = startTime;
+                        model.EndDate = endTime;
+                        model.Job_Type_nm = "销售交货";
                         var odlnList = await UnitWork.Find<ODLN>(r => r.SlpCode == slpCode)
                                                .WhereIf(startTime != "", r => r.CreateDate >= Convert.ToDateTime(startTime))
                                                .WhereIf(endTime != "", r => r.CreateDate <= Convert.ToDateTime(endTime))
                                                .Where(r => r.CANCELED == "N")
                                                .ToListAsync();
 
+                        //查询我的创建审核中的销售交货单信息
+                        DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount, model, UserID, true, true);
+                        List<SaleMyCreates> saleMyCreates = dt.Tolist<SaleMyCreates>();
+
+                        //模块数据
                         modelNum = odlnList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = odlnList.Count().ToString();
+                        modelChildNumOne = saleMyCreates.Sum(r => Convert.ToDecimal(string.IsNullOrEmpty(r.DocTotal) ? "0" : r.DocTotal));
+                        modelChildNumTwo = (decimal)odlnList.Where(r => r.DocStatus == "O").Sum(r => r.DocTotal);
+                        modelChildCountOne = rowCount.ToString();
+                        modelChildCountTwo = odlnList.Where(r => r.DocStatus == "O").Count().ToString();
                     }
                 }
 
@@ -253,20 +414,34 @@ namespace OpenAuth.App.SaleBusiness
                 {
                     modelName = "应收发票";
                     url = "api/Order/SalesDelivery/SalesInvoiceGridDataBind";
+                    modelChildTextOne = "未清";
+                    modelChildTextTwo = "已清";
                     if (startTime == "" || endTime == "")
                     {
-                        var oinvList = await UnitWork.Find<OINV>(r => r.SlpCode == slpCode).Where(r => r.CANCELED == "N").ToListAsync();
+                        var oinvList = await UnitWork.Find<OINV>(r => r.SlpCode == slpCode).ToListAsync();
+
+                        //模块数据
                         modelNum = oinvList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = oinvList.Count().ToString();
+                        modelChildNumOne = oinvList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildNumTwo = oinvList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildCountOne = oinvList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Count().ToString();
+                        modelChildCountTwo = oinvList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Count().ToString();
                     }
                     else
                     {
                         var oinvList = await UnitWork.Find<OINV>(r => r.SlpCode == slpCode)
                                                .WhereIf(startTime != "", r => r.CreateDate >= Convert.ToDateTime(startTime))
                                                .WhereIf(endTime != "", r => r.CreateDate <= Convert.ToDateTime(endTime))
-                                               .Where(r => r.CANCELED == "N")
                                                .ToListAsync();
 
+                        //模块数据
                         modelNum = oinvList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = oinvList.Count().ToString();
+                        modelChildNumOne = oinvList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildNumTwo = oinvList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildCountOne = oinvList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Count().ToString();
+                        modelChildCountTwo = oinvList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Count().ToString();
                     }
                 }
 
@@ -275,20 +450,34 @@ namespace OpenAuth.App.SaleBusiness
                 {
                     modelName = "销售退货";
                     url = "";
+                    modelChildTextOne = "未清";
+                    modelChildTextTwo = "已清";
                     if (startTime == "" || endTime == "")
                     {
-                        var ordnList = await UnitWork.Find<ORDN>(r => r.SlpCode == slpCode).Where(r => r.CANCELED == "N").ToListAsync();
+                        var ordnList = await UnitWork.Find<ORDN>(r => r.SlpCode == slpCode).ToListAsync();
+
+                        //模块数据
                         modelNum = ordnList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = ordnList.Count().ToString();
+                        modelChildNumOne = ordnList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildNumTwo = ordnList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildCountOne = ordnList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Count().ToString();
+                        modelChildCountTwo = ordnList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Count().ToString();
                     }
                     else
                     {
                         var ordnList = await UnitWork.Find<ORDN>(r => r.SlpCode == slpCode)
                                                .WhereIf(startTime != "", r => r.CreateDate >= Convert.ToDateTime(startTime))
                                                .WhereIf(endTime != "", r => r.CreateDate <= Convert.ToDateTime(endTime))
-                                               .Where(r => r.CANCELED == "N")
                                                .ToListAsync();
 
+                        //模块数据
                         modelNum = ordnList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = ordnList.Count().ToString();
+                        modelChildNumOne = ordnList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildNumTwo = ordnList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildCountOne = ordnList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Count().ToString();
+                        modelChildCountTwo = ordnList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Count().ToString();
                     }
                 }
 
@@ -297,32 +486,52 @@ namespace OpenAuth.App.SaleBusiness
                 {
                     modelName = "应收贷项凭证";
                     url = "api/Order/SalesDelivery/SalesCreditMemoGridDataBind";
+                    modelChildTextOne = "未清";
+                    modelChildTextTwo = "已清";
                     if (startTime == "" || endTime == "")
                     {
-                        var orinList = await UnitWork.Find<ORIN>(r => r.SlpCode == slpCode).Where(r => r.CANCELED == "N").ToListAsync();
+                        var orinList = await UnitWork.Find<ORIN>(r => r.SlpCode == slpCode).ToListAsync();
+
+                        //模块数据
                         modelNum = orinList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = orinList.Count().ToString();
+                        modelChildNumOne = orinList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildNumTwo = orinList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildCountOne = orinList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Count().ToString();
+                        modelChildCountTwo = orinList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Count().ToString();
                     }
                     else
                     {
                         var orinList = await UnitWork.Find<ORIN>(r => r.SlpCode == slpCode)
                                                .WhereIf(startTime != "", r => r.CreateDate >= Convert.ToDateTime(startTime))
                                                .WhereIf(endTime != "", r => r.CreateDate <= Convert.ToDateTime(endTime))
-                                               .Where(r => r.CANCELED != "N")
                                                .ToListAsync();
 
+                        //模块数据
                         modelNum = orinList.Sum(r => r.DocTotal).ToDecimal();
+                        modelCount = orinList.Count().ToString();
+                        modelChildNumOne = orinList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildNumTwo = orinList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Sum(r => r.DocTotal).ToDecimal();
+                        modelChildCountOne = orinList.Where(r => r.DocStatus == "O" && r.CANCELED == "N").Count().ToString();
+                        modelChildCountTwo = orinList.Where(r => r.DocStatus == "C" && r.CANCELED == "N").Count().ToString();
                     }
                 }
             }
 
             if (modelName != "")
             {
-                string docTotalSum = modelNum == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelNum, 2);//以货币形式输出，整数部分每隔三位数添加逗号
                 customerBusiness.ModelName = modelName;
-                customerBusiness.ModelNum = docTotalSum;
+                customerBusiness.ModelNum = modelNum == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelNum, 2);
+                customerBusiness.ModelCount = modelCount + "个";
+                customerBusiness.ModelChildNumOne = modelChildNumOne == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelChildNumOne, 2);
+                customerBusiness.ModelChildNumTwo = modelChildNumTwo == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelChildNumTwo, 2);
+                customerBusiness.ModelChildCountOne = modelChildCountOne + "个";
+                customerBusiness.ModelChildCountTwo = modelChildCountTwo + "个";
                 customerBusiness.Url = url;
+                customerBusiness.ModelChildTextOne = modelChildTextOne;
+                customerBusiness.ModelChildTextTwo = modelChildTextTwo;
             }
-            
+
             return customerBusiness;
         }
 
@@ -336,6 +545,11 @@ namespace OpenAuth.App.SaleBusiness
         public async Task<QuerySaleBusinessRequest> GetBillApplication(string startTime, string endTime, int? slpCode)
         {
             decimal modelNum = 0;
+            string modelCount = "";
+            decimal modelChildNumOne = 0;
+            decimal modelChildNumTwo = 0;
+            string modelChildCountOne = "0";
+            string modelChildCountTwo = "0";
             QuerySaleBusinessRequest customerBusiness = new QuerySaleBusinessRequest();
             var ordrList = await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Where(r => r.CANCELED == "N").ToListAsync();
             List<int> docEntryList = ordrList.Select(r => r.DocEntry).ToList();
@@ -343,6 +557,11 @@ namespace OpenAuth.App.SaleBusiness
             {
                 var billList = await UnitWork.Find<finance_billapplication_master>(r => docEntryList.Contains(Convert.ToInt32(r.DocEntry))).Where(r => r.billStatus != 2).ToListAsync();
                 modelNum = billList.Sum(r => r.totalmn).ToDecimal();
+                modelCount = billList.Count().ToString();
+                modelChildNumOne = billList.Where(r => r.billType.Contains("增值税普通发票")).Sum(r => r.totalmn).ToDecimal();
+                modelChildNumTwo = billList.Where(r => r.billType.Contains("增值税专用发票")).Sum(r => r.totalmn).ToDecimal();
+                modelChildCountOne = billList.Where(r => r.billType.Contains("增值税普通发票")).Count().ToString();
+                modelChildCountTwo = billList.Where(r => r.billType.Contains("增值税专用发票")).Count().ToString();
             }
             else
             {
@@ -353,13 +572,23 @@ namespace OpenAuth.App.SaleBusiness
                                              .ToListAsync();
 
                 modelNum = billList.Sum(r => r.totalmn).ToDecimal();
+                modelCount = billList.Count().ToString();
+                modelChildNumOne = billList.Where(r => r.billType.Contains("增值税普通发票")).Sum(r => r.totalmn).ToDecimal();
+                modelChildNumTwo = billList.Where(r => r.billType.Contains("增值税专用发票")).Sum(r => r.totalmn).ToDecimal();
+                modelChildCountOne = billList.Where(r => r.billType.Contains("增值税普通发票")).Count().ToString();
+                modelChildCountTwo = billList.Where(r => r.billType.Contains("增值税专用发票")).Count().ToString();
             }
 
-            string docTotalSum = modelNum == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelNum, 2);//以货币形式输出，整数部分每隔三位数添加逗号
             customerBusiness.ModelName = "增值税发票";
-            customerBusiness.ModelNum = docTotalSum;
+            customerBusiness.ModelNum = modelNum == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelNum, 2);
+            customerBusiness.ModelCount = modelCount + "个";
             customerBusiness.Url = "";
-
+            customerBusiness.ModelChildNumOne = modelChildNumOne == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelChildNumOne, 2);
+            customerBusiness.ModelChildNumTwo = modelChildNumTwo == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelChildNumTwo, 2);
+            customerBusiness.ModelChildCountOne = modelChildCountOne + "个";
+            customerBusiness.ModelChildCountTwo = modelChildCountTwo + "个";
+            customerBusiness.ModelChildTextOne = "普通发票";
+            customerBusiness.ModelChildTextTwo = "专用发票";
             return customerBusiness;
         }
 
@@ -373,30 +602,51 @@ namespace OpenAuth.App.SaleBusiness
         public async Task<QuerySaleBusinessRequest> GetSaleReceivables(string startTime, string endTime, int? slpCode)
         {
             decimal modelNum = 0;
+            string modelCount = "";
+            decimal modelChildNumOne = 0;
+            decimal modelChildNumTwo = 0;
+            string modelChildCountOne = "0";
+            string modelChildCountTwo = "0";
             QuerySaleBusinessRequest customerBusiness = new QuerySaleBusinessRequest();
             if (startTime == "" || endTime == "")
             {
-                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.Canceled }).ToListAsync()
+                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.Canceled, r.Printed }).ToListAsync()
                                     join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry
                                     where b == null ? a.Canceled == "N" : b.SlpCode == slpCode
-                                    select new { a.DocTotal };
+                                    select new { a.DocTotal, a.Printed };
 
                 modelNum = orctTotalList.Sum(r => r.DocTotal).ToDecimal();
+                modelCount = orctTotalList.Count().ToString();
+                modelChildNumOne = (orctTotalList.Where(r => r.Printed == "Y")).Sum(r => r.DocTotal).ToDecimal();
+                modelChildNumTwo = (orctTotalList.Where(r => r.Printed == "N")).Sum(r => r.DocTotal).ToDecimal();
+                modelChildCountOne = (orctTotalList.Where(r => r.Printed == "Y")).Count().ToString();
+                modelChildCountTwo = (orctTotalList.Where(r => r.Printed == "N")).Count().ToString();
             }
             else
             {
-                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.CreateDate, r.Canceled }).ToListAsync()
-                                    join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry       
-                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime) && (b == null ?  a.Canceled == "N" : b.SlpCode == slpCode)
-                                    select new { a.DocTotal };
+                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.CreateDate, r.Canceled, r.Printed }).ToListAsync()
+                                    join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry
+                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime) && (b == null ? a.Canceled == "N" : b.SlpCode == slpCode)
+                                    select new { a.DocTotal, a.Printed };
 
                 modelNum = orctTotalList.Sum(r => r.DocTotal).ToDecimal();
+                modelCount = orctTotalList.Count().ToString();
+                modelChildNumOne = (orctTotalList.Where(r => r.Printed == "Y")).Sum(r => r.DocTotal).ToDecimal();
+                modelChildNumTwo = (orctTotalList.Where(r => r.Printed == "N")).Sum(r => r.DocTotal).ToDecimal();
+                modelChildCountOne = (orctTotalList.Where(r => r.Printed == "Y")).Count().ToString();
+                modelChildCountTwo = (orctTotalList.Where(r => r.Printed == "N")).Count().ToString();
             }
 
-            string docTotalSum = modelNum == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelNum, 2);//以货币形式输出，整数部分每隔三位数添加逗号
             customerBusiness.ModelName = "销售收款";
-            customerBusiness.ModelNum = docTotalSum;
+            customerBusiness.ModelNum = modelNum == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelNum, 2);
+            customerBusiness.ModelCount = modelCount + "个";
             customerBusiness.Url = "";
+            customerBusiness.ModelChildNumOne = modelChildNumOne == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelChildNumOne, 2);
+            customerBusiness.ModelChildNumTwo = modelChildNumTwo == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(modelChildNumTwo, 2);
+            customerBusiness.ModelChildCountOne = modelChildCountOne + "个";
+            customerBusiness.ModelChildCountTwo = modelChildCountTwo + "个";
+            customerBusiness.ModelChildTextOne = "已打印";
+            customerBusiness.ModelChildTextTwo = "未打印";
             return customerBusiness;
         }
 
@@ -409,10 +659,10 @@ namespace OpenAuth.App.SaleBusiness
         /// <returns>返回生产订单信息</returns>
         public async Task<QuerySaleBusinessRequest> GetProductList(string startTime, string endTime, int? slpCode)
         {
-            int modelNum = 0;
             QuerySaleBusinessRequest customerBusiness = new QuerySaleBusinessRequest();
             StringBuilder strSql = new StringBuilder();
-
+            StringBuilder strSqlP = new StringBuilder();
+            StringBuilder strSqlR = new StringBuilder();
             if (startTime == "" || endTime == "")
             {
                 strSql.Append("SELECT w.CreateDate,w.DocEntry,w.ItemCode,w.txtitemName,w.Type,w.Status,w.OriginAbs,w.CardCode ");
@@ -421,8 +671,26 @@ namespace OpenAuth.App.SaleBusiness
                 strSql.AppendFormat(" LEFT JOIN {0}.crm_oslp AS s ON u.SlpCode=s.SlpCode  and u.sbo_id = s.sbo_id", "nsap_bone");
                 strSql.AppendFormat(" LEFT JOIN {0}.store_owhs AS z ON w.Warehouse = z.whsCode and w.sbo_id = z.sbo_id", "nsap_bone");
                 strSql.AppendFormat(" LEFT JOIN {0}.wfa_job a ON a.job_id = w.U_job_id ", "nsap_base");
-                strSql.Append(" WHERE W.sbo_id =1 AND w.PlannedQty > w.CmpltQty AND w.Status = 'R' AND ");
+                strSql.Append(" WHERE W.sbo_id =1 AND w.PlannedQty > w.CmpltQty AND ");
                 strSql.AppendFormat(" u.SlpCode = {0}", slpCode);
+
+                strSqlP.Append("SELECT w.CreateDate,w.DocEntry,w.ItemCode,w.txtitemName,w.Type,w.Status,w.OriginAbs,w.CardCode ");
+                strSqlP.AppendFormat(" FROM {0}.product_owor as w ", "nsap_bone");
+                strSqlP.AppendFormat(" LEFT JOIN {0}.sale_ordr AS u ON w.OriginAbs = u.DocEntry  and w.sbo_id = u.sbo_id", "nsap_bone");
+                strSqlP.AppendFormat(" LEFT JOIN {0}.crm_oslp AS s ON u.SlpCode=s.SlpCode  and u.sbo_id = s.sbo_id", "nsap_bone");
+                strSqlP.AppendFormat(" LEFT JOIN {0}.store_owhs AS z ON w.Warehouse = z.whsCode and w.sbo_id = z.sbo_id", "nsap_bone");
+                strSqlP.AppendFormat(" LEFT JOIN {0}.wfa_job a ON a.job_id = w.U_job_id ", "nsap_base");
+                strSqlP.Append(" WHERE W.sbo_id =1 AND w.PlannedQty > w.CmpltQty AND w.Status LIKE '%P%' AND ");
+                strSqlP.AppendFormat(" u.SlpCode = {0}", slpCode);
+
+                strSqlR.Append("SELECT w.CreateDate,w.DocEntry,w.ItemCode,w.txtitemName,w.Type,w.Status,w.OriginAbs,w.CardCode ");
+                strSqlR.AppendFormat(" FROM {0}.product_owor as w ", "nsap_bone");
+                strSqlR.AppendFormat(" LEFT JOIN {0}.sale_ordr AS u ON w.OriginAbs = u.DocEntry  and w.sbo_id = u.sbo_id", "nsap_bone");
+                strSqlR.AppendFormat(" LEFT JOIN {0}.crm_oslp AS s ON u.SlpCode=s.SlpCode  and u.sbo_id = s.sbo_id", "nsap_bone");
+                strSqlR.AppendFormat(" LEFT JOIN {0}.store_owhs AS z ON w.Warehouse = z.whsCode and w.sbo_id = z.sbo_id", "nsap_bone");
+                strSqlR.AppendFormat(" LEFT JOIN {0}.wfa_job a ON a.job_id = w.U_job_id ", "nsap_base");
+                strSqlR.Append(" WHERE W.sbo_id =1 AND w.PlannedQty > w.CmpltQty AND w.Status LIKE '%R%' AND ");
+                strSqlR.AppendFormat(" u.SlpCode = {0}", slpCode);
             }
             else
             {
@@ -432,15 +700,47 @@ namespace OpenAuth.App.SaleBusiness
                 strSql.AppendFormat(" LEFT JOIN {0}.crm_oslp AS s ON u.SlpCode=s.SlpCode  and u.sbo_id = s.sbo_id", "nsap_bone");
                 strSql.AppendFormat(" LEFT JOIN {0}.store_owhs AS z ON w.Warehouse = z.whsCode and w.sbo_id = z.sbo_id", "nsap_bone");
                 strSql.AppendFormat(" LEFT JOIN {0}.wfa_job a ON a.job_id = w.U_job_id ", "nsap_base");
-                strSql.Append(" WHERE W.sbo_id =1 AND w.PlannedQty > w.CmpltQty AND w.Status = 'R' AND ");
+                strSql.Append(" WHERE W.sbo_id =1 AND w.PlannedQty > w.CmpltQty AND ");
                 strSql.AppendFormat("  u.SlpCode = {0} and w.CreateDate >= '{1}' and w.CreateDate <= '{2}'", slpCode, Convert.ToDateTime(startTime), Convert.ToDateTime(endTime));
+
+                strSqlP.Append("SELECT w.CreateDate,w.DocEntry,w.ItemCode,w.txtitemName,w.Type,w.Status,w.OriginAbs,w.CardCode ");
+                strSqlP.AppendFormat(" FROM {0}.product_owor as w ", "nsap_bone");
+                strSqlP.AppendFormat(" LEFT JOIN {0}.sale_ordr AS u ON w.OriginAbs = u.DocEntry  and w.sbo_id = u.sbo_id", "nsap_bone");
+                strSqlP.AppendFormat(" LEFT JOIN {0}.crm_oslp AS s ON u.SlpCode=s.SlpCode  and u.sbo_id = s.sbo_id", "nsap_bone");
+                strSqlP.AppendFormat(" LEFT JOIN {0}.store_owhs AS z ON w.Warehouse = z.whsCode and w.sbo_id = z.sbo_id", "nsap_bone");
+                strSqlP.AppendFormat(" LEFT JOIN {0}.wfa_job a ON a.job_id = w.U_job_id ", "nsap_base");
+                strSqlP.Append(" WHERE W.sbo_id =1 AND w.PlannedQty > w.CmpltQty AND w.Status LIKE '%P%' AND ");
+                strSqlP.AppendFormat("  u.SlpCode = {0} and w.CreateDate >= '{1}' and w.CreateDate <= '{2}'", slpCode, Convert.ToDateTime(startTime), Convert.ToDateTime(endTime));
+
+                strSqlR.Append("SELECT w.CreateDate,w.DocEntry,w.ItemCode,w.txtitemName,w.Type,w.Status,w.OriginAbs,w.CardCode ");
+                strSqlR.AppendFormat(" FROM {0}.product_owor as w ", "nsap_bone");
+                strSqlR.AppendFormat(" LEFT JOIN {0}.sale_ordr AS u ON w.OriginAbs = u.DocEntry  and w.sbo_id = u.sbo_id", "nsap_bone");
+                strSqlR.AppendFormat(" LEFT JOIN {0}.crm_oslp AS s ON u.SlpCode=s.SlpCode  and u.sbo_id = s.sbo_id", "nsap_bone");
+                strSqlR.AppendFormat(" LEFT JOIN {0}.store_owhs AS z ON w.Warehouse = z.whsCode and w.sbo_id = z.sbo_id", "nsap_bone");
+                strSqlR.AppendFormat(" LEFT JOIN {0}.wfa_job a ON a.job_id = w.U_job_id ", "nsap_base");
+                strSqlR.Append(" WHERE W.sbo_id =1 AND w.PlannedQty > w.CmpltQty AND w.Status LIKE '%R%' AND ");
+                strSqlR.AppendFormat("  u.SlpCode = {0} and w.CreateDate >= '{1}' and w.CreateDate <= '{2}'", slpCode, Convert.ToDateTime(startTime), Convert.ToDateTime(endTime));
             }
-     
+
+            //查询生产订单
             DataTable dTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
-            modelNum = dTable == null ? 0 : dTable.Rows.Count;
+
+            //查询已计划生产订单
+            DataTable dTableP = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSqlP.ToString(), CommandType.Text, null);
+
+            //查询已审核生产订单
+            DataTable dTableR = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSqlR.ToString(), CommandType.Text, null);
+
+            customerBusiness.ModelCount = dTable == null ? "0" : dTable.Rows.Count.ToString() + "个";
             customerBusiness.ModelName = "生产订单";
-            customerBusiness.ModelNum = modelNum.ToString() + "个";
+            customerBusiness.ModelNum = "";
             customerBusiness.Url = "";
+            customerBusiness.ModelChildCountOne = (dTableP == null ? "0" : (dTableP.Rows.Count).ToString()) + "个";
+            customerBusiness.ModelChildCountTwo = (dTable == null ? "0" : (dTableR.Rows.Count).ToString()) + "个";
+            customerBusiness.ModelChildNumOne = "";
+            customerBusiness.ModelChildNumTwo = "";
+            customerBusiness.ModelChildTextOne = "已计划";
+            customerBusiness.ModelChildTextTwo = "已审核";
             return customerBusiness;
         }
         #endregion
@@ -489,18 +789,18 @@ namespace OpenAuth.App.SaleBusiness
                 var base_userList = await UnitWork.Find<base_user>(r => r.user_id == loginUser.User_Id).ToListAsync();
                 var wfa_stepList = await UnitWork.Find<wfa_step>(null).ToListAsync();
                 var sbo_info = await UnitWork.Find<sbo_info>(null).ToListAsync();
-                    saleQutationList = from a in wfa_jobList
-                                       join b in wfa_typeList on a.job_type_id equals b.job_type_id into ab
-                                       from b in ab.DefaultIfEmpty()
-                                       join c in base_userList on a.user_id equals Convert.ToInt32(c.user_id) into ac
-                                       from c in ac.DefaultIfEmpty()
-                                       join d in wfa_stepList on a.step_id equals d.step_id into ad
-                                       from d in ad.DefaultIfEmpty()
-                                       join g in sbo_info on a.sbo_id equals g.sbo_id into ag
-                                       from g in ag.DefaultIfEmpty()
-                                       where b.job_type_nm == saleType && c.user_id == loginUser.User_Id
-                                       group a by new { a.job_id } into h
-                                       select new QueryWfaJob{ job_id = 1 };
+                saleQutationList = from a in wfa_jobList
+                                   join b in wfa_typeList on a.job_type_id equals b.job_type_id into ab
+                                   from b in ab.DefaultIfEmpty()
+                                   join c in base_userList on a.user_id equals Convert.ToInt32(c.user_id) into ac
+                                   from c in ac.DefaultIfEmpty()
+                                   join d in wfa_stepList on a.step_id equals d.step_id into ad
+                                   from d in ad.DefaultIfEmpty()
+                                   join g in sbo_info on a.sbo_id equals g.sbo_id into ag
+                                   from g in ag.DefaultIfEmpty()
+                                   where b.job_type_nm == saleType && c.user_id == loginUser.User_Id
+                                   group a by new { a.job_id } into h
+                                   select new QueryWfaJob { job_id = 1 };
 
                 modelName = "审批中报价单";
                 url = "api/OrderWorkbench/OrderWorkbench/GetSubmtToMe";
@@ -532,7 +832,7 @@ namespace OpenAuth.App.SaleBusiness
                 modelName = "审批中销售订单";
                 url = "api/OrderWorkbench/OrderWorkbench/GetSubmtToMe";
             }
-            
+
             customerBusiness.ModelName = modelName;
             customerBusiness.ModelNum = saleQutationList.Count().ToString();
             customerBusiness.Url = url;
@@ -614,9 +914,9 @@ namespace OpenAuth.App.SaleBusiness
                                         where b.Applicantor == loginUser.User_Id
                                         select new { a.DocEntry, a.DocTotal, b.totalmn, b.billType };
 
-                modelNum =((ordrList.Count() - saleOrderBillList.Count()) +  saleOrderBillList.Where(r => r.DocTotal > r.totalmn).Count()).ToString();
+                modelNum = ((ordrList.Count() - saleOrderBillList.Count()) + saleOrderBillList.Where(r => r.DocTotal > r.totalmn).Count()).ToString();
             }
-           
+
             customerBusiness.ModelName = "未开增值税发票订单";
             customerBusiness.ModelNum = modelNum;
             customerBusiness.Url = "";
@@ -728,7 +1028,7 @@ namespace OpenAuth.App.SaleBusiness
             tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON m.ItemCode = w.ItemCode AND m.sbo_id=w.sbo_id ", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.base_item_cfg c ON m.ItemCode = c.ItemCode AND type_id={1} ", "nsap_bone", "0");
             tableName.AppendFormat(" LEFT JOIN {0}.store_owhs s ON w.WhsCode = s.WhsCode ", "nsap_bone");
-            DataTable dt = _serviceSaleOrderApp.SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), query.limit,query.page, sortString, filterString, out rowCounts);
+            DataTable dt = _serviceSaleOrderApp.SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), query.limit, query.page, sortString, filterString, out rowCounts);
             result.Data = dt;
             result.Count = rowCounts;
             return result;
@@ -791,7 +1091,7 @@ namespace OpenAuth.App.SaleBusiness
             else
             {
                 decimal sumAmount = await GetForeignCurrencyMoney(slpCode, currency);
-                deliveryNum = sumAmount == 0 ? "0.00" :  _serviceBaseApp.MoneyToCoin(sumAmount, 2);//以货币形式输出，整数部分每隔三位数添加逗号                
+                deliveryNum = sumAmount == 0 ? "0.00" : _serviceBaseApp.MoneyToCoin(sumAmount, 2);//以货币形式输出，整数部分每隔三位数添加逗号                
             }
 
             return deliveryNum;
@@ -813,7 +1113,7 @@ namespace OpenAuth.App.SaleBusiness
             if (departRankList.Contains(depAlias))
             {
                 var userList = await UnitWork.Find<base_user_detail>(r => r.dep_id == userDepart.dep_id).Select(r => r.user_id).ToListAsync();
-                var slpCodeList = (await UnitWork.Find<sbo_user>(r => userList.Contains(r.user_id)).Where(r => r.sbo_id == 1).Select(r => new QuerySlpCode { SlpCode = Convert.ToInt32(r.sale_id) }).ToListAsync()).GroupBy(r => new { r.SlpCode }).Select(r => new QuerySlpCode { SlpCode = r.Key.SlpCode }).ToList();      
+                var slpCodeList = (await UnitWork.Find<sbo_user>(r => userList.Contains(r.user_id)).Where(r => r.sbo_id == 1).Select(r => new QuerySlpCode { SlpCode = Convert.ToInt32(r.sale_id) }).ToListAsync()).GroupBy(r => new { r.SlpCode }).Select(r => new QuerySlpCode { SlpCode = r.Key.SlpCode }).ToList();
                 List<QueryRank> slpList = new List<QueryRank>();
                 if (currency == "ALL")
                 {
@@ -971,7 +1271,7 @@ namespace OpenAuth.App.SaleBusiness
                 //业务员应收款余额
                 sumAmount = oinvSumAmount - orctSumAmount - orinSumAmount;
             }
-          
+
             return sumAmount;
         }
 
@@ -1015,7 +1315,7 @@ namespace OpenAuth.App.SaleBusiness
             decimal sumAmount = oinvSumAmount - orctSumAmount - orinSumAmount;
             return sumAmount;
         }
-        
+
         /// <summary>
         /// 获取币种为外币的应收款金额
         /// </summary>
@@ -1079,7 +1379,7 @@ namespace OpenAuth.App.SaleBusiness
             {
                 deliveryNum = Math.Round((nowYearAmount / lastYearAmount), 2).ToString();
             }
-            
+
             return deliveryNum;
         }
 
@@ -1103,7 +1403,7 @@ namespace OpenAuth.App.SaleBusiness
                 List<QueryRank> slpList = new List<QueryRank>();
                 foreach (QuerySlpCode item in slpCodeList)
                 {
-                    decimal sumAmount = Math.Round(Convert.ToDecimal((await GetDeliveryCompareLastYearRatio(item.SlpCode)).Split('%')[0]), 2); 
+                    decimal sumAmount = Math.Round(Convert.ToDecimal((await GetDeliveryCompareLastYearRatio(item.SlpCode)).Split('%')[0]), 2);
                     slpList.Add(new QueryRank(item.SlpCode, Math.Round(sumAmount, 2)));
                 }
 
@@ -1179,11 +1479,11 @@ namespace OpenAuth.App.SaleBusiness
                     saleOrderYList.Add(saleOrderCount);
                 }
 
-                result.Data = new 
-                { 
-                     xAxis = td.xNum, 
-                     customerYAxis = customerYList, 
-                     saleOrderYAxis = saleOrderYList
+                result.Data = new
+                {
+                    xAxis = td.xNum,
+                    customerYAxis = customerYList,
+                    saleOrderYAxis = saleOrderYList
                 };
             }
             else
@@ -1191,7 +1491,7 @@ namespace OpenAuth.App.SaleBusiness
                 result.Message = td.Message;
                 result.Code = 500;
             }
-            
+
             return result;
         }
 
@@ -1321,7 +1621,7 @@ namespace OpenAuth.App.SaleBusiness
                     odlnYList.Add(odlnAmount);
                     orctYList.Add(orctAmount);
                     fbmYList.Add(fbmAmount);
-                    orinYList.Add(orinAmount); 
+                    orinYList.Add(orinAmount);
                 }
 
                 result.Data = new
@@ -1370,7 +1670,7 @@ namespace OpenAuth.App.SaleBusiness
                     switch (SaleType)
                     {
                         case "ORDR":
-                             sumAmount = await _saleBusinessMethodHelp.GetORDRAmount(startTime, endTime, currency, slpCode);
+                            sumAmount = await _saleBusinessMethodHelp.GetORDRAmount(startTime, endTime, currency, slpCode);
                             break;
                         case "ODLN":
                             sumAmount = await _saleBusinessMethodHelp.GetODLNAmount(startTime, endTime, currency, slpCode);
