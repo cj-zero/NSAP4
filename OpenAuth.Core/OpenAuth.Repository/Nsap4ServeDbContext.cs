@@ -204,10 +204,8 @@ namespace OpenAuth.Repository
         public virtual DbSet<PayWillFreezeCustomer> paywillfreezecustomer { get; set; }
         #endregion
 
-        #region 钉钉
+        #region 消息推送记录
         public virtual DbSet<DDSendMsgHitory> ddsendmsghistory { get; set; }
-        public virtual DbSet<DDUserDepartMsg> dduserdepartmsg { get; set; }
-        public virtual DbSet<DDBindUser> ddbinguser { get; set; }
         #endregion
     }
 }

@@ -82,7 +82,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         [HttpPost]
-        public async Task<Response<bool>> Generate(string loginfo ="")
+        public async Task<Response<bool>> Generate(string loginfo = "")
         {
 
 
@@ -716,14 +716,14 @@ namespace OpenAuth.WebApi.Controllers
             {
                 Directory.CreateDirectory(pathZip);
             }
-            for (int i = 0; i < filePaths.Count; i++)
+            foreach (var item in bases)
             {
-                if (string.IsNullOrEmpty(filePaths[i]))
+                if (string.IsNullOrEmpty(item.PdfPath))
                 {
                     continue;
                 }
-                string name = filePaths[i].Split('/').Last() ;
-                string path = filePaths[i];
+                string name = item.TesterSn + "-" + item.PdfPath.Split('/').Last();
+                string path = item.PdfPath;
                 HttpClient client = new HttpClient();
                 client.BaseAddress = new Uri(path);
                 //根据文件信息中的文件地址获取远程服务器，返回文件流
@@ -737,8 +737,29 @@ namespace OpenAuth.WebApi.Controllers
                     fils.FileStream.CopyTo(fs);
                 }
             }
+            //for (int i = 0; i < filePaths.Count; i++)
+            //{
+            //    if (string.IsNullOrEmpty(filePaths[i]))
+            //    {
+            //        continue;
+            //    }
+            //    string name = filePaths[i].Split('/').Last() ;
+            //    string path = filePaths[i];
+            //    HttpClient client = new HttpClient();
+            //    client.BaseAddress = new Uri(path);
+            //    //根据文件信息中的文件地址获取远程服务器，返回文件流
+            //    var stream = await client.GetStreamAsync(path);
+
+            //    var fils = File(stream, "application/vnd.android.package-archive", Path.GetFileName(path));
+            //    //创建文件流(文件路径，文件操作.创建)
+            //    using (FileStream fs = new FileStream(pathZip + "/" + name, FileMode.Create))
+            //    {
+            //        //复制文件流
+            //        fils.FileStream.CopyTo(fs);
+            //    }
+            //}
             //对多个文件流所在的目录进行压缩
-            string pathRes = Directory.GetCurrentDirectory() + "/wwwroot/" + "CertifiCate" + timespan+ ".zip";
+            string pathRes = Directory.GetCurrentDirectory() + "/wwwroot/" + "CertifiCate" + timespan + ".zip";
             ZipFile.CreateFromDirectory(pathZip, pathRes);
             //删除目录以及目录下的子文件
             //存在即删除
@@ -747,7 +768,7 @@ namespace OpenAuth.WebApi.Controllers
                 Directory.Delete(pathZip, true);
             }
             var file = new FileStream(pathRes, FileMode.Open);
-            return File(file, "application/octet-stream", "CertifiCate" + timespan+ ".zip");
+            return File(file, "application/octet-stream", "CertifiCate" + timespan + ".zip");
         }
         /// <summary>
         /// 将byte数组转换为文件并保存到指定地址
@@ -781,7 +802,7 @@ namespace OpenAuth.WebApi.Controllers
                     System.Net.HttpWebResponse response = (System.Net.HttpWebResponse)request.GetResponse();
                     Stream responseStream = response.GetResponseStream();
                     //var filestream = new FileStream(baseInfo.CNASPdfPath, FileMode.Open);
-                    return File(responseStream, "application/pdf");
+                    return File(responseStream, "application/pdf", baseInfo.TesterSn + "-" + baseInfo.PdfPath.Split('/').Last());
                 }
                 var model = await _certinfoApp.BuildModel(baseInfo);
                 foreach (var item in model.MainStandardsUsed)
@@ -800,6 +821,7 @@ namespace OpenAuth.WebApi.Controllers
                 var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Footer.html");
                 var datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate.cshtml", pdf =>
                 {
+                    //pdf.Name =  baseInfo.TesterSn + "-" + baseInfo.
                     pdf.IsWriteHtml = true;
                     pdf.PaperKind = PaperKind.A4;
                     pdf.Orientation = Orientation.Portrait;
@@ -901,10 +923,10 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         [HttpGet]
-        public async Task TestDownload(string serialNumber1,string serialNumber2)
+        public async Task TestDownload(string serialNumber1, string serialNumber2)
         {
             int a = Convert.ToInt32(serialNumber1);
-            int b =Convert.ToInt32(serialNumber2);
+            int b = Convert.ToInt32(serialNumber2);
             for (int i = a; i <= b; i++)
             {
                 var temp = $"T2112-{i}";
@@ -984,7 +1006,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="turV">Tur电压数据</param>
         /// <param name="turA">Tur电流数据</param>
         /// <returns></returns>
-        private async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo,string type="")
+        private async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo, string type = "")
         {
             var list = new List<WordModel>();
             var model = new CertModel();
@@ -1019,7 +1041,7 @@ namespace OpenAuth.WebApi.Controllers
                     AssetNo = baseInfo.Etalons[i].AssetNo,
                     CertificateNo = baseInfo.Etalons[i].CertificateNo,
                     DueDate = DateStringConverter(baseInfo.Etalons[i].DueDate),
-                    CalibrationEntity= baseInfo.Etalons[i].CalibrationEntity
+                    CalibrationEntity = baseInfo.Etalons[i].CalibrationEntity
                 });
             }
             #endregion
@@ -1590,7 +1612,7 @@ namespace OpenAuth.WebApi.Controllers
                             {
                                 model.ChargingCurrent.Add(new DataSheet
                                 {
-                                    Sort1 = item.Key ,
+                                    Sort1 = item.Key,
                                     Sort2 = cvData.Channel,
                                     Channel = CHH,
                                     Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((double)Range / 1000).ToString(),
@@ -2188,7 +2210,7 @@ namespace OpenAuth.WebApi.Controllers
         {
             var result = new TableData();
             try
-  
+
             {
                 return await _nwcaliCertApp.GetCalibrateReport(req);
             }

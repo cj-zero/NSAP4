@@ -21,7 +21,7 @@ namespace OpenAuth.Repository.Domain
     [Table("paytermset")]
     public partial class PayTermSet : Entity
     {
-        public PayTermSet() 
+        public PayTermSet()
         {
             this.ModuleTypeId = 0;
             this.ModuleName = string.Empty;

@@ -40,6 +40,8 @@ using Serilog;
 using Microsoft.Extensions.Options;
 using Magicodes.ExporterAndImporter.Core;
 using Magicodes.ExporterAndImporter.Excel;
+using OpenAuth.App.DDVoice.Common;
+using Microsoft.Extensions.Logging;
 
 namespace OpenAuth.App
 {
@@ -57,6 +59,8 @@ namespace OpenAuth.App
         private readonly IOptions<AppSetting> _appConfiguration;
         private static readonly string BaseCertDir = Path.Combine(Directory.GetCurrentDirectory(), "certs");
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
+        private ILogger<CertinfoApp> _logger;
+        private DDSettingHelp _ddSettingHelp;
         private static readonly Dictionary<int, double> PoorCoefficients = new Dictionary<int, double>()
         {
             { 2, 1.13 },
@@ -516,7 +520,7 @@ namespace OpenAuth.App
                                 });
                                 await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id });
                                 await UnitWork.SaveAsync();
-                                //await CreateNwcailFile(certNo);
+                                await CreateNwcailFile(certNo);
                             }
                             else if (flowInstance.ActivityName.Equals("开始") && flowInstance.IsFinish == -1)
                             {
@@ -587,10 +591,30 @@ namespace OpenAuth.App
 
         public async Task CreateNwcailFileHelper()
         {
-            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).ToListAsync();
-            foreach (var item in res)
+            //var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).ToListAsync();
+            //foreach (var item in res)
+            //{
+            //    await CreateNwcailFile(item.CertificateNumber);
+            //}
+            List<NwcaliBaseInfo> res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) &&
+            string.IsNullOrWhiteSpace(c.CNASPdfPath) && !c.TesterModel.Contains("V0")).OrderByDescending(c => c.Time).Take(1000).ToListAsync();
+            List<NwcaliBaseInfo> nwcaliBaseInfos = new List<NwcaliBaseInfo>();
+            var nwcaliplcdatas = await UnitWork.Find<NwcaliPlcData>(r => r.Mode == "Charge").GroupBy(r => new { r.NwcaliBaseInfoId }).Select(r => r.Key.NwcaliBaseInfoId).ToListAsync();
+            foreach (NwcaliBaseInfo item in res)
             {
-                await CreateNwcailFile(item.CertificateNumber);
+                nwcaliplcdatas = nwcaliplcdatas.Where(r => r == item.Id).ToList();
+                if (nwcaliplcdatas != null || nwcaliplcdatas.Count() > 0)
+                {
+                    nwcaliBaseInfos.Add(item);
+                }
+            }
+
+            if (nwcaliBaseInfos.Count() > 0)
+            {
+                foreach (NwcaliBaseInfo item in nwcaliBaseInfos)
+                {
+                    await CreateNwcailFile(item.CertificateNumber);
+                }
             }
         }
 
@@ -818,7 +842,8 @@ namespace OpenAuth.App
                                       CertificateNumber = b?.CertificateNumber,
                                       Time = b?.Time,
                                       ExpirationDate = b?.ExpirationDate,
-                                      Operator = b?.Operator
+                                      Operator = b?.Operator,
+                                      PdfPath = b?.PdfPath
                                   };
 
                 devicelist1 = devicelist1.OrderByDescending(c => c.Time).GroupBy(c => c.TesterSn).Select(c => c.First()).ToList();
@@ -869,7 +894,8 @@ namespace OpenAuth.App
                         CertificateNumber = c.CertificateNumber,
                         Time = c.Time,
                         ExpirationDate = c.ExpirationDate,
-                        Operator = c.Operator
+                        Operator = c.Operator,
+                        PdfPath = c.PdfPath
                     };
                 })
                 .OrderByDescending(c => c.Time)
@@ -894,20 +920,21 @@ namespace OpenAuth.App
                                 .ToListAsync();
                 ;
                 var view = cerinfo.Select(c =>
-                 {
-                     return new CertinfoView
-                     {
-                         Id = c.Id,
-                         CertNo = c.CertificateNumber,
-                         CreateTime = c.CreateTime,
-                         AssetNo = c.AssetNo,
-                         CalibrationDate = c.Time,
-                         ExpirationDate = c.ExpirationDate,
-                         Model = c.TesterModel,
-                         Operator = c.Operator,
-                         Sn = c.TesterSn,
-                     };
-                 });
+                {
+                    return new CertinfoView
+                    {
+                        Id = c.Id,
+                        CertNo = c.CertificateNumber,
+                        CreateTime = c.CreateTime,
+                        AssetNo = c.AssetNo,
+                        CalibrationDate = c.Time,
+                        ExpirationDate = c.ExpirationDate,
+                        Model = c.TesterModel,
+                        Operator = c.Operator,
+                        Sn = c.TesterSn,
+                        PdfPath = c.PdfPath
+                    };
+                });
 
                 #region 老数据
                 var obj = await UnitWork.Find<Certinfo>(o => fsid.Contains(o.FlowInstanceId))
@@ -1114,6 +1141,7 @@ namespace OpenAuth.App
                 .WhereIf(request.StartTime != null, c => c.CreateDate >= request.StartTime.Value.Date)
                 .WhereIf(request.EndTime != null, c => c.CreateDate < request.EndTime.Value.AddDays(1).Date);
 
+            query = query.OrderByDescending(r => r.UpdateDate);
             var list = await query.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
             result.Data = list;
             result.Count = await query.CountAsync();
@@ -1230,206 +1258,410 @@ namespace OpenAuth.App
         /// 拉取销售交货生成备料单
         /// </summary>
         /// <returns></returns>
+
         public async Task SynSalesDelivery()
         {
             //销售交货流程 并处于序列号选择环节
-            //var deliveryJob = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货" ).ToListAsync(); 
             var entrusted = await UnitWork.Find<Entrustment>(c => c.Status != 5).ToListAsync();
             var jobIds = entrusted.Select(c => c.JodId).ToList();//已经生成过的流程ID
-
             var deliveryList = await UnitWork.Find<wfa_job>(c => c.job_type_id == 1 && c.job_nm == "销售交货").Select(c => new { c.sbo_id, c.base_entry, c.base_type, c.job_data, c.job_id, c.step_id, c.job_state, c.sync_stat, c.sbo_itf_return }).ToListAsync();
             var deliveryJob = deliveryList.Where(c => !jobIds.Contains(c.job_id) && c.step_id == 455).ToList();//在选择序列号环节
-            #region 生成备料单
-            if (deliveryJob.Count > 0)
+            try
             {
-                foreach (var item in deliveryJob)
+                #region 生成备料单
+                if (deliveryJob.Count > 0)
                 {
-                    var saleOrder = await UnitWork.Find<sale_ordr>(c => c.sbo_id == item.sbo_id && c.DocEntry == item.base_entry).FirstOrDefaultAsync();
-                    if (saleOrder != null)
+                    deliveryJob = deliveryJob.Where((x, i) => deliveryJob.FindIndex(z => z.job_id == x.job_id) == i).ToList();
+                    foreach (var item in deliveryJob)
                     {
-                        var model = DeSerialize(item.job_data);
-                        Entrustment single = new Entrustment();
-
-                        var saler = await UnitWork.Find<crm_oslp>(c => c.SlpCode == saleOrder.SlpCode && c.sbo_id == saleOrder.sbo_id).FirstOrDefaultAsync();
-                        //获取部门
-                        var query = from a in UnitWork.Find<User>(c => c.Name == saler.SlpName)
-                                    join b in UnitWork.Find<Relevance>(c => c.Key == Define.USERORG) on a.Id equals b.FirstId into ab
-                                    from b in ab.DefaultIfEmpty()
-                                    join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
-                                    from c in bc.DefaultIfEmpty()
-                                    select new { a.Id, UserName = a.Name, OrgName = c.Name, c.CascadeId };
-
-                        var OrgNameList = await query.OrderByDescending(o => o.CascadeId).FirstOrDefaultAsync();
-                        single.ContactsId = OrgNameList?.Id;
-                        single.Contacts = OrgNameList?.UserName;
-                        single.ContactsOrg = OrgNameList?.OrgName;
-                        single.Phone = saler?.Memo;
-
-                        //获取开票到地址
-                        var entrustedUnit = GetAddress("C00550", saleOrder.sbo_id);//新威尔
-                        var certUnit = GetAddress(saleOrder.CardCode, saleOrder.sbo_id);//新威尔
-                        single.EntrustedUnit = entrustedUnit?.CardName;//????
-                        single.ECountry = entrustedUnit?.Country;
-                        single.EProvince = entrustedUnit?.State;
-                        single.ECity = entrustedUnit?.City;
-                        single.EAddress = entrustedUnit?.Building;
-                        single.CertUnit = saleOrder?.CardName;
-                        single.CertCountry = certUnit?.Country;
-                        single.CertProvince = certUnit?.State;
-                        single.CertCity = certUnit?.City;
-                        single.CertAddress = certUnit?.Building;
-                        single.CreateDate = DateTime.Now;
-                        single.SaleId = saleOrder.DocEntry;
-                        //单据备注+设备编号/箱号+验收期限+系统操作者+生产部门
-                        if (!string.IsNullOrWhiteSpace(saleOrder.Comments))
-                            saleOrder.Comments += ",";
-                        if (!string.IsNullOrWhiteSpace(saleOrder.U_CPH))
-                            saleOrder.U_CPH += ",";
-                        if (!string.IsNullOrWhiteSpace(saleOrder.U_YSQX))
-                            saleOrder.U_YSQX += ",";
-                        if (!string.IsNullOrWhiteSpace(saleOrder.U_YGMD))
-                            saleOrder.U_YGMD += ",";
-                        if (!string.IsNullOrWhiteSpace(saleOrder.U_SCBM))
-                            saleOrder.U_SCBM += ",";
-
-                        single.Remark = (saleOrder.Comments + saleOrder.U_CPH + saleOrder.U_YSQX + saleOrder.U_YGMD + saleOrder.U_SCBM).Trim();
-                        single.Status = 1;
-                        single.UpdateDate = DateTime.Now;
-                        single.JodId = item.job_id;
-
-                        //物料明细
-                        if (model.DocType == "I")
+                        var saleOrder = await UnitWork.Find<sale_ordr>(c => c.sbo_id == item.sbo_id && c.DocEntry == item.base_entry).FirstOrDefaultAsync();
+                        if (saleOrder != null)
                         {
-                            single.EntrustmentDetails = new List<EntrustmentDetail>();
-                            int i = 0;
-                            foreach (var data in model.billSalesDetails)
-                            {
-                                if (data.ItemCode.StartsWith("CT") || data.ItemCode.StartsWith("CTE") || data.ItemCode.StartsWith("CE"))
-                                {
-                                    ++i;
-                                    EntrustmentDetail obj = new EntrustmentDetail();
-                                    obj.LineNum = i.ToString();
-                                    obj.EntrustmentId = single.Id;
-                                    obj.ItemName = data.Dscription.Split(',')[0].Split('-')[0];
-                                    obj.ItemCode = data.ItemCode;
-                                    obj.Quantity = Convert.ToInt32(data.Quantity.Split(".")[0]);
-                                    obj.Sort = i;
+                            var model = DeSerialize(item.job_data);
+                            Entrustment single = new Entrustment();
+                            var saler = await UnitWork.Find<crm_oslp>(c => c.SlpCode == saleOrder.SlpCode && c.sbo_id == saleOrder.sbo_id).FirstOrDefaultAsync();
 
-                                    single.EntrustmentDetails.Add(obj);
+                            //获取部门
+                            var query = from a in UnitWork.Find<User>(c => c.Name == saler.SlpName)
+                                        join b in UnitWork.Find<Relevance>(c => c.Key == Define.USERORG) on a.Id equals b.FirstId into ab
+                                        from b in ab.DefaultIfEmpty()
+                                        join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
+                                        from c in bc.DefaultIfEmpty()
+                                        select new { a.Id, UserName = a.Name, OrgName = c.Name, c.CascadeId };
+
+                            var OrgNameList = await query.OrderByDescending(o => o.CascadeId).FirstOrDefaultAsync();
+                            single.ContactsId = OrgNameList?.Id;
+                            single.Contacts = OrgNameList?.UserName;
+                            single.ContactsOrg = OrgNameList?.OrgName;
+                            single.Phone = saler?.Memo;
+
+                            //获取开票到地址
+                            var entrustedUnit = GetAddress("C00550", saleOrder.sbo_id);//新威尔
+                            var certUnit = GetAddress(saleOrder.CardCode, saleOrder.sbo_id);//新威尔
+                            single.EntrustedUnit = entrustedUnit?.CardName;//????
+                            single.ECountry = entrustedUnit?.Country;
+                            single.EProvince = entrustedUnit?.State;
+                            single.ECity = entrustedUnit?.City;
+                            single.EAddress = entrustedUnit?.Building;
+                            single.CertUnit = saleOrder?.CardName;
+                            single.CertCountry = certUnit?.Country;
+                            single.CertProvince = certUnit?.State;
+                            single.CertCity = certUnit?.City;
+                            single.CertAddress = certUnit?.Building;
+                            single.CreateDate = DateTime.Now;
+                            single.SaleId = saleOrder.DocEntry;
+                            //单据备注+设备编号/箱号+验收期限+系统操作者+生产部门
+                            if (!string.IsNullOrWhiteSpace(saleOrder.Comments))
+                                saleOrder.Comments += ",";
+                            if (!string.IsNullOrWhiteSpace(saleOrder.U_CPH))
+                                saleOrder.U_CPH += ",";
+                            if (!string.IsNullOrWhiteSpace(saleOrder.U_YSQX))
+                                saleOrder.U_YSQX += ",";
+                            if (!string.IsNullOrWhiteSpace(saleOrder.U_YGMD))
+                                saleOrder.U_YGMD += ",";
+                            if (!string.IsNullOrWhiteSpace(saleOrder.U_SCBM))
+                                saleOrder.U_SCBM += ",";
+
+                            single.Remark = (saleOrder.Comments + saleOrder.U_CPH + saleOrder.U_YSQX + saleOrder.U_YGMD + saleOrder.U_SCBM).Trim();
+                            single.Status = 1;
+                            single.UpdateDate = DateTime.Now;
+                            single.JodId = item.job_id;
+
+                            //物料明细
+                            if (model.DocType == "I")
+                            {
+                                single.EntrustmentDetails = new List<EntrustmentDetail>();
+                                int i = 0;
+                                foreach (var data in model.billSalesDetails)
+                                {
+                                    if (data.ItemCode.StartsWith("CT") || data.ItemCode.StartsWith("CTE") || data.ItemCode.StartsWith("CE"))
+                                    {
+                                        ++i;
+                                        EntrustmentDetail obj = new EntrustmentDetail();
+                                        obj.LineNum = i.ToString();
+                                        obj.EntrustmentId = single.Id;
+                                        obj.ItemName = data.Dscription.Split(',')[0].Split('-')[0];
+                                        obj.ItemCode = data.ItemCode;
+                                        obj.Quantity = string.IsNullOrEmpty(data.Quantity) ? 0 : Convert.ToInt32(data.Quantity.Split(".")[0]);
+                                        obj.Sort = i;
+
+                                        single.EntrustmentDetails.Add(obj);
+                                    }
+                                }
+                            }
+
+                            single = await UnitWork.AddAsync<Entrustment, int>(single);
+                            await UnitWork.SaveAsync();
+                        }
+                    }
+                }
+                #endregion
+
+                #region 生成委托单
+                var finlishJob = deliveryList.Where(c => c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToList();//选择了序列号/结束的交货流程并且同步完成
+                var finlishEntrusted = entrusted.Where(c => finlishJob.Contains(c.JodId) && c.Status == 1).ToList();//选择了序列号/结束的交货流程并且同步完成
+                for (int i = 0; i < finlishEntrusted.Count; i++)
+                {
+                    var item = finlishEntrusted[i];
+                    var job = deliveryList.Where(c => c.job_id == item.JodId).FirstOrDefault();
+                    if (job != null)
+                    {
+                        var serialNumber = await (from a in UnitWork.Find<OITL>(null)
+                                                  join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
+                                                  from b in ab.DefaultIfEmpty()
+                                                  join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
+                                                  from c in bc.DefaultIfEmpty()
+                                                  where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
+                                                  select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
+
+                        int line = 0, sort = 0;
+                        List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
+                        foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
+                        {
+                            int line2 = 0;
+                            var deleteData = await UnitWork.Find<EntrustmentDetail>(x => x.EntrustmentId == item.Id)?.ToArrayAsync();
+                            if (deleteData != null && deleteData.Count() > 0)
+                            {
+                                try
+                                {
+                                    await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
+                                    await UnitWork.SaveAsync();
+                                }
+                                catch (DbUpdateConcurrencyException ex)
+                                {
+                                    throw new Exception("数据删除异常", ex);
+                                }
+                            }
+
+                            if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
+                            {
+                                ++line;
+                                foreach (var items in groupItem)
+                                {
+                                    ++line2; ++sort;
+                                    EntrustmentDetail entrustmentDetail = new EntrustmentDetail();
+                                    entrustmentDetail.EntrustmentId = item.Id;
+                                    entrustmentDetail.ItemCode = groupItem.Key;
+                                    entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
+                                    entrustmentDetail.SerialNumber = items.MnfSerial;
+                                    entrustmentDetail.Quantity = 1;
+                                    entrustmentDetail.LineNum = line + "-" + line2;
+                                    entrustmentDetail.Sort = sort;
+                                    entrustmentDetail.Id = Guid.NewGuid().ToString();
+                                    detail.Add(entrustmentDetail);
                                 }
                             }
                         }
 
-                        single = await UnitWork.AddAsync<Entrustment, int>(single);
+                        await UnitWork.BatchAddAsync<EntrustmentDetail>(detail.ToArray());
+                        await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
+                        {
+                            DeliveryId = job.sbo_itf_return,
+                            Status = 2,//待处理
+                            EntrustedUserId = item.ContactsId,
+                            EntrustedUser = item.Contacts,
+                            EntrustedDate = DateTime.Now,
+                            UpdateDate = DateTime.Now
+                        });
                         await UnitWork.SaveAsync();
                     }
                 }
-            }
-            #endregion
 
-            #region 生成委托单
-            var finlishJob = deliveryList.Where(c => c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToList();//选择了序列号/结束的交货流程并且同步完成
-            var finlishEntrusted = entrusted.Where(c => finlishJob.Contains(c.JodId) && c.Status == 1).ToList();
-            for (int i = 0; i < finlishEntrusted.Count; i++)
-            {
-                var item = finlishEntrusted[i];
-                var job = deliveryList.Where(c => c.job_id == item.JodId).FirstOrDefault();
+                #endregion
 
-                var serialNumber = await (from a in UnitWork.Find<OITL>(null)
-                                          join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
-                                          from b in ab.DefaultIfEmpty()
-                                          join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
-                                          from c in bc.DefaultIfEmpty()
-                                          where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
-                                          select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
-
-                //var aa = serialNumber.GroupBy(c => c.ItemCode).ToList();
-                int line = 0, sort = 0;
-                List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
-                foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
+                #region 同步状态
+                var calibration = entrusted.Where(c => c.Status >= 3).ToList();
+                foreach (var item in calibration)
                 {
-                    int line2 = 0;
-
-                    var deleteData = await UnitWork.Find<EntrustmentDetail>(x => x.EntrustmentId == item.Id)?.ToArrayAsync();
-                    if (deleteData != null && deleteData.Count() > 0)
+                    var details = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
+                    var snids = details.Select(c => c.SerialNumber).ToList();
+                    var nwcert = await UnitWork.Find<NwcaliBaseInfo>(c => snids.Contains(c.TesterSn)).ToListAsync();
+                    if (nwcert != null && nwcert.Count > 0)
                     {
-                        try
-                        {
-                            await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
-                            await UnitWork.SaveAsync();
-                        }
-                        catch (DbUpdateConcurrencyException ex)
-                        {
-                            throw new Exception("数据删除异常", ex);
-                        }
-                    }
-                    //var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
-                    //await UnitWork.DeleteAsync<EntrustmentDetail>(c => c.EntrustmentId == item.Id);
-                    //await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deletedt.ToArray());
+                        var status = 4;//校准中
+                        SetStatus(ref details, nwcert);
+                        //全部为已校准 则为完成
+                        if (details.All(c => c.Status > 1))
+                            status = 5;//已完成
 
-                    //var deleteSql = $"DELETE FROM entrustmentdetail WHERE EntrustmentId={item.Id}";
-                    //UnitWork.ExecuteSql(deleteSql, ContextType.Nsap4NwcaliDbContextType);
-
-                    if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
-                    {
-                        ++line;
-                        foreach (var items in groupItem)
+                        await UnitWork.BatchUpdateAsync(details.ToArray());
+                        await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
                         {
-                            ++line2; ++sort;
-                            EntrustmentDetail entrustmentDetail = new EntrustmentDetail();
-                            entrustmentDetail.EntrustmentId = item.Id;
-                            entrustmentDetail.ItemCode = groupItem.Key;
-                            entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
-                            entrustmentDetail.SerialNumber = items.MnfSerial;
-                            entrustmentDetail.Quantity = 1;
-                            entrustmentDetail.LineNum = line + "-" + line2;
-                            entrustmentDetail.Sort = sort;
-                            entrustmentDetail.Id = Guid.NewGuid().ToString();
-                            detail.Add(entrustmentDetail);
-                        }
-
+                            Status = status,
+                            UpdateDate = DateTime.Now
+                        });
                     }
                 }
-                await UnitWork.BatchAddAsync<EntrustmentDetail>(detail.ToArray());
+                #endregion
 
-                await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
+                #region 调用接口
+                string tokens = System.Web.HttpUtility.UrlEncode(_ddSettingHelp.GetCalibrationKey("Token"));
+
+                //获取状态2,5的委托单据
+                List<Entrustment> entrustments = await UnitWork.Find<Entrustment>(r => r.Status == 2 && r.UpdateDate >= Convert.ToDateTime("2022-12-06")).Include(r => r.EntrustmentDetails).ToListAsync();
+
+                //获取状态-1的委托单
+                List<int> entrustmentList = await UnitWork.Find<Entrustment>(r => r.Status == -1).Select(r => (r.SaleId == null ? 0 : (int)r.SaleId)).ToListAsync();
+
+                //获取校准委托单组件信息
+                CalibrationResult calibrations = JsonConvert.DeserializeObject<CalibrationResult>(HttpHelpers.Get($"http://121.37.222.129:1666/api/Calibration/GetCalibrationFields?Token={tokens}"));
+
+                //校准委托单数据提交
+                if (calibrations.status == 200)
                 {
-                    DeliveryId = job.sbo_itf_return,
-                    Status = 2,//待处理
-                    EntrustedUserId = item.ContactsId,
-                    EntrustedUser = item.Contacts,
-                    EntrustedDate = DateTime.Now,
-                    UpdateDate = DateTime.Now
-                });
-                await UnitWork.SaveAsync();
-            }
-            #endregion
-
-            #region 同步状态
-            var calibration = entrusted.Where(c => c.Status >= 3).ToList();
-            foreach (var item in calibration)
-            {
-                var details = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
-                var snids = details.Select(c => c.SerialNumber).ToList();
-                var nwcert = await UnitWork.Find<NwcaliBaseInfo>(c => snids.Contains(c.TesterSn)).ToListAsync();
-                if (nwcert != null && nwcert.Count > 0)
-                {
-                    var status = 4;//校准中
-                    SetStatus(ref details, nwcert);
-                    //全部为已校准 则为完成
-                    if (details.All(c => c.Status > 1))
-                        status = 5;//已完成
-
-                    await UnitWork.BatchUpdateAsync(details.ToArray());
-                    await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
+                    foreach (Entrustment entrustment in entrustments)
                     {
-                        Status = status,
-                        UpdateDate = DateTime.Now
-                    });
+                        if (entrustment.SaleId != 0 && entrustment.SaleId != null)
+                        {
+                            if (!entrustmentList.Contains((int)entrustment.SaleId))
+                            {
+                                List<SubmitData> submitDatas = new List<SubmitData>();
+                                if (entrustment.EntrustmentDetails != null && entrustment.EntrustmentDetails.Count() > 0)
+                                {
+                                    foreach (CalibrationGroups item in calibrations.data)
+                                    {
+                                        SubmitData submitData = new SubmitData();
+                                        switch (item.field_tag)
+                                        {
+                                            case "EntOrderNo":
+                                                submitData.key = item.field_id;
+                                                submitData.value = "";
+                                                break;
+                                            case "EntOrderDate":
+                                                submitData.key = item.field_id;
+                                                submitData.value = entrustment.EntrustedDate == null ? DateTime.Now : entrustment.EntrustedDate;
+                                                break;
+                                            case "SaleOrderDate":
+                                                submitData.key = item.field_id;
+                                                submitData.value = entrustment.SaleId == null ? 0 : entrustment.SaleId;
+                                                break;
+                                            case "Submitter":
+                                                submitData.key = item.field_id;
+                                                submitData.value = entrustment.Contacts;
+                                                break;
+                                            case "SubmittingUnit":
+                                                submitData.key = item.field_id;
+                                                submitData.value = entrustment.EntrustedUnit;
+                                                break;
+                                            case "SubmittingUnitTel":
+                                                submitData.key = item.field_id;
+                                                submitData.value = entrustment.Phone;
+                                                break;
+                                            case "SubmittingUnitAdd":
+                                                submitData.key = item.field_id;
+                                                submitData.value = entrustment.ECountry + entrustment.EAddress;
+                                                break;
+                                            case "CertificationUnit":
+                                                submitData.key = item.field_id;
+                                                submitData.value = entrustment.CertUnit;
+                                                break;
+                                            case "CertificationUnitTel":
+                                                submitData.key = item.field_id;
+                                                submitData.value = entrustment.Phone;
+                                                break;
+                                            case "CertificationUnitAdd":
+                                                submitData.key = item.field_id;
+                                                submitData.value = entrustment.CertCountry + entrustment.CertProvince + entrustment.CertCity + entrustment.CertAddress;
+                                                break;
+                                            case "Remarks":
+                                                submitData.key = item.field_id;
+                                                submitData.value = entrustment.Remark;
+                                                break;
+                                            case "TimeReq":
+                                                submitData.key = item.field_id;
+                                                submitData.value = "普通服务（五个工作日）";
+                                                break;
+                                            case "LabelNo":
+                                                submitData.key = item.field_id;
+                                                submitData.value = "出厂编号";
+                                                break;
+                                            case "CertificateNo":
+                                                submitData.key = item.field_id;
+                                                submitData.value = "出场编号";
+                                                break;
+                                            case "NextCalibrationDate":
+                                                submitData.key = item.field_id;
+                                                submitData.value = "需要下次校准时间";
+                                                break;
+                                            case "ConclusionJud":
+                                                submitData.key = item.field_id;
+                                                submitData.value = "无结论判定";
+                                                break;
+                                            case "HandlingMethod":
+                                                submitData.key = item.field_id;
+                                                submitData.value = "不同意代送";
+                                                break;
+                                            case "CollectionMethod":
+                                                submitData.key = item.field_id;
+                                                submitData.value = "自取";
+                                                break;
+                                            case "MeasurementUnit":
+                                                submitData.key = item.field_id;
+                                                submitData.value = "国家法定计量单位";
+                                                break;
+                                            case "CalibrationStaff":
+                                                submitData.key = item.field_id;
+                                                submitData.value = "";
+                                                break;
+                                            default:
+                                                if (item.child_list != null && item.child_list.Count() > 0)
+                                                {
+                                                    SubmitDataContainChild submirDataContainChild = new SubmitDataContainChild();
+                                                    submirDataContainChild.key = item.field_id;
+                                                    List<SubmitDataChild> submitDataChildren = new List<SubmitDataChild>();
+                                                    foreach (CalibrationGroups itemChild in item.child_list)
+                                                    {
+                                                        SubmitDataChild submitDataChild = new SubmitDataChild();
+                                                        foreach (EntrustmentDetail entrustmentDetail in entrustment.EntrustmentDetails)
+                                                        {
+                                                            switch (itemChild.field_tag)
+                                                            {
+                                                                case "InstrumentName":
+                                                                    submitDataChild.key = itemChild.field_id;
+                                                                    submitDataChild.value.Add(entrustmentDetail.ItemName);
+                                                                    break;
+                                                                case "SpecificatModel":
+                                                                    submitDataChild.key = itemChild.field_id;
+                                                                    submitDataChild.value.Add(entrustmentDetail.ItemCode);
+                                                                    break;
+                                                                case "SN":
+                                                                    submitDataChild.key = itemChild.field_id;
+                                                                    submitDataChild.value.Add(entrustmentDetail.SerialNumber);
+                                                                    break;
+                                                                case "Attachment":
+                                                                    submitDataChild.key = itemChild.field_id;
+                                                                    submitDataChild.value.Add("");
+                                                                    break;
+                                                                case "AppearanceDes":
+                                                                    submitDataChild.key = itemChild.field_id;
+                                                                    submitDataChild.value.Add("正常");
+                                                                    break;
+                                                                case "CalibrationReq":
+                                                                    submitDataChild.key = itemChild.field_id;
+                                                                    submitDataChild.value.Add("");
+                                                                    break;
+                                                                case "CertificateSta":
+                                                                    submitDataChild.key = itemChild.field_id;
+                                                                    submitDataChild.value.Add(entrustmentDetail.Status.ToString());
+                                                                    break;
+                                                            }
+                                                        }
+
+                                                        submitDataChildren.Add(submitDataChild);
+                                                    }
+
+                                                    submirDataContainChild.value = submitDataChildren;
+                                                    submitData.key = submirDataContainChild.key;
+                                                    submitData.value = submirDataContainChild.value;
+                                                }
+                                                break;
+                                        }
+
+                                        submitDatas.Add(submitData);
+                                    }
+                                }
+                                else
+                                {
+                                    _logger.LogError("委托单物料明细为空");
+                                }
+
+                                ControlDataList controlDataList = new ControlDataList();
+                                controlDataList.controls_data_list = submitDatas;
+                                if (controlDataList.controls_data_list.Count() > 0)
+                                {
+                                    //调用校准委托单数据提交接口
+                                    ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
+                                    if (returnResult.status != 200)
+                                    {
+                                        _logger.LogError("委托单调用2接口失败：" + returnResult.message + " 参数：" + JsonConvert.SerializeObject(entrustment));
+                                    }
+                                    else
+                                    {
+                                        await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
+                                        {
+                                            Status = -1,
+                                            UpdateDate = DateTime.Now
+                                        });
+
+                                        await UnitWork.SaveAsync();
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
+                else
+                {
+                    _logger.LogError("委托单调用1接口失败：" + calibrations.message);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("委托单调用接口失败：" + ex.Message.ToString());
             }
             #endregion
         }
+
 
         private void SetStatus(ref List<EntrustmentDetail> detail, List<NwcaliBaseInfo> nwcert)
         {
@@ -1477,7 +1709,7 @@ namespace OpenAuth.App
                         from c in ac.DefaultIfEmpty()
                         where d.sbo_id == sboid && a.CardCode == cardcode // && a.AdresType=="B" && a.Address== "开票到"
                         select new { d.CardCode, d.CardName, a.LineNum, Active = a.U_Active, a.AdresType, a.Address, Country = b.Name, State = c.Name, a.City, a.Building };
-            return query.FirstOrDefault();
+            return query.Where(r => r.CardCode != null).FirstOrDefault();
         }
         public void Add(AddOrUpdateCertinfoReq req)
         {
@@ -1660,7 +1892,8 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
             var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
-            var query = from a in UnitWork.Find<product_owor>(c => (c.ItemCode.StartsWith("C") || c.ItemCode.StartsWith("BT") || c.ItemCode.StartsWith("BTE") || c.ItemCode.StartsWith("BE")) && c.CreateDate >= DateTime.Parse("2021-01-01"))
+            var query = from a in UnitWork.Find<product_owor>(c => (c.ItemCode.StartsWith("C") || c.ItemCode.StartsWith("BT") || c.ItemCode.StartsWith("BTE")
+                        || c.ItemCode.StartsWith("BE") || c.ItemCode.StartsWith("BBE") || c.ItemCode.StartsWith("BA")) && c.CreateDate >= DateTime.Parse("2020-01-01"))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.ProductionNo.ToString()), c => EF.Functions.Like(c.DocEntry, $"%{request.ProductionNo}%"))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.SaleOrderNo.ToString()), c => EF.Functions.Like(c.OriginAbs, $"%{request.SaleOrderNo}%"))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.ItemCode), c => c.ItemCode.Contains(request.ItemCode))
@@ -2065,7 +2298,7 @@ namespace OpenAuth.App
                     OriginAbs = orderInfo.OriginAbs == 0 ? "" : orderInfo.OriginAbs.ToString(),
                     ItemCode = orderInfo == null ? "" : orderInfo.ItemCode,
                     item.GeneratorCode,
-                    Department= item.CreateUser== "杨想来"?"P8":item.Department,
+                    Department = item.CreateUser == "杨想来" ? "P8" : item.Department,
                     item.TaskId,
                     item.MidGuid,
                     item.LowGuid,
@@ -2111,7 +2344,7 @@ namespace OpenAuth.App
             var m = resObj["data"]["CheckItems"];
             foreach (var item in m)
             {
-                if ((int)item["ErrCount"]>0)
+                if ((int)item["ErrCount"] > 0)
                 {
                     list.AddRange(item["Records"]);
                 }
@@ -2246,7 +2479,7 @@ namespace OpenAuth.App
                     begin = records == null ? "" : Convert.ToInt64(records["begin"]).GetTimeSpmpToDate().ToString("yyyy.MM.dd HH:mm:ss"),
                     end = records == null ? "" : Convert.ToInt64(records["end"]).GetTimeSpmpToDate().ToString("yyyy.MM.dd HH:mm:ss"),
                     result = records == null ? "" : (records["result"].ToString().Equal("OK") ? "通过" : "失败"),
-                    power = records == null ? "" : Math.Round((Convert.ToDecimal(records["power"])/1000),6).ToString(),
+                    power = records == null ? "" : Math.Round((Convert.ToDecimal(records["power"]) / 1000), 6).ToString(),
                     carbon = records == null ? "" : records["carbon"].ToString(),
                     duration = records == null ? "" : records["duration"].ToString(),
                     sn = snInfo == null ? "" : snInfo.sn
@@ -2332,7 +2565,7 @@ namespace OpenAuth.App
                 beginTime = ((DateTimeOffset)req.StartTime.Value).ToUnixTimeSeconds(),
                 endTime = ((DateTimeOffset)req.EndTime.Value).ToUnixTimeSeconds(),
                 pageSize = 500,
-                page =1
+                page = 1
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
             if (taskObj == null || taskObj["code"].ToString() != "1001")
@@ -2393,12 +2626,12 @@ namespace OpenAuth.App
                 var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator)).Select(c => c.Id).ToListAsync();
                 userIds.AddRange(query);
             }
-            if (req.SalesOrder>0)
+            if (req.SalesOrder > 0)
             {
                 string strSql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
                     inner join (SELECT DocEntry,MIN(BaseEntry) as BaseEntry from DLN1 where BaseType=17  group by DocEntry )  t2 on t1.deliveryNo = t2.DocEntry 
                     inner join ORDR t3 on t2.BaseEntry = t3.DocEntry
-                    inner join OSLP t4 on t3.SlpCode =t4.SlpCode where t3.DocEntry="+ req.SalesOrder;
+                    inner join OSLP t4 on t3.SlpCode =t4.SlpCode where t3.DocEntry=" + req.SalesOrder;
                 var shipmentCalibration = await UnitWork.Query<ShipmentCalibration_sql>(strSql).ToListAsync();
                 sns = shipmentCalibration.Select(c => c.TesterSn).ToList();
             }
@@ -2407,13 +2640,13 @@ namespace OpenAuth.App
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                sns=sns,
+                sns = sns,
                 passportIDs = ids,
                 beginTime = ((DateTimeOffset)req.StartTime.Value).ToUnixTimeSeconds(),
                 endTime = ((DateTimeOffset)req.EndTime.Value).ToUnixTimeSeconds(),
-                pageSize =req.limit,
-                page=req.page,
-                taskType=req.taskType==0?null:req.taskType
+                pageSize = req.limit,
+                page = req.page,
+                taskType = req.taskType == 0 ? null : req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
             if (taskObj == null || taskObj["code"].ToString() != "1001")
@@ -2423,17 +2656,17 @@ namespace OpenAuth.App
                 return result;
             }
             result.Count = Convert.ToInt32(taskObj["data"]["total"]);
-            if (result.Count<=0)
+            if (result.Count <= 0)
             {
                 result.Data = list;
                 return result;
             }
-            var erpUserIds = taskObj["data"]["records"].Select(c =>c["userId"].ToString()).ToList().Distinct();
+            var erpUserIds = taskObj["data"]["records"].Select(c => c["userId"].ToString()).ToList().Distinct();
             var userList = await (from b in UnitWork.Find<User>(null)
                                   join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
                                   join d in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on c.SecondId equals d.Id
                                   where erpUserIds.Contains(b.Id) && c.Key == Define.USERORG
-                                  select new { userName = b.Name, orgName = d.Name,b.Id}).ToListAsync();
+                                  select new { userName = b.Name, orgName = d.Name, b.Id }).ToListAsync();
             var taskIds = taskObj["data"]["records"].Select(c => c["taskId"].ToString()).ToList().Distinct();
             var codelist = await (from a in UnitWork.Find<DeviceCheckTask>(null)
                                   join b in UnitWork.Find<DeviceTestLog>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
@@ -2442,7 +2675,7 @@ namespace OpenAuth.App
             //获取销售信息
             List<ShipmentCalibration_sql> saleInfoList = new List<ShipmentCalibration_sql>();
             var serialNoList = taskObj["data"]["records"].Where(c => c["serialNo"] != null).Select(c => c["serialNo"].ToString()).Distinct().ToList();
-            if (serialNoList.Count>0)
+            if (serialNoList.Count > 0)
             {
                 string querySql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
                     inner join (SELECT DocEntry,MIN(BaseEntry) as BaseEntry from DLN1 where BaseType=17  group by DocEntry )  t2 on t1.deliveryNo = t2.DocEntry 
@@ -2462,13 +2695,13 @@ namespace OpenAuth.App
             var nwcalibase = await (from a in UnitWork.Find<PcPlc>(null)
                                     join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id
                                     where lowGuids.Contains(a.Guid)
-                                    select new { b.Issuer,b.IssuerId, a.Guid, b.TesterModel }).Distinct().ToListAsync();
+                                    select new { b.Issuer, b.IssuerId, a.Guid, b.TesterModel }).Distinct().ToListAsync();
             foreach (var item in taskObj["data"]["records"])
             {
                 var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
                 var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
-                var nwcalibaseinfo = item["serialNo"] == null ? null: nwcalibase.Where(c => c.Guid == item["lowGuid"].ToString()).FirstOrDefault();
-                var saleInfo = item["serialNo"] == null ? null: saleInfoList.Where(c => c.TesterSn == item["serialNo"].ToString()).FirstOrDefault();
+                var nwcalibaseinfo = item["serialNo"] == null ? null : nwcalibase.Where(c => c.Guid == item["lowGuid"].ToString()).FirstOrDefault();
+                var saleInfo = item["serialNo"] == null ? null : saleInfoList.Where(c => c.TesterSn == item["serialNo"].ToString()).FirstOrDefault();
                 list.Add(new
                 {
                     userId = item["userId"].ToString(),
@@ -2488,13 +2721,13 @@ namespace OpenAuth.App
                     userName = userInfo == null ? "" : userInfo.userName,
                     orgName = userInfo == null ? "" : userInfo.orgName,
                     generatorCode = codeInfo == null ? "" : codeInfo.GeneratorCode,
-                    taskType= item["taskType"].ToString(),
-                    serialNo= item["serialNo"]==null?"": item["serialNo"].ToString(),
-                    salesOrder = saleInfo==null?"": saleInfo.SalesOrder.ToString(),
+                    taskType = item["taskType"].ToString(),
+                    serialNo = item["serialNo"] == null ? "" : item["serialNo"].ToString(),
+                    salesOrder = saleInfo == null ? "" : saleInfo.SalesOrder.ToString(),
                     Salesman = saleInfo == null ? "" : saleInfo.Salesman,
                     DeliveryNumber = saleInfo == null ? "" : saleInfo.DeliveryNumber.ToString(),
-                    Issuer= nwcalibaseinfo==null?"": nwcalibaseinfo.Issuer,
-                    TesterModel= nwcalibaseinfo == null ? "" : nwcalibaseinfo.TesterModel
+                    Issuer = nwcalibaseinfo == null ? "" : nwcalibaseinfo.Issuer,
+                    TesterModel = nwcalibaseinfo == null ? "" : nwcalibaseinfo.TesterModel
                 });
             }
             result.Data = list;
@@ -2536,10 +2769,10 @@ namespace OpenAuth.App
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                sns=sns,
+                sns = sns,
                 passportIDs = ids,
-                beginTime = ((DateTimeOffset)req.StartTime.Value).ToUnixTimeSeconds(),
-                endTime = ((DateTimeOffset)req.EndTime.Value).ToUnixTimeSeconds(),
+                beginTime = req.StartTime.Value.GetTimeStamp() - 28800,
+                endTime = req.EndTime.Value.GetTimeStamp() - 28800,
                 taskType = req.taskType == 0 ? null : req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
@@ -2547,7 +2780,7 @@ namespace OpenAuth.App
             {
                 throw new Exception($"获取人员校准报表接口异常!");
             }
-            if (taskObj["data"].Count()<=0)
+            if (taskObj["data"].Count() <= 0)
             {
                 throw new Exception($"暂无数据!");
             }
@@ -2603,7 +2836,7 @@ namespace OpenAuth.App
                     userName = userInfo == null ? "" : userInfo.userName,
                     orgName = userInfo == null ? "" : userInfo.orgName,
                     generatorCode = codeInfo == null ? "" : codeInfo.GeneratorCode,
-                    taskType = item["taskType"].ToString()=="0"?"默认":(item["taskType"].ToString() == "1"? "自动校准" : "手动校准"),
+                    taskType = item["taskType"].ToString() == "0" ? "默认" : (item["taskType"].ToString() == "1" ? "自动校准" : "手动校准"),
                     TesterModel = nwcalibaseinfo == null ? "" : nwcalibaseinfo.TesterModel,
                     serialNo = item["serialNo"] == null ? "" : item["serialNo"].ToString(),
                     assetInfo = item["assetInfo"].ToString(),
@@ -2706,6 +2939,7 @@ namespace OpenAuth.App
                 HttpHelper httpHelper = new HttpHelper(url);
                 var guidSuccessCount = 0;
                 var err = 0;
+                List<int> dts = new List<int>();
                 foreach (var guid in guids)
                 {
                     List<string> taskId = new List<string>();
@@ -2771,6 +3005,7 @@ namespace OpenAuth.App
                         if (resObj["data"] != null)
                         {
                             var checkDto = JsonHelper.Instance.Deserialize<List<CheckResultDto>>(resObj["data"].ToString());
+                            dts.InsertRange(dts.Count(), checkDto.Select(r => (int)r.LastTime).ToList());
                             if (checkDto.Any(c => c.Status == 0))
                             {
 
@@ -2819,7 +3054,7 @@ namespace OpenAuth.App
                     var last = UnitWork.Find<DeviceTestLog>(c => guids.Contains(c.LowGuid)).OrderByDescending(c => c.CreateTime).FirstOrDefault();
                     u1 = last.CreateUserId;
                     u2 = last.CreateUser;
-                    date = DateTime.Now;
+                    date = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).AddSeconds((long)dts.Max());
                 }
                 else
                     result = 2;//烤机中
@@ -2908,371 +3143,344 @@ namespace OpenAuth.App
             var plcRepetitiveMeasurementData = baseInfo.NwcaliPlcDatas.Where(d => d.DataType == 2).ToList();
             var turV = baseInfo.NwcaliTurs.Where(d => d.DataType == 1).ToList();
             var turA = baseInfo.NwcaliTurs.Where(d => d.DataType == 2).ToList();
-            #region 页眉
-            var barcode = await BarcodeGenerate(baseInfo.CertificateNumber);
-            model.BarCode = barcode;
-            #endregion
-            #region Calibration Certificate
-            model.CalibrationCertificate.CertificatenNumber = baseInfo.CertificateNumber;
-            model.CalibrationCertificate.TesterMake = baseInfo.TesterMake;
-            model.CalibrationCertificate.CalibrationDate = DateStringConverter(baseInfo.Time.Value.ToString());
-            model.CalibrationCertificate.TesterModel = baseInfo.TesterModel;
-            model.CalibrationCertificate.CalibrationDue = ConvertTestInterval(baseInfo.Time.Value.ToString(), baseInfo.TestInterval);
-            model.CalibrationCertificate.TesterSn = baseInfo.TesterSn;
-            model.CalibrationCertificate.DataType = "";
-            model.CalibrationCertificate.AssetNo = baseInfo.AssetNo == "0" ? "------" : baseInfo.AssetNo;
-            model.CalibrationCertificate.SiteCode = baseInfo.SiteCode;
-            model.CalibrationCertificate.Temperature = baseInfo.Temperature;
-            model.CalibrationCertificate.RelativeHumidity = baseInfo.RelativeHumidity;
-            #endregion
-            #region Main Standards Used
-            for (int i = 0; i < baseInfo.Etalons.Count; i++)
+            try
             {
-                model.MainStandardsUsed.Add(new MainStandardsUsed
+                #region 页眉
+                var barcode = await BarcodeGenerate(baseInfo.CertificateNumber);
+                model.BarCode = barcode;
+                #endregion
+                #region Calibration Certificate
+                model.CalibrationCertificate.CertificatenNumber = baseInfo.CertificateNumber;
+                model.CalibrationCertificate.TesterMake = baseInfo.TesterMake;
+                model.CalibrationCertificate.CalibrationDate = DateStringConverter(baseInfo.Time.Value.ToString());
+                model.CalibrationCertificate.TesterModel = baseInfo.TesterModel;
+                model.CalibrationCertificate.CalibrationDue = ConvertTestInterval(baseInfo.Time.Value.ToString(), baseInfo.TestInterval);
+                model.CalibrationCertificate.TesterSn = baseInfo.TesterSn;
+                model.CalibrationCertificate.DataType = "";
+                model.CalibrationCertificate.AssetNo = baseInfo.AssetNo == "0" ? "------" : baseInfo.AssetNo;
+                model.CalibrationCertificate.SiteCode = baseInfo.SiteCode;
+                model.CalibrationCertificate.Temperature = baseInfo.Temperature;
+                model.CalibrationCertificate.RelativeHumidity = baseInfo.RelativeHumidity;
+                #endregion
+                #region Main Standards Used
+                for (int i = 0; i < baseInfo.Etalons.Count; i++)
                 {
-                    Name = baseInfo.Etalons[i].Name,
-                    Characterisics = baseInfo.Etalons[i].Characteristics,
-                    AssetNo = baseInfo.Etalons[i].AssetNo,
-                    CertificateNo = baseInfo.Etalons[i].CertificateNo,
-                    DueDate = DateStringConverter(baseInfo.Etalons[i].DueDate),
-                    CalibrationEntity = baseInfo.Etalons[i].CalibrationEntity
-                });
-            }
-            #endregion
-
-            #region Uncertainty Budget
-            var plcGroupData = plcData.GroupBy(d => d.PclNo);
-            var plcRepetitiveMeasurementGroupData = plcRepetitiveMeasurementData.GroupBy(d => d.PclNo);
-            var plc = plcGroupData.First();
-            var plcrmd = plcRepetitiveMeasurementGroupData.First();
-            var v = plc.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals("Charge") && p.VerifyType.Equals("Post-Calibration")).GroupBy(p => p.Channel).First().ToList();
-            var sv = v.Select(s => s.CommandedValue).OrderBy(s => s).ToList();
-            sv.Sort();
-            var vscale = sv[(sv.Count - 1) / 2];
-
-
-            var c = plc.Where(p => p.VoltsorAmps.Equals("Amps") && p.Mode.Equals("Charge") && p.VerifyType.Equals("Post-Calibration")).OrderByDescending(a => a.Scale).GroupBy(p => p.Scale).First().ToList();
-            var cv = c.Select(c => c.CommandedValue).OrderBy(s => s).ToList();
-            cv.Sort();
-            var cscale = cv[(cv.Count - 1) / 2];
-            if (type != "cnas")
-            {
-                #region T.U.R. Table
-                //电压
-                var vPoint = turV.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
-                var vPointIndex = (vPoint.Count - 1) / 2;
-                var vSpec = v.First().Scale * baseInfo.RatedAccuracyV * 1000;
-                var u95_1 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-                var a = turV.Where(v => v.TestPoint == vPoint[vPointIndex]).ToList();
-                var u95_2 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-                var u95_3 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex + 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-                var tur_1 = (2 * vSpec / 1000) / (2 * u95_1);
-                var tur_2 = (2 * vSpec / 1000) / (2 * u95_2);
-                var tur_3 = (2 * vSpec / 1000) / (2 * u95_3);
-                model.TurTables.Add(new TurTable { Number = "1", Point = $"{vPoint[vPointIndex - 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_1.ToString("e3") + "V", TUR = tur_1.ToString("f2") });
-                model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3") + "V", TUR = tur_2.ToString("f2") });
-                model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3") + "V", TUR = tur_3.ToString("f2") });
-                //电流
-                var cPoint = turA.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
-                var cPointIndex = cPoint.IndexOf(cscale / 1000); //(cPoint.Count - 1) / 2;
-                var cSpec = c.First().Scale * baseInfo.RatedAccuracyC;
-                var U95_4turA = turA;
-                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList().Count > 2)
-                {
-                    U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                    if (U95_4turA.Count > 2)
+                    model.MainStandardsUsed.Add(new MainStandardsUsed
                     {
-                        U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                        Name = baseInfo.Etalons[i].Name,
+                        Characterisics = baseInfo.Etalons[i].Characteristics,
+                        AssetNo = baseInfo.Etalons[i].AssetNo,
+                        CertificateNo = baseInfo.Etalons[i].CertificateNo,
+                        DueDate = DateStringConverter(baseInfo.Etalons[i].DueDate),
+                        CalibrationEntity = baseInfo.Etalons[i].CalibrationEntity
+                    });
+                }
+                #endregion
+
+                #region Uncertainty Budget
+                var plcGroupData = plcData.GroupBy(d => d.PclNo);
+                var plcRepetitiveMeasurementGroupData = plcRepetitiveMeasurementData.GroupBy(d => d.PclNo);
+                var plc = plcGroupData.First();
+                var plcrmd = plcRepetitiveMeasurementGroupData.First();
+                var v = plc.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals("Charge") && p.VerifyType.Equals("Post-Calibration")).GroupBy(p => p.Channel).First().ToList();
+                var sv = v.Select(s => s.CommandedValue).OrderBy(s => s).ToList();
+                sv.Sort();
+                var vscale = sv[(sv.Count - 1) / 2];
+
+
+                var c = plc.Where(p => p.VoltsorAmps.Equals("Amps") && p.Mode.Equals("Charge") && p.VerifyType.Equals("Post-Calibration")).OrderByDescending(a => a.Scale).GroupBy(p => p.Scale).First().ToList();
+                var cv = c.Select(c => c.CommandedValue).OrderBy(s => s).ToList();
+                cv.Sort();
+                var cscale = cv[(cv.Count - 1) / 2];
+                if (type != "cnas")
+                {
+                    #region T.U.R. Table
+                    //电压
+                    var vPoint = turV.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
+                    var vPointIndex = (vPoint.Count - 1) / 2;
+                    var vSpec = v.First().Scale * baseInfo.RatedAccuracyV * 1000;
+                    var u95_1 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                    var a = turV.Where(v => v.TestPoint == vPoint[vPointIndex]).ToList();
+                    var u95_2 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                    var u95_3 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex + 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                    var tur_1 = (2 * vSpec / 1000) / (2 * u95_1);
+                    var tur_2 = (2 * vSpec / 1000) / (2 * u95_2);
+                    var tur_3 = (2 * vSpec / 1000) / (2 * u95_3);
+                    model.TurTables.Add(new TurTable { Number = "1", Point = $"{vPoint[vPointIndex - 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_1.ToString("e3") + "V", TUR = tur_1.ToString("f2") });
+                    model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3") + "V", TUR = tur_2.ToString("f2") });
+                    model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3") + "V", TUR = tur_3.ToString("f2") });
+                    //电流
+                    var cPoint = turA.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
+                    var cPointIndex = cPoint.IndexOf(cscale / 1000); //(cPoint.Count - 1) / 2;
+                    var cSpec = c.First().Scale * baseInfo.RatedAccuracyC;
+                    var U95_4turA = turA;
+                    if (turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList().Count > 2)
+                    {
+                        U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                        if (U95_4turA.Count > 2)
+                        {
+                            U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                        }
+                    }
+                    else
+                    {
+                        U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList();
+                    }
+                    var u95_4 = 2 * Math.Sqrt(U95_4turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                    var U95_5turA = turA;
+                    if (turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList().Count > 2)
+                    {
+                        U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                        if (U95_5turA.Count > 2)
+                        {
+                            U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                        }
+                    }
+                    else
+                    {
+                        U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList();
+                    }
+                    var u95_5 = 2 * Math.Sqrt(U95_5turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                    var U95_6turA = turA;
+                    if (turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList().Count > 2)
+                    {
+                        U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                        if (U95_6turA.Count > 2)
+                        {
+                            U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                        }
+                    }
+                    else
+                    {
+                        U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList();
+                    }
+                    var u95_6 = 2 * Math.Sqrt(U95_6turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                    var tur_4 = (2 * cSpec) / (2 * u95_4 * 1000);
+                    var tur_5 = (2 * cSpec) / (2 * u95_5 * 1000);
+                    var tur_6 = (2 * cSpec) / (2 * u95_6 * 1000);
+
+                    model.TurTables.Add(new TurTable { Number = "4", Point = $"{cPoint[cPointIndex - 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_4.ToString("e3") + "A", TUR = tur_4.ToString("f2") });
+                    model.TurTables.Add(new TurTable { Number = "5", Point = $"{cPoint[cPointIndex]}A", Spec = $"±{cSpec}mA", U95Standard = u95_5.ToString("e3") + "A", TUR = tur_5.ToString("f2") });
+                    model.TurTables.Add(new TurTable { Number = "6", Point = $"{cPoint[cPointIndex + 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_6.ToString("e3") + "A", TUR = tur_6.ToString("f2") });
+
+                    #endregion
+                }
+
+                #region Uncertainty Budget Table
+                #region Voltage
+                var vv = 2 * (double)v.FirstOrDefault().Scale / Math.Pow(2, baseInfo.VoltmeterBits);
+                var vstd = 2 * (double)v.FirstOrDefault().Scale / (Math.Pow(2, baseInfo.VoltmeterBits) * Math.Sqrt(12));
+                var voltageUncertaintyBudgetTable = new UncertaintyBudgetTable();
+                voltageUncertaintyBudgetTable.Value = $"{vscale}V";
+                voltageUncertaintyBudgetTable.TesterResolutionValue = vv.ToString("e3");
+                voltageUncertaintyBudgetTable.TesterResolutionStdUncertainty = vstd.ToString("e3");
+                var vmdcv = plcrmd.Where(d => d.CommandedValue.Equals(vscale) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals("Charge") && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
+                double vror;
+                if (vmdcv.Count >= 6)//贝塞尔公式法
+                {
+                    var vavg = vmdcv.Sum(c => c.StandardValue) / vmdcv.Count;
+                    vror = Math.Sqrt(vmdcv.Select(c => Math.Pow(c.StandardValue - vavg, 2)).Sum() / (vmdcv.Count - 1));
+                    voltageUncertaintyBudgetTable.RepeatabilityOfReadingValue = vror.ToString("e3");
+                    voltageUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = vror.ToString("e3");
+                }
+                else//极差法
+                {
+                    var poorCoefficient = PoorCoefficients[vmdcv.Count];
+                    var vmdsv = vmdcv.Select(c => c.StandardValue).ToList();
+                    var R = vmdsv.Max() - vmdsv.Min();
+                    var u2 = R / poorCoefficient;
+                    vror = u2;
+                    voltageUncertaintyBudgetTable.RepeatabilityOfReadingValue = u2.ToString("e3");
+                    voltageUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = u2.ToString("e3");
+                }
+                turV = turV.Where(v => v.TestPoint == vscale).ToList();
+                var combinedUncertaintyV = Math.Sqrt(turV.Sum(v => Math.Pow(v.StdUncertainty, 2)) + Math.Pow(vstd, 2) + Math.Pow(vror, 2));
+                voltageUncertaintyBudgetTable.CombinedUncertainty = combinedUncertaintyV.ToString("e3");
+                voltageUncertaintyBudgetTable.CombinedUncertaintySignificance = "100.000%";
+                voltageUncertaintyBudgetTable.CoverageFactor = baseInfo.K.ToString(); ;
+                voltageUncertaintyBudgetTable.ExpandedUncertainty = (baseInfo.K * combinedUncertaintyV).ToString("e3");
+                for (int i = 0; i < turV.Count; i++)
+                {
+                    var data = new UncertaintyBudgetTable.UncertaintyBudgetTableData();
+                    var tv = turV[i];
+                    data.UncertaintyContributors = tv.UncertaintyContributors;
+                    data.Value = tv.Value.ToString("e3");
+                    data.SensitivityCoefficient = tv.SensitivityCoefficient.ToString();
+                    data.Unit = tv.Unit;
+                    data.Type = tv.Type;
+                    data.Distribution = tv.Distribution;
+                    if (tv.UncertaintyContributors.Equals("Resolution"))
+                    {
+                        data.CoverageFactor = Math.Sqrt(12).ToString("f3");
+                    }
+                    else
+                    {
+                        data.CoverageFactor = tv.Divisor.ToString();
+                    }
+                    data.StdUncertainty = tv.StdUncertainty.ToString("e3");
+                    data.Significance = (Math.Pow(tv.StdUncertainty, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3");
+                    voltageUncertaintyBudgetTable.Datas.Add(data);
+                }
+                voltageUncertaintyBudgetTable.TesterResolutionSignificance = (Math.Pow(vstd, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3");
+                voltageUncertaintyBudgetTable.RepeatabilityOfReadingSignificance = (Math.Pow(vror, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3");
+                model.VoltageUncertaintyBudgetTables = voltageUncertaintyBudgetTable;
+                #endregion
+
+                #region Current
+                var currentUncertaintyBudgetTable = new UncertaintyBudgetTable();
+                var cvv = 2 * (double)c.FirstOrDefault().Scale / 1000 / Math.Pow(2, baseInfo.AmmeterBits);
+                var cstd = 2 * (double)c.FirstOrDefault().Scale / 1000 / (Math.Pow(2, baseInfo.AmmeterBits) * Math.Sqrt(12));
+                currentUncertaintyBudgetTable.Value = $"{cscale}mA";
+                currentUncertaintyBudgetTable.TesterResolutionValue = cvv.ToString("e3");
+                currentUncertaintyBudgetTable.TesterResolutionStdUncertainty = cstd.ToString("e3");
+                var cmdcv = plcrmd.Where(d => d.CommandedValue.Equals(cscale) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals("Charge") && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
+                double cror;
+                if (cmdcv.Count >= 6)//贝塞尔公式法
+                {
+                    var cavg = cmdcv.Sum(c => c.StandardValue) / cmdcv.Count / 1000;
+                    cror = Math.Sqrt(cmdcv.Select(c => Math.Pow(c.StandardValue / 1000 - cavg, 2)).Sum() / (cmdcv.Count - 1));
+                    currentUncertaintyBudgetTable.RepeatabilityOfReadingValue = cror.ToString("e3");
+                    currentUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = cror.ToString("e3");
+                }
+                else//极差法
+                {
+                    var poorCoefficient = PoorCoefficients[cmdcv.Count];
+                    var cmdsv = cmdcv.Select(c => c.StandardValue / 1000).ToList();
+                    var R = cmdsv.Max() - cmdsv.Min();
+                    var u2 = R / poorCoefficient;
+                    cror = u2;
+                    currentUncertaintyBudgetTable.RepeatabilityOfReadingValue = u2.ToString("e3");
+                    currentUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = u2.ToString("e3");
+                }
+
+                turA = turA.Where(a => a.TestPoint * 1000 == cscale).ToList();
+                if (turA.Count > 2)
+                {
+                    var turAOne = turA.GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                    if (turAOne.Count > 2)
+                    {
+                        turA = turA.OrderBy(t => t.Range).Take(2).ToList();
+                    }
+                    else
+                    {
+                        turA = turAOne;
                     }
                 }
-                else
-                {
-                    U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList();
-                }
-                var u95_4 = 2 * Math.Sqrt(U95_4turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-                var U95_5turA = turA;
-                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList().Count > 2)
-                {
-                    U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                    if (U95_5turA.Count > 2)
-                    {
-                        U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
-                    }
-                }
-                else
-                {
-                    U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList();
-                }
-                var u95_5 = 2 * Math.Sqrt(U95_5turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-                var U95_6turA = turA;
-                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList().Count > 2)
-                {
-                    U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                    if (U95_6turA.Count > 2)
-                    {
-                        U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
-                    }
-                }
-                else
-                {
-                    U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList();
-                }
-                var u95_6 = 2 * Math.Sqrt(U95_6turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-                var tur_4 = (2 * cSpec) / (2 * u95_4 * 1000);
-                var tur_5 = (2 * cSpec) / (2 * u95_5 * 1000);
-                var tur_6 = (2 * cSpec) / (2 * u95_6 * 1000);
+                var combinedUncertaintyA = Math.Sqrt(turA.Sum(c => Math.Pow(c.StdUncertainty, 2)) + Math.Pow(cstd, 2) + Math.Pow(cror, 2));
+                currentUncertaintyBudgetTable.CombinedUncertainty = combinedUncertaintyA.ToString("e3");
+                currentUncertaintyBudgetTable.CombinedUncertaintySignificance = "100.000%";
+                currentUncertaintyBudgetTable.CoverageFactor = baseInfo.K.ToString(); ;
+                currentUncertaintyBudgetTable.ExpandedUncertainty = (baseInfo.K * combinedUncertaintyA).ToString("e3");
 
-                model.TurTables.Add(new TurTable { Number = "4", Point = $"{cPoint[cPointIndex - 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_4.ToString("e3") + "A", TUR = tur_4.ToString("f2") });
-                model.TurTables.Add(new TurTable { Number = "5", Point = $"{cPoint[cPointIndex]}A", Spec = $"±{cSpec}mA", U95Standard = u95_5.ToString("e3") + "A", TUR = tur_5.ToString("f2") });
-                model.TurTables.Add(new TurTable { Number = "6", Point = $"{cPoint[cPointIndex + 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_6.ToString("e3") + "A", TUR = tur_6.ToString("f2") });
+                for (int i = 0; i < turA.Count; i++)
+                {
+                    var data = new UncertaintyBudgetTable.UncertaintyBudgetTableData();
+                    var ta = turA[i];
+
+                    data.UncertaintyContributors = ta.UncertaintyContributors;
+                    data.Value = ta.Value.ToString("e3");
+                    data.SensitivityCoefficient = ta.SensitivityCoefficient.ToString();
+                    data.Unit = ta.Unit;
+                    data.Type = ta.Type;
+                    data.Distribution = ta.Distribution;
+                    data.CoverageFactor = ta.Divisor.ToString();
+                    data.StdUncertainty = ta.StdUncertainty.ToString("e3");
+                    data.Significance = (Math.Pow(ta.StdUncertainty, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3");
+                    currentUncertaintyBudgetTable.Datas.Add(data);
+                }
+                currentUncertaintyBudgetTable.TesterResolutionSignificance = (Math.Pow(cstd, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3");
+                currentUncertaintyBudgetTable.RepeatabilityOfReadingSignificance = (Math.Pow(cror, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3");
+                model.CurrentUncertaintyBudgetTables = currentUncertaintyBudgetTable;
+                #endregion
 
                 #endregion
-            }
+                #endregion
 
-            #region Uncertainty Budget Table
-            #region Voltage
-            var vv = 2 * (double)v.FirstOrDefault().Scale / Math.Pow(2, baseInfo.VoltmeterBits);
-            var vstd = 2 * (double)v.FirstOrDefault().Scale / (Math.Pow(2, baseInfo.VoltmeterBits) * Math.Sqrt(12));
-            var voltageUncertaintyBudgetTable = new UncertaintyBudgetTable();
-            voltageUncertaintyBudgetTable.Value = $"{vscale}V";
-            voltageUncertaintyBudgetTable.TesterResolutionValue = vv.ToString("e3");
-            voltageUncertaintyBudgetTable.TesterResolutionStdUncertainty = vstd.ToString("e3");
-            var vmdcv = plcrmd.Where(d => d.CommandedValue.Equals(vscale) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals("Charge") && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
-            double vror;
-            if (vmdcv.Count >= 6)//贝塞尔公式法
-            {
-                var vavg = vmdcv.Sum(c => c.StandardValue) / vmdcv.Count;
-                vror = Math.Sqrt(vmdcv.Select(c => Math.Pow(c.StandardValue - vavg, 2)).Sum() / (vmdcv.Count - 1));
-                voltageUncertaintyBudgetTable.RepeatabilityOfReadingValue = vror.ToString("e3");
-                voltageUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = vror.ToString("e3");
-            }
-            else//极差法
-            {
-                var poorCoefficient = PoorCoefficients[vmdcv.Count];
-                var vmdsv = vmdcv.Select(c => c.StandardValue).ToList();
-                var R = vmdsv.Max() - vmdsv.Min();
-                var u2 = R / poorCoefficient;
-                vror = u2;
-                voltageUncertaintyBudgetTable.RepeatabilityOfReadingValue = u2.ToString("e3");
-                voltageUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = u2.ToString("e3");
-            }
-            turV = turV.Where(v => v.TestPoint == vscale).ToList();
-            var combinedUncertaintyV = Math.Sqrt(turV.Sum(v => Math.Pow(v.StdUncertainty, 2)) + Math.Pow(vstd, 2) + Math.Pow(vror, 2));
-            voltageUncertaintyBudgetTable.CombinedUncertainty = combinedUncertaintyV.ToString("e3");
-            voltageUncertaintyBudgetTable.CombinedUncertaintySignificance = "100.000%";
-            voltageUncertaintyBudgetTable.CoverageFactor = baseInfo.K.ToString(); ;
-            voltageUncertaintyBudgetTable.ExpandedUncertainty = (baseInfo.K * combinedUncertaintyV).ToString("e3");
-            for (int i = 0; i < turV.Count; i++)
-            {
-                var data = new UncertaintyBudgetTable.UncertaintyBudgetTableData();
-                var tv = turV[i];
-                data.UncertaintyContributors = tv.UncertaintyContributors;
-                data.Value = tv.Value.ToString("e3");
-                data.SensitivityCoefficient = tv.SensitivityCoefficient.ToString();
-                data.Unit = tv.Unit;
-                data.Type = tv.Type;
-                data.Distribution = tv.Distribution;
-                if (tv.UncertaintyContributors.Equals("Resolution"))
+                #region Data Sheet
+                void CalculateVoltage(string mode, int tableIndex, int DecimalPlace)
                 {
-                    data.CoverageFactor = Math.Sqrt(12).ToString("f3");
-                }
-                else
-                {
-                    data.CoverageFactor = tv.Divisor.ToString();
-                }
-                data.StdUncertainty = tv.StdUncertainty.ToString("e3");
-                data.Significance = (Math.Pow(tv.StdUncertainty, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3");
-                voltageUncertaintyBudgetTable.Datas.Add(data);
-            }
-            voltageUncertaintyBudgetTable.TesterResolutionSignificance = (Math.Pow(vstd, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3");
-            voltageUncertaintyBudgetTable.RepeatabilityOfReadingSignificance = (Math.Pow(vror, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3");
-            model.VoltageUncertaintyBudgetTables = voltageUncertaintyBudgetTable;
-            #endregion
-
-            #region Current
-            var currentUncertaintyBudgetTable = new UncertaintyBudgetTable();
-            var cvv = 2 * (double)c.FirstOrDefault().Scale / 1000 / Math.Pow(2, baseInfo.AmmeterBits);
-            var cstd = 2 * (double)c.FirstOrDefault().Scale / 1000 / (Math.Pow(2, baseInfo.AmmeterBits) * Math.Sqrt(12));
-            currentUncertaintyBudgetTable.Value = $"{cscale}mA";
-            currentUncertaintyBudgetTable.TesterResolutionValue = cvv.ToString("e3");
-            currentUncertaintyBudgetTable.TesterResolutionStdUncertainty = cstd.ToString("e3");
-            var cmdcv = plcrmd.Where(d => d.CommandedValue.Equals(cscale) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals("Charge") && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
-            double cror;
-            if (cmdcv.Count >= 6)//贝塞尔公式法
-            {
-                var cavg = cmdcv.Sum(c => c.StandardValue) / cmdcv.Count / 1000;
-                cror = Math.Sqrt(cmdcv.Select(c => Math.Pow(c.StandardValue / 1000 - cavg, 2)).Sum() / (cmdcv.Count - 1));
-                currentUncertaintyBudgetTable.RepeatabilityOfReadingValue = cror.ToString("e3");
-                currentUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = cror.ToString("e3");
-            }
-            else//极差法
-            {
-                var poorCoefficient = PoorCoefficients[cmdcv.Count];
-                var cmdsv = cmdcv.Select(c => c.StandardValue / 1000).ToList();
-                var R = cmdsv.Max() - cmdsv.Min();
-                var u2 = R / poorCoefficient;
-                cror = u2;
-                currentUncertaintyBudgetTable.RepeatabilityOfReadingValue = u2.ToString("e3");
-                currentUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = u2.ToString("e3");
-            }
-
-            turA = turA.Where(a => a.TestPoint * 1000 == cscale).ToList();
-            if (turA.Count > 2)
-            {
-                var turAOne = turA.GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                if (turAOne.Count > 2)
-                {
-                    turA = turA.OrderBy(t => t.Range).Take(2).ToList();
-                }
-                else
-                {
-                    turA = turAOne;
-                }
-            }
-            var combinedUncertaintyA = Math.Sqrt(turA.Sum(c => Math.Pow(c.StdUncertainty, 2)) + Math.Pow(cstd, 2) + Math.Pow(cror, 2));
-            currentUncertaintyBudgetTable.CombinedUncertainty = combinedUncertaintyA.ToString("e3");
-            currentUncertaintyBudgetTable.CombinedUncertaintySignificance = "100.000%";
-            currentUncertaintyBudgetTable.CoverageFactor = baseInfo.K.ToString(); ;
-            currentUncertaintyBudgetTable.ExpandedUncertainty = (baseInfo.K * combinedUncertaintyA).ToString("e3");
-
-            for (int i = 0; i < turA.Count; i++)
-            {
-                var data = new UncertaintyBudgetTable.UncertaintyBudgetTableData();
-                var ta = turA[i];
-
-                data.UncertaintyContributors = ta.UncertaintyContributors;
-                data.Value = ta.Value.ToString("e3");
-                data.SensitivityCoefficient = ta.SensitivityCoefficient.ToString();
-                data.Unit = ta.Unit;
-                data.Type = ta.Type;
-                data.Distribution = ta.Distribution;
-                data.CoverageFactor = ta.Divisor.ToString();
-                data.StdUncertainty = ta.StdUncertainty.ToString("e3");
-                data.Significance = (Math.Pow(ta.StdUncertainty, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3");
-                currentUncertaintyBudgetTable.Datas.Add(data);
-            }
-            currentUncertaintyBudgetTable.TesterResolutionSignificance = (Math.Pow(cstd, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3");
-            currentUncertaintyBudgetTable.RepeatabilityOfReadingSignificance = (Math.Pow(cror, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3");
-            model.CurrentUncertaintyBudgetTables = currentUncertaintyBudgetTable;
-            #endregion
-
-            #endregion
-            #endregion
-
-            #region Data Sheet
-            void CalculateVoltage(string mode, int tableIndex, int DecimalPlace)
-            {
-                int j = 0;
-                int l = 1;
-                foreach (var item in plcGroupData)
-                {
-                    var data = item.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel).ToList();
-                    foreach (var item2 in data)
+                    int j = 0;
+                    int l = 1;
+                    foreach (var item in plcGroupData)
                     {
-                        var cvDataList = item2.OrderBy(dd => dd.CommandedValue).ToList();
-                        foreach (var cvData in cvDataList)
+                        var data = item.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel).ToList();
+                        foreach (var item2 in data)
                         {
-                            //var cvCHH = $"{l}-{cvData.Channel}";
-                            var cvCHH = $"{item.Key}-{cvData.Channel}";
-                            var cvRange = cvData.Scale;
-                            var cvIndication = cvData.MeasuredValue;
-                            var cvMeasuredValue = cvData.StandardValue;
-                            var cvError = (cvIndication - cvMeasuredValue) * 1000;
-                            double cvAcceptance = 0;
-                            var cvAcceptanceStr = "";
-                            var plcrmd = plcRepetitiveMeasurementGroupData.First(a => a.Key.Equals(cvData.PclNo));
-                            var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals(mode) && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
-                            double ror;
-                            if (baseInfo.RepetitiveMeasurementsCount >= 6)//贝塞尔公式法
+                            var cvDataList = item2.OrderBy(dd => dd.CommandedValue).ToList();
+                            foreach (var cvData in cvDataList)
                             {
-                                var vavg = mdcv.Sum(c => c.StandardValue) / mdcv.Count;
-                                ror = Math.Sqrt(mdcv.Select(c => Math.Pow(c.StandardValue - vavg, 2)).Sum() / (mdcv.Count - 1));
-                            }
-                            else//极差法
-                            {
-                                var poorCoefficient = PoorCoefficients[mdcv.Count];
-                                var mdsv = mdcv.Select(c => c.StandardValue).ToList();
-                                var R = mdsv.Max() - mdsv.Min();
-                                var u2 = R / poorCoefficient;
-                                ror = u2;
-                            }
-                            //计算不确定度
-                            var cvUncertaintyStr = (baseInfo.K * 1000 * Math.Sqrt(Math.Pow(cvData.StandardTotalU / 2, 2) + Math.Pow(vstd, 2) + Math.Pow(ror, 2))).ToString("G2");
-                            var cvUncertainty = double.Parse(cvUncertaintyStr);
-                            var T = double.Parse((cvData.Scale * baseInfo.RatedAccuracyV * 1000).ToString("G2"));
-                            var cvConclustion = "";
-                            //计算接受限
-                            if (baseInfo.AcceptedTolerance.Equals("0"))
-                            {
-                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyV * 1000;
-                                cvAcceptance = accpetedTolerance;
-                            }
-                            else if (baseInfo.AcceptedTolerance.Equals("1"))
-                            {
-                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyV * 1000 - cvUncertainty;
-                                cvAcceptance = accpetedTolerance;
-                            }
-                            else if (baseInfo.AcceptedTolerance.Equals("M2%"))
-                            {
-                                var m2 = 1.04 - Math.Pow(Math.E, 0.38 * Math.Log(cvData.Scale * baseInfo.RatedAccuracyV * 2 / (2 * cvUncertainty / 1000)) - 0.54);
-                                if (m2 < 0)
+                                //var cvCHH = $"{l}-{cvData.Channel}";
+                                var cvCHH = $"{item.Key}-{cvData.Channel}";
+                                var cvRange = cvData.Scale;
+                                var cvIndication = cvData.MeasuredValue;
+                                var cvMeasuredValue = cvData.StandardValue;
+                                var cvError = (cvIndication - cvMeasuredValue) * 1000;
+                                double cvAcceptance = 0;
+                                var cvAcceptanceStr = "";
+                                var plcrmd = plcRepetitiveMeasurementGroupData.First(a => a.Key.Equals(cvData.PclNo));
+                                var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals(mode) && d.VerifyType.Equals("Post-Calibration") && d.Scale.Equals(cvData.Scale)).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
+                                double ror;
+                                if (baseInfo.RepetitiveMeasurementsCount >= 6)//贝塞尔公式法
+                                {
+                                    var vavg = mdcv.Sum(c => c.StandardValue) / mdcv.Count;
+                                    ror = Math.Sqrt(mdcv.Select(c => Math.Pow(c.StandardValue - vavg, 2)).Sum() / (mdcv.Count - 1));
+                                }
+                                else//极差法
+                                {
+                                    var poorCoefficient = PoorCoefficients[mdcv.Count];
+                                    var mdsv = mdcv.Select(c => c.StandardValue).ToList();
+                                    var R = mdsv.Max() - mdsv.Min();
+                                    var u2 = R / poorCoefficient;
+                                    ror = u2;
+                                }
+                                //计算不确定度
+                                var cvUncertaintyStr = (baseInfo.K * 1000 * Math.Sqrt(Math.Pow(cvData.StandardTotalU / 2, 2) + Math.Pow(vstd, 2) + Math.Pow(ror, 2))).ToString("G2");
+                                var cvUncertainty = double.Parse(cvUncertaintyStr);
+                                var T = double.Parse((cvData.Scale * baseInfo.RatedAccuracyV * 1000).ToString("G2"));
+                                var cvConclustion = "";
+                                //计算接受限
+                                if (baseInfo.AcceptedTolerance.Equals("0"))
                                 {
                                     var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyV * 1000;
                                     cvAcceptance = accpetedTolerance;
                                 }
-                                else
+                                else if (baseInfo.AcceptedTolerance.Equals("1"))
                                 {
-                                    var accpetedTolerance = (cvData.Scale * baseInfo.RatedAccuracyV * 1000 - cvUncertainty) * m2;
+                                    var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyV * 1000 - cvUncertainty;
                                     cvAcceptance = accpetedTolerance;
                                 }
-                            }
-                            else//默认为0的处理方法
-                            {
+                                else if (baseInfo.AcceptedTolerance.Equals("M2%"))
+                                {
+                                    var m2 = 1.04 - Math.Pow(Math.E, 0.38 * Math.Log(cvData.Scale * baseInfo.RatedAccuracyV * 2 / (2 * cvUncertainty / 1000)) - 0.54);
+                                    if (m2 < 0)
+                                    {
+                                        var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyV * 1000;
+                                        cvAcceptance = accpetedTolerance;
+                                    }
+                                    else
+                                    {
+                                        var accpetedTolerance = (cvData.Scale * baseInfo.RatedAccuracyV * 1000 - cvUncertainty) * m2;
+                                        cvAcceptance = accpetedTolerance;
+                                    }
+                                }
+                                else//默认为0的处理方法
+                                {
 
-                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyV * 1000;
-                                cvAcceptance = accpetedTolerance;
-                            }
-                            //约分
-                            //var (IndicationReduce, MeasuredValueReduce, ErrorReduce, AcceptanceReduce, UncertaintyReduce) = ReduceVoltage(cvIndication, cvMeasuredValue, cvError, cvAcceptance, cvUncertainty);
+                                    var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyV * 1000;
+                                    cvAcceptance = accpetedTolerance;
+                                }
+                                //约分
+                                //var (IndicationReduce, MeasuredValueReduce, ErrorReduce, AcceptanceReduce, UncertaintyReduce) = ReduceVoltage(cvIndication, cvMeasuredValue, cvError, cvAcceptance, cvUncertainty);
 
-                            var IndicationReduce = cvIndication.ToString($"F{DecimalPlace + 3}");
-                            var MeasuredValueReduce = cvMeasuredValue.ToString($"F{DecimalPlace + 3}");
-                            var ErrorReduce = (Convert.ToDouble(IndicationReduce) * 1000 - Convert.ToDouble(MeasuredValueReduce) * 1000).ToString($"F{DecimalPlace}");
-                            var AcceptanceReduce = cvAcceptance.ToString($"F{DecimalPlace}");
-                            var UncertaintyReduce = cvUncertainty.ToString($"F{DecimalPlace}");
+                                var IndicationReduce = cvIndication.ToString($"F{DecimalPlace + 3}");
+                                var MeasuredValueReduce = cvMeasuredValue.ToString($"F{DecimalPlace + 3}");
+                                var ErrorReduce = (Convert.ToDouble(IndicationReduce) * 1000 - Convert.ToDouble(MeasuredValueReduce) * 1000).ToString($"F{DecimalPlace}");
+                                var AcceptanceReduce = cvAcceptance.ToString($"F{DecimalPlace}");
+                                var UncertaintyReduce = cvUncertainty.ToString($"F{DecimalPlace}");
 
-                            cvAcceptanceStr = $"±{AcceptanceReduce}";
-                            //计算判定结果
-                            if (baseInfo.AcceptedTolerance.Equals("0"))
-                            {
-                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
-                                {
-                                    cvConclustion = "P";
-                                }
-                                else
-                                {
-                                    cvConclustion = "F";
-                                }
-                            }
-                            else if (baseInfo.AcceptedTolerance.Equals("1"))
-                            {
-                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
-                                {
-                                    cvConclustion = "P";
-                                }
-                                else if (Math.Abs(double.Parse(ErrorReduce)) >= Math.Abs(double.Parse(AcceptanceReduce)) && Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(T))
-                                {
-                                    cvConclustion = "P*";
-                                }
-                                else
-                                {
-                                    cvConclustion = "F";
-                                }
-                            }
-                            else if (baseInfo.AcceptedTolerance.Equals("M2%"))
-                            {
-                                var m2 = 1.04 - Math.Pow(Math.E, 0.38 * Math.Log(cvData.Scale * baseInfo.RatedAccuracyV * 2 / (2 * cvUncertainty / 1000)) - 0.54);
-                                if (m2 < 0)
+                                cvAcceptanceStr = $"±{AcceptanceReduce}";
+                                //计算判定结果
+                                if (baseInfo.AcceptedTolerance.Equals("0"))
                                 {
                                     if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
                                     {
@@ -3283,7 +3491,7 @@ namespace OpenAuth.App
                                         cvConclustion = "F";
                                     }
                                 }
-                                else
+                                else if (baseInfo.AcceptedTolerance.Equals("1"))
                                 {
                                     if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
                                     {
@@ -3298,172 +3506,172 @@ namespace OpenAuth.App
                                         cvConclustion = "F";
                                     }
                                 }
-                            }
-                            else//默认为0的处理方法
-                            {
-
-                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                else if (baseInfo.AcceptedTolerance.Equals("M2%"))
                                 {
-                                    cvConclustion = "P";
+                                    var m2 = 1.04 - Math.Pow(Math.E, 0.38 * Math.Log(cvData.Scale * baseInfo.RatedAccuracyV * 2 / (2 * cvUncertainty / 1000)) - 0.54);
+                                    if (m2 < 0)
+                                    {
+                                        if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                        {
+                                            cvConclustion = "P";
+                                        }
+                                        else
+                                        {
+                                            cvConclustion = "F";
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                        {
+                                            cvConclustion = "P";
+                                        }
+                                        else if (Math.Abs(double.Parse(ErrorReduce)) >= Math.Abs(double.Parse(AcceptanceReduce)) && Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(T))
+                                        {
+                                            cvConclustion = "P*";
+                                        }
+                                        else
+                                        {
+                                            cvConclustion = "F";
+                                        }
+                                    }
+                                }
+                                else//默认为0的处理方法
+                                {
+
+                                    if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                    {
+                                        cvConclustion = "P";
+                                    }
+                                    else
+                                    {
+                                        cvConclustion = "F";
+                                    }
+                                }
+
+                                if (mode.Equals("Charge"))
+                                {
+                                    model.ChargingVoltage.Add(new DataSheet
+                                    {
+                                        Sort1 = item.Key,
+                                        Sort2 = cvData.Channel,
+                                        Channel = cvCHH,
+                                        Range = cvRange.ToString(),
+                                        Indication = IndicationReduce,
+                                        MeasuredValue = MeasuredValueReduce,
+                                        Error = ErrorReduce,
+                                        Acceptance = cvAcceptanceStr,
+                                        Uncertainty = UncertaintyReduce,
+                                        Conclusion = cvConclustion
+                                    });
                                 }
                                 else
                                 {
-                                    cvConclustion = "F";
+                                    model.DischargingVoltage.Add(new DataSheet
+                                    {
+                                        Sort1 = item.Key,
+                                        Sort2 = cvData.Channel,
+                                        Channel = cvCHH,
+                                        Range = cvRange.ToString(),
+                                        Indication = IndicationReduce,
+                                        MeasuredValue = MeasuredValueReduce,
+                                        Error = ErrorReduce,
+                                        Acceptance = cvAcceptanceStr,
+                                        Uncertainty = UncertaintyReduce,
+                                        Conclusion = cvConclustion
+                                    });
                                 }
+                                j++;
                             }
-
-                            if (mode.Equals("Charge"))
-                            {
-                                model.ChargingVoltage.Add(new DataSheet
-                                {
-                                    Sort1 = item.Key,
-                                    Sort2 = cvData.Channel,
-                                    Channel = cvCHH,
-                                    Range = cvRange.ToString(),
-                                    Indication = IndicationReduce,
-                                    MeasuredValue = MeasuredValueReduce,
-                                    Error = ErrorReduce,
-                                    Acceptance = cvAcceptanceStr,
-                                    Uncertainty = UncertaintyReduce,
-                                    Conclusion = cvConclustion
-                                });
-                            }
-                            else
-                            {
-                                model.DischargingVoltage.Add(new DataSheet
-                                {
-                                    Sort1 = item.Key,
-                                    Sort2 = cvData.Channel,
-                                    Channel = cvCHH,
-                                    Range = cvRange.ToString(),
-                                    Indication = IndicationReduce,
-                                    MeasuredValue = MeasuredValueReduce,
-                                    Error = ErrorReduce,
-                                    Acceptance = cvAcceptanceStr,
-                                    Uncertainty = UncertaintyReduce,
-                                    Conclusion = cvConclustion
-                                });
-                            }
-                            j++;
                         }
+                        l++;
                     }
-                    l++;
                 }
-            }
-            void CalculateCurrent(string mode, int tableIndex, int DecimalPlace, int Cunit)
-            {
-                int j = 0;
-                int l = 1;
-                foreach (var item in plcGroupData)
+                void CalculateCurrent(string mode, int tableIndex, int DecimalPlace, int Cunit)
                 {
-                    var data = item.Where(p => p.VoltsorAmps.Equals("Amps") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel);
-                    foreach (var item2 in data)
+                    int j = 0;
+                    int l = 1;
+                    foreach (var item in plcGroupData)
                     {
-                        var cvDataList = item2.OrderBy(dd => dd.Scale).ThenBy(dd => dd.CommandedValue).ToList();
-                        foreach (var cvData in cvDataList)
+                        var data = item.Where(p => p.VoltsorAmps.Equals("Amps") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel);
+                        foreach (var item2 in data)
                         {
-                            //var CHH = $"{l}-{cvData.Channel}";
-                            var CHH = $"{item.Key}-{cvData.Channel}";
-                            var Range = cvData.Scale;
-                            var Indication = cvData.MeasuredValue;
-                            var MeasuredValue = cvData.StandardValue;
-                            var Error = Indication - MeasuredValue;
-                            double Acceptance = 0;
-                            var AcceptanceStr = "";
+                            var cvDataList = item2.OrderBy(dd => dd.Scale).ThenBy(dd => dd.CommandedValue).ToList();
+                            foreach (var cvData in cvDataList)
+                            {
+                                //var CHH = $"{l}-{cvData.Channel}";
+                                var CHH = $"{item.Key}-{cvData.Channel}";
+                                var Range = cvData.Scale;
+                                var Indication = cvData.MeasuredValue;
+                                var MeasuredValue = cvData.StandardValue;
+                                var Error = Indication - MeasuredValue;
+                                double Acceptance = 0;
+                                var AcceptanceStr = "";
 
-                            var plcrmd = plcRepetitiveMeasurementGroupData.First(a => a.Key.Equals(cvData.PclNo));
-                            var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals(mode) && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
-                            double ror;
-                            if (baseInfo.RepetitiveMeasurementsCount >= 6)//贝塞尔公式法
-                            {
-                                var avg = mdcv.Sum(c => c.StandardValue) / mdcv.Count / 1000;
-                                ror = Math.Sqrt(mdcv.Select(c => Math.Pow(c.StandardValue / 1000 - avg, 2)).Sum() / (mdcv.Count - 1));
-                            }
-                            else//极差法
-                            {
-                                var poorCoefficient = PoorCoefficients[mdcv.Count];
-                                var mdsv = mdcv.Select(c => c.StandardValue / 1000).ToList();
-                                var R = mdsv.Max() - mdsv.Min();
-                                var u2 = R / poorCoefficient;
-                                ror = u2;
-                            }
-                            //计算不确定度
-                            var UncertaintyStr = (baseInfo.K * 1000 * Math.Sqrt(Math.Pow(cvData.StandardTotalU / 2, 2) + Math.Pow(cstd, 2) + Math.Pow(ror, 2))).ToString();
-                            var Uncertainty = double.Parse(UncertaintyStr);
-                            var T = double.Parse((cvData.Scale * baseInfo.RatedAccuracyC).ToString("G2"));
-                            var Conclustion = "";
-                            //计算接受限
-                            if (baseInfo.AcceptedTolerance.Equals("0"))
-                            {
-                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC;
-                                Acceptance = accpetedTolerance;
-                            }
-                            else if (baseInfo.AcceptedTolerance.Equals("1"))
-                            {
-                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC - Uncertainty;
-                                Acceptance = accpetedTolerance;
-                            }
-                            else if (baseInfo.AcceptedTolerance.Equals("M2%"))
-                            {
-                                var m2 = 1.04 - Math.Pow(Math.E, 0.38 * Math.Log(cvData.Scale * baseInfo.RatedAccuracyC * 2 / (2 * Uncertainty / 1000)) - 0.54);
-                                if (m2 < 0)
+                                var plcrmd = plcRepetitiveMeasurementGroupData.First(a => a.Key.Equals(cvData.PclNo));
+                                var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals(mode) && d.VerifyType.Equals("Post-Calibration") && d.Scale.Equals(cvData.Scale)).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
+                                double ror;
+                                if (baseInfo.RepetitiveMeasurementsCount >= 6)//贝塞尔公式法
+                                {
+                                    var avg = mdcv.Sum(c => c.StandardValue) / mdcv.Count / 1000;
+                                    ror = Math.Sqrt(mdcv.Select(c => Math.Pow(c.StandardValue / 1000 - avg, 2)).Sum() / (mdcv.Count - 1));
+                                }
+                                else//极差法
+                                {
+                                    var poorCoefficient = PoorCoefficients[mdcv.Count];
+                                    var mdsv = mdcv.Select(c => c.StandardValue / 1000).ToList();
+                                    var R = mdsv.Max() - mdsv.Min();
+                                    var u2 = R / poorCoefficient;
+                                    ror = u2;
+                                }
+                                //计算不确定度
+                                var UncertaintyStr = (baseInfo.K * 1000 * Math.Sqrt(Math.Pow(cvData.StandardTotalU / 2, 2) + Math.Pow(cstd, 2) + Math.Pow(ror, 2))).ToString();
+                                var Uncertainty = double.Parse(UncertaintyStr);
+                                var T = double.Parse((cvData.Scale * baseInfo.RatedAccuracyC).ToString("G2"));
+                                var Conclustion = "";
+                                //计算接受限
+                                if (baseInfo.AcceptedTolerance.Equals("0"))
                                 {
                                     var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC;
                                     Acceptance = accpetedTolerance;
                                 }
-                                else
+                                else if (baseInfo.AcceptedTolerance.Equals("1"))
                                 {
-                                    var accpetedTolerance = (cvData.Scale * baseInfo.RatedAccuracyC - Uncertainty) * m2;
+                                    var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC - Uncertainty;
                                     Acceptance = accpetedTolerance;
                                 }
-                            }
-                            else//默认为0的处理方法
-                            {
-                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC;
-                                Acceptance = accpetedTolerance;
-                            }
-                            //约分
-                            //var (IndicationReduce, MeasuredValueReduce, ErrorReduce, AcceptanceReduce, UncertaintyReduce) = ReduceCurrent(Math.Abs(Indication), Math.Abs(MeasuredValue), Error, Acceptance, Uncertainty);
-                            string IndicationReduce = "", MeasuredValueReduce = "", ErrorReduce = "", AcceptanceReduce = "", UncertaintyReduce = "";
+                                else if (baseInfo.AcceptedTolerance.Equals("M2%"))
+                                {
+                                    var m2 = 1.04 - Math.Pow(Math.E, 0.38 * Math.Log(cvData.Scale * baseInfo.RatedAccuracyC * 2 / (2 * Uncertainty / 1000)) - 0.54);
+                                    if (m2 < 0)
+                                    {
+                                        var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC;
+                                        Acceptance = accpetedTolerance;
+                                    }
+                                    else
+                                    {
+                                        var accpetedTolerance = (cvData.Scale * baseInfo.RatedAccuracyC - Uncertainty) * m2;
+                                        Acceptance = accpetedTolerance;
+                                    }
+                                }
+                                else//默认为0的处理方法
+                                {
+                                    var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC;
+                                    Acceptance = accpetedTolerance;
+                                }
+                                //约分
+                                //var (IndicationReduce, MeasuredValueReduce, ErrorReduce, AcceptanceReduce, UncertaintyReduce) = ReduceCurrent(Math.Abs(Indication), Math.Abs(MeasuredValue), Error, Acceptance, Uncertainty);
+                                string IndicationReduce = "", MeasuredValueReduce = "", ErrorReduce = "", AcceptanceReduce = "", UncertaintyReduce = "";
 
-                            IndicationReduce = (Math.Abs(Indication) / Math.Pow(1000, Cunit)).ToString($"F{DecimalPlace + 3}");
-                            MeasuredValueReduce = (Math.Abs(MeasuredValue) / Math.Pow(1000, Cunit)).ToString($"F{DecimalPlace + 3}");
-                            ErrorReduce = (Convert.ToDouble(IndicationReduce) * 1000 - Convert.ToDouble(MeasuredValueReduce) * 1000).ToString($"F{DecimalPlace}");
-                            AcceptanceReduce = (Acceptance / Math.Pow(1000, Cunit - 1)).ToString($"F{DecimalPlace}");
-                            UncertaintyReduce = (Uncertainty / Math.Pow(1000, Cunit - 1)).ToString($"F{DecimalPlace}");
+                                IndicationReduce = (Math.Abs(Indication) / Math.Pow(1000, Cunit)).ToString($"F{DecimalPlace + 3}");
+                                MeasuredValueReduce = (Math.Abs(MeasuredValue) / Math.Pow(1000, Cunit)).ToString($"F{DecimalPlace + 3}");
+                                ErrorReduce = (Convert.ToDouble(IndicationReduce) * 1000 - Convert.ToDouble(MeasuredValueReduce) * 1000).ToString($"F{DecimalPlace}");
+                                AcceptanceReduce = (Acceptance / Math.Pow(1000, Cunit - 1)).ToString($"F{DecimalPlace}");
+                                UncertaintyReduce = (Uncertainty / Math.Pow(1000, Cunit - 1)).ToString($"F{DecimalPlace}");
 
-                            AcceptanceStr = $"±{AcceptanceReduce}";
-                            //计算判定结果
-                            if (baseInfo.AcceptedTolerance.Equals("0"))
-                            {
-                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
-                                {
-                                    Conclustion = "P";
-                                }
-                                else
-                                {
-                                    Conclustion = "F";
-                                }
-                            }
-                            else if (baseInfo.AcceptedTolerance.Equals("1"))
-                            {
-                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
-                                {
-                                    Conclustion = "P";
-                                }
-                                else if (Math.Abs(double.Parse(ErrorReduce)) >= Math.Abs(double.Parse(AcceptanceReduce)) && Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(T))
-                                {
-                                    Conclustion = "P*";
-                                }
-                                else
-                                {
-                                    Conclustion = "F";
-                                }
-                            }
-                            else if (baseInfo.AcceptedTolerance.Equals("M2%"))
-                            {
-                                var m2 = 1.04 - Math.Pow(Math.E, 0.38 * Math.Log(cvData.Scale / 1000 * baseInfo.RatedAccuracyC * 2 / (2 * Uncertainty / 1000)) - 0.54);
-                                if (m2 < 0)
+                                AcceptanceStr = $"±{AcceptanceReduce}";
+                                //计算判定结果
+                                if (baseInfo.AcceptedTolerance.Equals("0"))
                                 {
                                     if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
                                     {
@@ -3474,7 +3682,7 @@ namespace OpenAuth.App
                                         Conclustion = "F";
                                     }
                                 }
-                                else
+                                else if (baseInfo.AcceptedTolerance.Equals("1"))
                                 {
                                     if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
                                     {
@@ -3489,112 +3697,147 @@ namespace OpenAuth.App
                                         Conclustion = "F";
                                     }
                                 }
-                            }
-                            else//默认为0的处理方法
-                            {
-                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                else if (baseInfo.AcceptedTolerance.Equals("M2%"))
                                 {
-                                    Conclustion = "P";
+                                    var m2 = 1.04 - Math.Pow(Math.E, 0.38 * Math.Log(cvData.Scale / 1000 * baseInfo.RatedAccuracyC * 2 / (2 * Uncertainty / 1000)) - 0.54);
+                                    if (m2 < 0)
+                                    {
+                                        if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                        {
+                                            Conclustion = "P";
+                                        }
+                                        else
+                                        {
+                                            Conclustion = "F";
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                        {
+                                            Conclustion = "P";
+                                        }
+                                        else if (Math.Abs(double.Parse(ErrorReduce)) >= Math.Abs(double.Parse(AcceptanceReduce)) && Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(T))
+                                        {
+                                            Conclustion = "P*";
+                                        }
+                                        else
+                                        {
+                                            Conclustion = "F";
+                                        }
+                                    }
+                                }
+                                else//默认为0的处理方法
+                                {
+                                    if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                    {
+                                        Conclustion = "P";
+                                    }
+                                    else
+                                    {
+                                        Conclustion = "F";
+                                    }
+                                }
+
+                                if (mode.Equals("Charge"))
+                                {
+                                    model.ChargingCurrent.Add(new DataSheet
+                                    {
+                                        Sort1 = item.Key,
+                                        Sort2 = cvData.Channel,
+                                        Channel = CHH,
+                                        Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((decimal)Range / 1000).ToString(),
+                                        Indication = IndicationReduce,
+                                        MeasuredValue = MeasuredValueReduce,
+                                        Error = ErrorReduce,
+                                        Acceptance = AcceptanceStr,
+                                        Uncertainty = UncertaintyReduce,
+                                        Conclusion = Conclustion
+                                    });
                                 }
                                 else
                                 {
-                                    Conclustion = "F";
+                                    model.DischargingCurrent.Add(new DataSheet
+                                    {
+                                        Sort1 = item.Key,
+                                        Sort2 = cvData.Channel,
+                                        Channel = CHH,
+                                        Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((decimal)Range / 1000).ToString(),
+                                        Indication = IndicationReduce,
+                                        MeasuredValue = MeasuredValueReduce,
+                                        Error = ErrorReduce,
+                                        Acceptance = AcceptanceStr,
+                                        Uncertainty = UncertaintyReduce,
+                                        Conclusion = Conclustion
+                                    });
                                 }
+                                j++;
                             }
-
-                            if (mode.Equals("Charge"))
-                            {
-                                model.ChargingCurrent.Add(new DataSheet
-                                {
-                                    Sort1 = item.Key,
-                                    Sort2 = cvData.Channel,
-                                    Channel = CHH,
-                                    Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((decimal)Range / 1000).ToString(),
-                                    Indication = IndicationReduce,
-                                    MeasuredValue = MeasuredValueReduce,
-                                    Error = ErrorReduce,
-                                    Acceptance = AcceptanceStr,
-                                    Uncertainty = UncertaintyReduce,
-                                    Conclusion = Conclustion
-                                });
-                            }
-                            else
-                            {
-                                model.DischargingCurrent.Add(new DataSheet
-                                {
-                                    Sort1 = item.Key,
-                                    Sort2 = cvData.Channel,
-                                    Channel = CHH,
-                                    Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((decimal)Range / 1000).ToString(),
-                                    Indication = IndicationReduce,
-                                    MeasuredValue = MeasuredValueReduce,
-                                    Error = ErrorReduce,
-                                    Acceptance = AcceptanceStr,
-                                    Uncertainty = UncertaintyReduce,
-                                    Conclusion = Conclustion
-                                });
-                            }
-                            j++;
                         }
+                        l++;
                     }
-                    l++;
                 }
+
+                var CategoryObj = await GetCategory(baseInfo.TesterModel);
+
+                #region Charging Voltage
+                CalculateVoltage("Charge", 8, int.Parse(CategoryObj.DtValue));
+                model.ChargingVoltage = model.ChargingVoltage.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
+                #endregion
+
+                #region Discharging Voltage
+                CalculateVoltage("DisCharge", 9, int.Parse(CategoryObj.DtValue));
+                model.DischargingVoltage = model.DischargingVoltage.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
+                #endregion
+
+                #region Charging Current
+                CalculateCurrent("Charge", 10, int.Parse(CategoryObj.Description), int.Parse(CategoryObj.DtCode));
+                model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
+                #endregion
+
+                #region Discharging Current
+                CalculateCurrent("DisCharge", 10, int.Parse(CategoryObj.Description), int.Parse(CategoryObj.DtCode));
+                model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
+                //放电不确定度改为充电不确定度
+                for (int i = 0; i < model.DischargingCurrent.Count; i++)
+                {
+                    model.DischargingCurrent[i].Uncertainty = model.ChargingCurrent[i].Uncertainty;
+                }
+                #endregion
+
+
+
+                #endregion
+
+                #region 签名
+                var us = await _userSignApp.GetUserSignList(new QueryUserSignListReq { });
+                //if (baseInfo.Operator == "肖淑惠" || baseInfo.Operator == "阙勤勤")
+                //{
+                //    var name = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CalibrationCertificateSign").Select(c => c.Name).FirstOrDefaultAsync();
+                //    baseInfo.Operator = name;
+                //}
+                var calibrationTechnician = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.Issuer));
+                if (calibrationTechnician != null)
+                {
+                    model.CalibrationTechnician = await GetSignBase64(calibrationTechnician.PictureId);
+                }
+                var technicalManager = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.TechnicalManager));
+                if (technicalManager != null)
+                {
+                    model.TechnicalManager = await GetSignBase64(technicalManager.PictureId);
+                }
+                var approvalDirector = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.ApprovalDirector));
+                if (approvalDirector != null)
+                {
+                    model.ApprovalDirector = await GetSignBase64(approvalDirector.PictureId);
+                }
+                #endregion
             }
-
-            var CategoryObj = await GetCategory(baseInfo.TesterModel);
-
-            #region Charging Voltage
-            CalculateVoltage("Charge", 8, int.Parse(CategoryObj.DtValue));
-            model.ChargingVoltage = model.ChargingVoltage.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
-            #endregion
-
-            #region Discharging Voltage
-            CalculateVoltage("DisCharge", 9, int.Parse(CategoryObj.DtValue));
-            model.DischargingVoltage = model.DischargingVoltage.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
-            #endregion
-
-            #region Charging Current
-            CalculateCurrent("Charge", 10, int.Parse(CategoryObj.Description), int.Parse(CategoryObj.DtCode));
-            model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
-            #endregion
-
-            #region Discharging Current
-            CalculateCurrent("DisCharge", 10, int.Parse(CategoryObj.Description), int.Parse(CategoryObj.DtCode));
-            model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
-            //放电不确定度改为充电不确定度
-            for (int i = 0; i < model.DischargingCurrent.Count; i++)
+            catch (Exception ex)
             {
-                model.DischargingCurrent[i].Uncertainty = model.ChargingCurrent[i].Uncertainty;
+                _logger.LogError("校准公式：" + ex.Message.ToString());
             }
-            #endregion
 
-
-
-            #endregion
-
-            #region 签名
-            var us = await _userSignApp.GetUserSignList(new QueryUserSignListReq { });
-            //if (baseInfo.Operator == "肖淑惠" || baseInfo.Operator == "阙勤勤")
-            //{
-            //    var name = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CalibrationCertificateSign").Select(c => c.Name).FirstOrDefaultAsync();
-            //    baseInfo.Operator = name;
-            //}
-            var calibrationTechnician = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.Issuer));
-            if (calibrationTechnician != null)
-            {
-                model.CalibrationTechnician = await GetSignBase64(calibrationTechnician.PictureId);
-            }
-            var technicalManager = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.TechnicalManager));
-            if (technicalManager != null)
-            {
-                model.TechnicalManager = await GetSignBase64(technicalManager.PictureId);
-            }
-            var approvalDirector = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.ApprovalDirector));
-            if (approvalDirector != null)
-            {
-                model.ApprovalDirector = await GetSignBase64(approvalDirector.PictureId);
-            }
-            #endregion
             return model;
         }
 
@@ -3682,7 +3925,7 @@ namespace OpenAuth.App
         }
 
 
-        public CertinfoApp(IUnitWork unitWork, IRepository<Certinfo> repository,
+        public CertinfoApp(IUnitWork unitWork, IRepository<Certinfo> repository, ILogger<CertinfoApp> logger, DDSettingHelp dDSettingHelp,
             RevelanceManagerApp app, IAuth auth, FlowInstanceApp flowInstanceApp, CertOperationHistoryApp certOperationHistoryApp, ModuleFlowSchemeApp moduleFlowSchemeApp, NwcaliCertApp nwcaliCertApp, FileApp fileApp, UserSignApp userSignApp, ServiceOrderApp serviceOrderApp, StepVersionApp stepVersionApp, IOptions<AppSetting> appConfiguration) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
@@ -3695,6 +3938,8 @@ namespace OpenAuth.App
             _serviceOrderApp = serviceOrderApp;
             _stepVersionApp = stepVersionApp;
             _appConfiguration = appConfiguration;
+            _ddSettingHelp = dDSettingHelp;
+            _logger = logger;
         }
     }
 }

@@ -12,15 +12,15 @@ namespace OpenAuth.Repository
 
         public OpenAuthDBContext(DbContextOptions<OpenAuthDBContext> options)
             : base(options)
-        {}
-        
+        { }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<DataPrivilegeRule>()
                 .HasKey(c => new { c.Id });
             modelBuilder.Entity<WorkbenchPending>()
                 .HasKey(c => new { c.ApprovalNumber });
-            
+
         }
 
         public virtual DbSet<Application> Applications { get; set; }
@@ -46,9 +46,9 @@ namespace OpenAuth.Repository
         public virtual DbSet<SysLog> SysLogs { get; set; }
 
         public virtual DbSet<SysMessage> SysMessages { get; set; }
-        
+
         public virtual DbSet<DataPrivilegeRule> DataPrivilegeRules { get; set; }
-        
+
         public virtual DbSet<WmsInboundOrderDtbl> WmsInboundOrderDtbls { get; set; }
         public virtual DbSet<WmsInboundOrderTbl> WmsInboundOrderTbls { get; set; }
         public virtual DbSet<OpenJob> OpenJobs { get; set; }
@@ -68,14 +68,20 @@ namespace OpenAuth.Repository
         public virtual DbSet<VersionsLog> VersionsLogs { get; set; }
         public virtual DbSet<ReportInfo> ReportInfos { get; set; }
 
+        #region 钉钉
+        public virtual DbSet<DDBindUser> DDBindUsers { get; set; }
+        public virtual DbSet<DDUserMsg> DDUserMsgs { get; set; }
+        public virtual DbSet<DDDepartMsg> DDDepartMsgs { get; set; }
+        #endregion
+
         #region 客户中间商 终端关系维护表
         public virtual DbSet<ClientRelation> ClientRelations { get; set; }
         public virtual DbSet<ClientRelHistory> ClientRelHistories { get; set; }
-        public virtual DbSet<JobClientRelation>  JobClientRelations { get; set; }
+        public virtual DbSet<JobClientRelation> JobClientRelations { get; set; }
         #endregion
 
         #region 工程部相关维护表
-        public virtual DbSet<ManageAccountBind>  ManageAccountBinds  { get; set; }
+        public virtual DbSet<ManageAccountBind> ManageAccountBinds { get; set; }
         public virtual DbSet<RateDetail> RateDetails { get; set; }
         #endregion
 
