@@ -2023,7 +2023,7 @@ namespace OpenAuth.App
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
 
             //获取技术员等级
-            List<TechnicianGrades> grades = new List<TechnicianGrades>();
+            List<Settlement.Request.TechnicianGrades> grades = new List<Settlement.Request.TechnicianGrades>();
             var appuserIds = appUser.Select(c => c.AppUserId).ToList();
             var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddMinutes(5));
             var text = $"NewareApiTokenDeadline:{timespan}";
@@ -2035,7 +2035,7 @@ namespace OpenAuth.App
             JObject resObj = JObject.Parse(grade);
             if (resObj["Data"] != null)
             {
-                grades = JsonHelper.Instance.Deserialize<List<TechnicianGrades>>(resObj["Data"].ToString());
+                grades = JsonHelper.Instance.Deserialize<List<Settlement.Request.TechnicianGrades>>(resObj["Data"].ToString());
             }
 
             var outsourcObj = outsourcList.Select(o =>

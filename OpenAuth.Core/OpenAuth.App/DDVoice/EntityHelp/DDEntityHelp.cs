@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using OpenAuth.App.Request;
 
 namespace OpenAuth.App.DDVoice.EntityHelp
 {
@@ -111,7 +112,7 @@ namespace OpenAuth.App.DDVoice.EntityHelp
         /// <summary>
         /// 创建的异步发送任务Id
         /// </summary>
-        public int task_id { get; set; }
+        public long task_id { get; set; }
     }
 
     /// <summary>
@@ -122,7 +123,7 @@ namespace OpenAuth.App.DDVoice.EntityHelp
         /// <summary>
         /// 父部门id
         /// </summary>
-        public int dept_id { get; set; }
+        public long dept_id { get; set; }
 
         /// <summary>
         /// 通讯录语言
@@ -164,7 +165,7 @@ namespace OpenAuth.App.DDVoice.EntityHelp
         /// <summary>
         /// 部门Id
         /// </summary>
-        public int dept_id { get; set; }
+        public long dept_id { get; set; }
 
         /// <summary>
         /// 部门名称
@@ -174,7 +175,7 @@ namespace OpenAuth.App.DDVoice.EntityHelp
         /// <summary>
         /// 父部门id
         /// </summary>
-        public int parent_id { get; set; }
+        public long parent_id { get; set; }
 
         /// <summary>
         /// 是否同步创建一个关联此部门的企业群
@@ -190,12 +191,12 @@ namespace OpenAuth.App.DDVoice.EntityHelp
     /// <summary>
     /// 部门信息实体
     /// </summary>
-    public class DDDepartMsg 
+    public class DDDepartMsgs
     {
         /// <summary>
         /// 部门id
         /// </summary>
-        public int departId { get; set; }
+        public long departId { get; set; }
 
         /// <summary>
         /// 部门名称
@@ -211,7 +212,7 @@ namespace OpenAuth.App.DDVoice.EntityHelp
         /// <summary>
         /// 部门id
         /// </summary>
-        public int dept_id { get; set; }
+        public long dept_id { get; set; }
 
         /// <summary>
         /// 分页页码
@@ -359,7 +360,7 @@ namespace OpenAuth.App.DDVoice.EntityHelp
         /// <summary>
         /// 所属部门id列表
         /// </summary>
-        public int[] dept_id_list { get; set; }
+        public long[] dept_id_list { get; set; }
 
         /// <summary>
         /// 员工在部门中的排序
@@ -402,6 +403,9 @@ namespace OpenAuth.App.DDVoice.EntityHelp
         public bool exclusive_account { get; set; }
     }
 
+    /// <summary>
+    /// 需要绑定的用户信息
+    /// </summary>
     public class DDNeedBindUserMsg
     { 
          /// <summary>
@@ -413,5 +417,109 @@ namespace OpenAuth.App.DDVoice.EntityHelp
          /// 用户名称
          /// </summary>
          public string UserName { get; set; }
+    }
+
+    /// <summary>
+    /// 手动绑定用户参数实体
+    /// </summary>
+    public class DDUpdateBindUserParam
+    { 
+        /// <summary>
+        /// 用户Id
+        /// </summary>
+        public string UserId { get; set; }
+
+        /// <summary>
+        /// 钉钉用户Id
+        /// </summary>
+        public string DDUserId { get; set; }
+    }
+
+    /// <summary>
+    /// 钉钉用户查询实体
+    /// </summary>
+    public class QueryDDUserMsg : PageReq
+    {
+        /// <summary>
+        /// 用户名称
+        /// </summary>
+        public string UserName { get; set; }
+
+        /// <summary>
+        /// 用户Id
+        /// </summary>
+        public string UserId { get; set; }
+
+        /// <summary>
+        /// 部门名称
+        /// </summary>
+        public string DepartName { get; set; }
+
+        /// <summary>
+        /// 电话
+        /// </summary>
+        public string UserPhone { get; set; }
+    }
+
+    public class DDDepartMsgParam
+    { 
+        public long dept_id { get; set; }
+
+
+        public string language { get; set; }
+    }
+
+    public class DDDepartMsgResult
+    { 
+        public string request_id { get; set; }
+
+        public int errcode { get; set; }
+
+        public string errmsg { get; set; }
+
+        public DDDepartGetResponse result { get; set; }
+    }
+
+    public class DDDepartGetResponse
+    { 
+        public long dept_id { get; set; }
+
+        public string name { get; set; }
+
+        public long parent_id { get; set; }
+
+        public string source_identifier { get; set; }
+
+        public bool create_dept_group { get; set; }
+
+        public bool auto_add_user { get; set; }
+
+        public bool auto_approve_apply { get; set; }
+
+        public bool from_union_org { get; set; }
+
+        public string tags { get; set; }
+
+        public long order { get; set; }
+
+        public string dept_group_chat_id { get; set; }
+
+        public bool group_contain_sub_dept { get; set; }
+
+        public string org_dept_owner { get; set; }
+
+        public List<string> dept_manager_userid_list { get; set; }
+
+        public bool outer_dept { get; set; }
+
+        public List<int> outer_permit_depts { get; set; }
+
+        public List<string> outer_permit_users { get; set; }
+
+        public bool hide_dept { get; set; }
+
+        public List<string> user_permits { get; set; }
+
+        public List<int> dept_permits { get; set; }
     }
 }

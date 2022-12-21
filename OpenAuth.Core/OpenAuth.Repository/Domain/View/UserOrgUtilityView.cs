@@ -232,15 +232,15 @@ namespace OpenAuth.Repository.Domain.View
 
         public string LName { get; set; }
 
-        public string  Level { get; set; }
+        public string Level { get; set; }
 
-        public int  DutyFlag { get; set; }
+        public int DutyFlag { get; set; }
         public int IsDelete { get; set; }
     }
 
 
     public class DutyChartRequest
-    { 
+    {
         public string Month { get; set; }
         public int limit { get; set; }
         public int page { get; set; }
@@ -255,7 +255,7 @@ namespace OpenAuth.Repository.Domain.View
     public class SerieData
     {
         public string Name { get; set; }
-        public List<decimal> SerieVal { get; set; }= new List<decimal>();
+        public List<decimal> SerieVal { get; set; } = new List<decimal>();
     }
 
     public class RateTableResponse
@@ -352,15 +352,15 @@ namespace OpenAuth.Repository.Domain.View
         /// <summary>
         /// 数据
         /// </summary>
-        public string detports  { get; set; }
-}
+        public string detports { get; set; }
+    }
 
     public class DetailData
     {
         public string Time { get; set; }
         public string Name { get; set; }
         public int Flag { get; set; }
-}
+    }
 
 
     public class MaterialDataReq
@@ -448,7 +448,7 @@ namespace OpenAuth.Repository.Domain.View
 
     public class RateTableReq
     {
-        public List<RateTableExport>  texports =new List<RateTableExport>();
+        public List<RateTableExport> texports = new List<RateTableExport>();
     }
 
 

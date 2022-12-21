@@ -129,7 +129,11 @@ namespace OpenAuth.App
                         join c in UnitWork.Find<AppUserMap>(null)
                         on a.Id equals c.UserID into ac
                         from c in ac.DefaultIfEmpty()
-                        select new UserOrg { Name = a.Name, SecondId = b.SecondId, AppUserId = c.AppUserId };
+                        join o in UnitWork.Find < OpenAuth.Repository.Domain.Org >(null)
+                        on b.SecondId equals o.Id into bo
+                        from botemp in bo.DefaultIfEmpty()
+
+                        select new UserOrg {Id = a.Id, Name = a.Name, SecondId = b.SecondId, SecondName= botemp.Name, AppUserId = c.AppUserId };
 
             List<object> trees = new List<object>();
             GetTree(trees, "", org, query);
@@ -188,7 +192,8 @@ namespace OpenAuth.App
             }
             else if (user != null)
             {
-                user.Where(c => !string.IsNullOrWhiteSpace(c.SecondId) && c.SecondId == pid).ToList().ForEach(c => { trees.Add(c); });
+                user.Where(c => !string.IsNullOrWhiteSpace(c.SecondId) && c.SecondId == pid).ToList()
+                    .ForEach(c => { trees.Add(c); });
             }
 
         }

@@ -6,7 +6,7 @@ using OpenAuth.Repository.Domain;
 namespace OpenAuth.App.Response
 {
     [AutoMapTo(typeof(User))]
-    public  class UserView
+    public class UserView
     {
         /// <summary>
         /// 用户ID
@@ -83,6 +83,16 @@ namespace OpenAuth.App.Response
         /// 入职时间
         /// </summary>
         public DateTime? EntryTime { get; set; }
+
+        /// <summary>
+        /// 钉钉用户Id
+        /// </summary>
+        public string DDUserId { get; set; }
+
+        /// <summary>
+        /// 钉钉用户名称
+        /// </summary>
+        public string DDUserName { get; set; }
 
         public static implicit operator UserView(User user)
         {

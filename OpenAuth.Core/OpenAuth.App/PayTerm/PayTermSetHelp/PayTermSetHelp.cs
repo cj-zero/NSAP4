@@ -414,4 +414,79 @@ namespace OpenAuth.App.PayTerm.PayTermSetHelp
         /// </summary>
         public SaleReceHelp SaleReceHelp { get; set; }
     }
+
+    public class AddPayUsedRate 
+    {
+        /// <summary>
+        /// 付款条件实体
+        /// </summary>
+        public PayTermSave payTermSave { get; set; }
+
+        /// <summary>
+        /// 常用比例实体
+        /// </summary>
+        public PayUserRate payUserRate { get; set; }
+    }
+
+    public class DDSendSale 
+    {
+        /// <summary>
+        /// 客户编码
+        /// </summary>
+        public string CardCode { get; set; }
+
+        /// <summary>
+        /// 客户名称
+        /// </summary>
+        public string CardName { get; set; }
+
+        /// <summary>
+        /// 钉钉用户Id
+        /// </summary>
+        public string DDUserId { get; set; }
+
+        /// <summary>
+        /// 冻结时间
+        /// </summary>
+        public string FreezeDateTime { get; set; }
+    }
+
+    public class CrmOcrdHelp
+    {
+        /// <summary>
+        /// 业务员编码
+        /// </summary>
+        public int SlpCode { get; set; }
+
+        /// <summary>
+        /// 客户编码
+        /// </summary>
+        public string CardCode { get; set; }
+    }
+
+    public class SboUserHelp
+    {
+        /// <summary>
+        /// 用户Id
+        /// </summary>
+        public int user_id { get; set; }
+
+        /// <summary>
+        /// 业务员Id
+        /// </summary>
+        public int sale_id { get; set; }
+    }
+
+    public class UserHelp
+    {
+        /// <summary>
+        /// Id
+        /// </summary>
+        public string Id { get; set; }
+
+        /// <summary>
+        /// 用户Id
+        /// </summary>
+        public int User_Id { get; set; }
+    }
 }

@@ -45,5 +45,14 @@ namespace OpenAuth.App.Nwcali.Request
         public int? OrderNo { get; set; }
 
         public string VestinOrg { get; set; }
+        /// <summary>
+        /// 发起人
+        /// </summary>
+        public string CreateUser { get; set; }
+
+        /// <summary>
+        /// 处理人
+        /// </summary>
+        public string HandleUser { get; set; }
     }
 }

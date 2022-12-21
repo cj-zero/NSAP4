@@ -11,6 +11,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.SSO;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.NsapBase;
 using OpenAuth.Repository.Interface;
 
 
@@ -45,6 +46,12 @@ namespace OpenAuth.App
                            join org in UnitWork.Find<Repository.Domain.Org>(null)
                                on r.SecondId equals org.Id into orgtmp
                            from o in orgtmp.DefaultIfEmpty()
+                           join a in UnitWork.Find<DDBindUser>(null) on user.Id equals a.UserId
+                           into usera 
+                           from a  in usera.DefaultIfEmpty()
+                           join b in UnitWork.Find<DDUserMsg>(null) on a.DDUserId equals b.UserId
+                           into ab 
+                           from b in ab.DefaultIfEmpty()
                            select new
                            {
                                user.Account,
@@ -63,7 +70,9 @@ namespace OpenAuth.App
                                r.SecondId,
                                OrgId = o.Id,
                                OrgName = o.Name,
-                               user.EntryTime 
+                               user.EntryTime,
+                               DDUserId = a == null ? "" : a.DDUserId,
+                               DDUserName = b == null ? "" : b.UserName
                            };
 
             //如果请求的orgId不为空
@@ -104,11 +113,13 @@ namespace OpenAuth.App
                 Status = u.First().Status,
                 CreateTime = u.First().CreateTime,
                 CreateUser = u.First().CreateId,
-                ServiceRelations=u.First()?.ServiceRelations,
-                CardNo=u.First()?.CardNo,
+                ServiceRelations = u.First()?.ServiceRelations,
+                CardNo = u.First()?.CardNo,
                 OrganizationIds = string.Join(",", u.Select(x => x.OrgId)),
                 Organizations = string.Join(",", u.Select(x => x.OrgName)),
-                EntryTime = u.First().EntryTime
+                EntryTime = u.First().EntryTime,
+                DDUserId = u.First().DDUserId,
+                DDUserName = u.First().DDUserName
 
             });
 
@@ -116,8 +127,8 @@ namespace OpenAuth.App
             {
                 Count = userViews.Count(),
                 Data = userViews.OrderBy(u => u.Status)
-                    .Skip((request.page - 1) * request.limit)
-                    .Take(request.limit),
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit),
             };
         }
 
@@ -677,6 +688,18 @@ namespace OpenAuth.App
             return result;
         }
         /// <summary>
+        /// 根据UserId获取PassportID/AppUserID
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetAppUserIDByErpUserId(string Id)
+        {
+            var result = new TableData();
+            var userInfo = await UnitWork.Find<AppUserMap>(w => w.UserID == Id).Select(s => new {s.UserID, s.AppUserId , s.PassPortId }).FirstOrDefaultAsync();
+            result.Data = userInfo;
+            return result;
+        }
+        /// <summary>
         /// 获取erp3.0人员
         /// </summary>
         /// <param name="request"></param>
@@ -793,7 +816,7 @@ namespace OpenAuth.App
                         UnitWork.Add(new NsapUserMap { UserID = item.Id, NsapUserId = (int?)u.user_id });
                         UnitWork.Save();
                     }
-                    if (item.EntryTime == null)
+                    if (item.EntryTime != u.try_date)
                     {
                         UnitWork.Update<User>(c => c.Account == item.Account, c => new User
                         {
@@ -804,8 +827,31 @@ namespace OpenAuth.App
                 }
             }
 
+            var saleUser3 = UnitWork.Find<base_user_role>(a => a.role_id == 1).Select(a => (int?)a.user_id).ToList();
+            var listOut = erpUsers.Where(c => c.out_date.ToString() != "0000-00-00").Select(c => (int?)c.user_id).ToList();//3.0已离职
+            var saleUser4 = UnitWork.Find<NsapUserMap>(a => saleUser3.Contains(a.NsapUserId) && !listOut.Contains(a.NsapUserId)).Select(a => a.UserID).ToList();
 
+            var saleRoleId = UnitWork.Find<Role>(a => a.Name == "销售员").FirstOrDefault();
+            var saleList =  UnitWork.Find<Relevance>(a => a.Key == Define.USERROLE && a.SecondId == saleRoleId.Id).Select(a=> a.FirstId).ToList();
 
+            foreach (var item in saleUser4)
+            {
+                if (!saleList.Contains(item))
+                {
+                    Relevance relevance = new Relevance();
+                    relevance.Key = Define.USERROLE;
+                    relevance.Status = 0;
+                    relevance.OperateTime = DateTime.Now;
+                    relevance.OperatorId = "";
+                    relevance.FirstId = item;
+                    relevance.SecondId = saleRoleId.Id;
+                    relevance.ThirdId = "";
+                    relevance.ExtendInfo = "";
+                    relevance.Description = "同步ERP3.0";
+                    UnitWork.Add(relevance);
+                }
+            }
+            UnitWork.Save();
 
         }
 
@@ -856,6 +902,46 @@ namespace OpenAuth.App
                                         Email = a.Email
                                     }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
             return petitioner;
+        }
+
+
+        /// <summary>
+        /// 获取用户部门信息
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<List<UserResp>> GetUsersOrg(List<string> userId)
+        {
+
+            var userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
+                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                            select new UserResp { Id = a.FirstId ,OrgId = a.SecondId, OrgName =  c.Name }).ToList();
+            return userList;
+        }
+
+        /// <summary>
+        /// 加载用户的同部门人员
+        /// </summary>
+        public async Task<TableData> GetOrgUser(string userId)
+        {
+            TableData result = new TableData();
+            var orgId = UnitWork.Find<Relevance>(a => a.FirstId == userId && a.Key == Define.USERORG).FirstOrDefault().SecondId;
+
+            var data = from a in UnitWork.Find<Relevance>(null)
+                      join b in UnitWork.Find<User>(null) on a.FirstId equals b.Id
+                      join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                      where a.SecondId == orgId && a.Key == Define.USERORG
+                      select new
+                      {
+                          userId = b.Id,
+                          userName = b.Name,
+                          orgId = c.Id,
+                          orgName = c.Name
+
+                      };
+
+            result.Data = data;
+            return result;
         }
     }
 }

@@ -65,7 +65,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 
         /// </summary>
-        [Description("")]
-        public int? POR_LineStatus { get; set; }
+        //[Description("")]
+        //public int? POR_LineStatus { get; set; }
     }
 }

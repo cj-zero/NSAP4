@@ -11,81 +11,52 @@ using OpenAuth.App.DDVoice.EntityHelp;
 using OpenAuth.App.Interface;
 using OpenAuth.Repository.Interface;
 using OpenAuth.Repository.Domain;
+using Infrastructure.Extensions;
+using OpenAuth.App.Response;
 
 namespace OpenAuth.App.DDVoice
 {
     public class DDVoiceApp : OnlyUnitWorkBaeApp
     {
         private DDSettingHelp _ddSettingHelp;
-        private List<DDDepartMsg> afterDeptIds = new List<DDDepartMsg>();
-        private List<DDDepartMsg> originalDepart = new List<DDDepartMsg>() { new DDDepartMsg() { departId = 1, departName = "深圳市新威尔电子有限公司" } };
+        private List<DDDepartMsgs> afterDeptIds = new List<DDDepartMsgs>();
+        private List<DDDepartMsgs> originalDepart = new List<DDDepartMsgs>() { new DDDepartMsgs() { departId = 1, departName = "深圳市新威尔电子有限公司" } };
         private ILogger<DDVoiceApp> _logger;
         private IUnitWork _UnitWork;
         private IAuth _auth;
+        private string access_token;
 
         /// <summary>
         /// 构造函数
         /// </summary>
-        /// <param name="dDSettingHelp"></param>
+        /// <param name="ddSettingHelp"></param>
         /// <param name="logger"></param>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public DDVoiceApp(DDSettingHelp ddSettingHelp,ILogger<DDVoiceApp> logger, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        public DDVoiceApp(DDSettingHelp ddSettingHelp, ILogger<DDVoiceApp> logger, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
             _logger = logger;
             _UnitWork = unitWork;
             _auth = auth;
             _ddSettingHelp = ddSettingHelp;
+            this.DDLogin();
         }
 
         /// <summary>
         /// 钉钉登录
         /// </summary>
         /// <returns>返回token</returns>
-        public async Task<string> DDLogin()
+        public void DDLogin()
         {
-            var loginContext = _auth.GetCurrentUser();
-            string access_token = "";
             string appkey = _ddSettingHelp.GetDDKey("Appkey");//获取配置文件中钉钉Appkey
             string appsecret = _ddSettingHelp.GetDDKey("Appsecret");//获取配置文件中钉钉Appsecret
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
 
             //获取钉钉登录token
             DDLogin ddLogin = JsonConvert.DeserializeObject<DDLogin>(HttpHelpers.Get($"https://oapi.dingtalk.com/gettoken?appkey={appkey}&appsecret={appsecret}"));
-            if (ddLogin == null || string.IsNullOrEmpty(ddLogin.access_token))
+            if (ddLogin != null && !string.IsNullOrEmpty(ddLogin.access_token))
             {
-                //钉钉获取token失败
-                await UnitWork.AddAsync<DDSendMsgHitory>(new DDSendMsgHitory()
-                {
-                    MsgType = "钉钉获取token",
-                    MsgContent = ddLogin.errmsg,
-                    MsgResult = "失败",
-                    CreateName = loginContext.User.Name,
-                    CreateUserId = loginContext.User.Id,
-                    CreateTime = DateTime.Now
-                });
-            }
-            else
-            {
-                //钉钉获取token成功
-                await UnitWork.AddAsync<DDSendMsgHitory>(new DDSendMsgHitory()
-                {
-                    MsgType = "钉钉获取token",
-                    MsgContent = ddLogin.errmsg,
-                    MsgResult = "成功",
-                    CreateName = loginContext.User.Name,
-                    CreateUserId = loginContext.User.Id,
-                    CreateTime = DateTime.Now
-                });
-
                 access_token = ddLogin.access_token;
             }
-
-            await UnitWork.SaveAsync();
-            return access_token;
         }
 
         /// <summary>
@@ -98,7 +69,6 @@ namespace OpenAuth.App.DDVoice
         public async Task DDSendMsg(string msgType, string remarks, string userIds)
         {
             var loginContext = _auth.GetCurrentUser();
-            string access_token = await DDLogin();
             string agent_Id = _ddSettingHelp.GetDDKey("Agent_Id");
             if (loginContext == null)
             {
@@ -158,21 +128,14 @@ namespace OpenAuth.App.DDVoice
         /// </summary>
         /// <param name="dept_ids">部门id集合</param>
         /// <returns>返回所有部门id</returns>
-        public async Task<List<DDDepartMsg>> DDDepartMsg(List<DDDepartMsg> dept_ids)
+        public async Task<List<DDDepartMsgs>> DDDepartMsg(List<DDDepartMsgs> dept_ids)
         {
-            string access_token = await DDLogin();
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-
             if (access_token != "")
             {
                 try
                 {
                     DDDepartResult dDDepartResult = new DDDepartResult();
-                    foreach (DDDepartMsg dDDepartMsg in dept_ids.ToArray())
+                    foreach (DDDepartMsgs dDDepartMsg in dept_ids.ToArray())
                     {
                         //钉钉推送文本消息实体
                         DDDepartParam dDDepartParam = new DDDepartParam()
@@ -188,7 +151,7 @@ namespace OpenAuth.App.DDVoice
                         {
                             foreach (DDDepartResultMsg result in dDDepartResult.result)
                             {
-                                DDDepartMsg ddmsg = new DDDepartMsg();
+                                DDDepartMsgs ddmsg = new DDDepartMsgs();
                                 ddmsg.departId = result.dept_id;
                                 ddmsg.departName = result.name;
                                 afterDeptIds.Add(ddmsg);
@@ -198,28 +161,24 @@ namespace OpenAuth.App.DDVoice
                         }
                         else
                         {
-                            //去重获取所有部门Id
-                            return afterDeptIds.Where((x, i) => afterDeptIds.FindIndex(s => s.departId == x.departId) == i).ToList();
+                            dept_ids.Remove(dDDepartMsg);
                         }
                     }
 
-                    //钉钉操作历史记录
-                    await UnitWork.AddAsync<DDSendMsgHitory>(new DDSendMsgHitory()
+                    if (dept_ids.Count() > 0)
                     {
-                        MsgType = "钉钉获取部门列表",
-                        MsgContent = dDDepartResult.errmsg,
-                        MsgResult = dDDepartResult.errmsg == "ok" ? "成功" : "失败",
-                        CreateName = loginContext.User.Name,
-                        CreateUserId = loginContext.User.Id,
-                        CreateTime = DateTime.Now
-                    });
-
-                    await UnitWork.SaveAsync();
-                    return await DDDepartMsg(dept_ids);
+                        return await DDDepartMsg(dept_ids);
+                    }
+                    else
+                    {
+                        //去重获取所有部门Id
+                        return afterDeptIds.Where((x, i) => afterDeptIds.FindIndex(s => s.departId == x.departId) == i).ToList();
+                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex.Message.ToString());
+                    throw new Exception("获取部门列表失败");
                 }
             }
 
@@ -229,43 +188,44 @@ namespace OpenAuth.App.DDVoice
         /// <summary>
         /// 获取钉钉部门用户最新信息
         /// </summary>
+        /// <param name="departId">部门Id</param>
         /// <returns></returns>
-        public async Task GetDDLasterDepartUserMsg()
+        public async Task GetDDLasterDepartUserMsg(string departId)
         {
-            var loginContext = _auth.GetCurrentUser();       
+            var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            //获取部门用户信息，如果存在删除，拉取最新的部门用户信息
-            List<DDUserDepartMsg> ddUser = await UnitWork.Find<DDUserDepartMsg>(null).ToListAsync();
-            if (ddUser != null && ddUser.Count() > 0)
-            {
-                await DeleteUserDepart(ddUser);
-            }
-
-            //获取用户和钉钉用户绑定信息，如果存在删除，重新绑定
-            List<DDBindUser> ddBindUsers = await UnitWork.Find<DDBindUser>(null).ToListAsync();
-            if (ddBindUsers != null && ddBindUsers.Count() > 0)
-            {
-                await DeleteDDBindUser(ddBindUsers);
-            }
-
-            //部门用户信息集合
-            List<DDUserDepartMsg> departUserMsgs = new List<DDUserDepartMsg>();
-
             //获取所有部门信息
-            List<DDDepartMsg> dDDepartMsgs = await DDDepartMsg(originalDepart);
+            List<DDDepartMsgs> dDDepartMsgs = new List<DDDepartMsgs>();
+            if (string.IsNullOrEmpty(departId))
+            {
+                dDDepartMsgs = await DDDepartMsg(originalDepart);
+            }
+            else
+            {
+                List<DDDepartMsgs> dDDepartMsgsList = new List<DDDepartMsgs>();
+                dDDepartMsgsList.Add(new DDDepartMsgs() { departId = departId.ToLong(), departName = "" });
+                dDDepartMsgs = await DDDepartMsg(dDDepartMsgsList);
+            }
+
+            //用户信息集合
+            List<DDUserMsg> userMsgs = new List<DDUserMsg>();
+
+            //部门信息集合
+            List<DDDepartMsg> departMsgs = new List<DDDepartMsg>();
+
+            //返回结果信息
+            List<DDUserMsgs> dDUserMsgs = new List<DDUserMsgs>();
             try
             {
                 if (dDDepartMsgs != null && dDDepartMsgs.Count() > 0)
                 {
-                    //获取token
-                    string access_token = await DDLogin();
                     if (access_token != "")
                     {
-                        foreach (DDDepartMsg dDDepartMsg in dDDepartMsgs)
+                        foreach (DDDepartMsgs dDDepartMsg in dDDepartMsgs)
                         {
                             //返回结果实体
                             DDBaseUserResult dDBaseUserResult = new DDBaseUserResult();
@@ -287,24 +247,7 @@ namespace OpenAuth.App.DDVoice
                             //状态为ok时加载用户信息
                             if (dDBaseUserResult.errmsg == "ok")
                             {
-                                foreach (DDUserMsgs userItem in dDBaseUserResult.result.list)
-                                {
-                                    //循环获取用户信息
-                                    DDUserDepartMsg dDUserDepartMsg = new DDUserDepartMsg()
-                                    {
-                                        DepartId = dDDepartMsg.departId,
-                                        DepartName = dDDepartMsg.departName,
-                                        UserId = userItem.userid,
-                                        UserName = userItem.name,
-                                        UserPhone = userItem.mobile,
-                                        IsBind = false,
-                                        CreateUserId = loginContext.User.Id,
-                                        CreateName = loginContext.User.Name,
-                                        CreateTime = DateTime.Now
-                                    };
-
-                                    departUserMsgs.Add(dDUserDepartMsg);
-                                }
+                                dDUserMsgs.InsertRange(dDUserMsgs.Count(), dDBaseUserResult.result.list);
                             }
                             else
                             {
@@ -324,7 +267,50 @@ namespace OpenAuth.App.DDVoice
                             }
                         }
 
-                        await UnitWork.BatchAddAsync<DDUserDepartMsg>(departUserMsgs.ToArray());
+                        List<string> ddUserMsg = await UnitWork.Find<DDUserMsg>(null).Select(r => r.UserId).ToListAsync();
+                        foreach (DDUserMsgs userItem in dDUserMsgs)
+                        {
+                            //判定用户是否已经存在，不存在添加
+                            if (!ddUserMsg.Contains(userItem.userid))
+                            {
+                                //循环获取用户信息
+                                userMsgs.Add(new DDUserMsg()
+                                {
+                                    UserId = userItem.userid,
+                                    UserName = userItem.name,
+                                    UserPhone = userItem.mobile,
+                                    IsBind = false,
+                                    CreateUserId = loginContext.User.Id,
+                                    CreateName = loginContext.User.Name,
+                                    CreateTime = DateTime.Now
+                                });
+
+                                foreach (long departid in userItem.dept_id_list)
+                                {
+                                    DDDepartMsgParam dDDepartMsgParam = new DDDepartMsgParam()
+                                    {
+                                        dept_id = departid,
+                                        language = "zh_CN"
+                                    };
+
+                                    //调用钉钉官方接口获取部门下用户信息
+                                    DDDepartMsgResult dDDepartMsgResult = JsonConvert.DeserializeObject<DDDepartMsgResult>(HttpHelpers.HttpPostAsync($"https://oapi.dingtalk.com/topapi/v2/department/get?access_token={access_token}", JsonConvert.SerializeObject(dDDepartMsgParam)).Result);
+
+                                    if (dDDepartMsgResult.errmsg == "ok")
+                                    {
+                                        departMsgs.Add(new DDDepartMsg()
+                                        {
+                                            UserId = userItem.userid,
+                                            DepartId = departid.ToString(),
+                                            DepartName = dDDepartMsgResult.result.name
+                                        });
+                                    }
+                                }
+                            }
+                        }
+
+                        await UnitWork.BatchAddAsync<DDUserMsg>(userMsgs.ToArray());
+                        await UnitWork.BatchAddAsync<DDDepartMsg>(departMsgs.ToArray());
                         await UnitWork.SaveAsync();
                     }
                 }
@@ -340,8 +326,9 @@ namespace OpenAuth.App.DDVoice
         /// 自动绑定用户
         /// </summary>
         /// <returns>返回绑定结果</returns>
-        public async Task<string> GetAutoDDBindUser()
+        public async Task<TableData> GetAutoDDBindUser()
         {
+            var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -349,8 +336,8 @@ namespace OpenAuth.App.DDVoice
             }
 
             //查询部门用户信息
-            List<DDNeedBindUserMsg> ddUsers = await UnitWork.Find<DDUserDepartMsg>(r => r.IsBind == false).Select(r => new DDNeedBindUserMsg { UserId = r.UserId, UserName = r.UserName}).ToListAsync();
-            var dbContext = UnitWork.GetDbContext<ContractApply>();
+            List<DDNeedBindUserMsg> ddUsers = await UnitWork.Find<DDUserMsg>(r => r.IsBind == false).Select(r => new DDNeedBindUserMsg { UserId = r.UserId, UserName = r.UserName }).ToListAsync();
+            var dbContext = UnitWork.GetDbContext<DDBindUser>();
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
                 try
@@ -365,11 +352,23 @@ namespace OpenAuth.App.DDVoice
                             var needUsers = ddUsers.Where(r => r.UserName == item.UserName).ToList();
                             if (needUsers != null && needUsers.Count() == 1)
                             {
-                                dDBindUsers.Add(new DDBindUser()
+                                var ddBindUsers = await UnitWork.Find<DDBindUser>(r => r.UserId == item.UserId && r.DDUserId == (needUsers.FirstOrDefault()).UserId).ToListAsync();
+                                if (ddBindUsers == null || ddBindUsers.Count() == 0)
                                 {
-                                    UserId = item.UserId,
-                                    DDUserId = (needUsers.FirstOrDefault()).UserId
-                                });
+                                    dDBindUsers.Add(new DDBindUser()
+                                    {
+                                        UserId = item.UserId,
+                                        DDUserId = (needUsers.FirstOrDefault()).UserId
+                                    });
+
+                                    //将已经绑定的钉钉用户是否绑定改为true
+                                    await UnitWork.UpdateAsync<DDUserMsg>(q => q.UserId == (needUsers.FirstOrDefault()).UserId, q => new DDUserMsg
+                                    {
+                                        IsBind = true
+                                    });
+
+                                    await UnitWork.SaveAsync();
+                                }
                             }
                         }
 
@@ -377,16 +376,6 @@ namespace OpenAuth.App.DDVoice
                         if (dDBindUsers != null && dDBindUsers.Count() > 0)
                         {
                             await UnitWork.BatchAddAsync<DDBindUser>(dDBindUsers.ToArray());
-                            foreach (DDBindUser dDBindUser in dDBindUsers)
-                            {
-                                //将已经绑定的钉钉用户是否绑定改为true
-                                await UnitWork.UpdateAsync<DDUserDepartMsg>(q => q.UserId == dDBindUser.DDUserId, q => new DDUserDepartMsg
-                                {
-                                    IsBind = true
-                                });
-
-                                await UnitWork.SaveAsync();
-                            }
                         }
 
                         await UnitWork.SaveAsync();
@@ -394,7 +383,9 @@ namespace OpenAuth.App.DDVoice
                     }
                     else
                     {
-                        return "没有要绑定的钉钉用户";
+                        result.Code = 500;
+                        result.Message = "没有要绑定的钉钉用户";
+                        return result;
                     }
                 }
                 catch (Exception ex)
@@ -404,29 +395,196 @@ namespace OpenAuth.App.DDVoice
                 }
             }
 
-            return "自动绑定钉钉用户成功";
+            result.Message = "自动绑定钉钉用户成功";
+            return result;
         }
 
         /// <summary>
-        /// 删除钉钉用户部门信息
+        /// 手动绑定用户
         /// </summary>
-        /// <param name="dDUserDepartMsgs">部门用户信息实体</param>
-        /// <returns></returns>
-        public async Task DeleteUserDepart(List<DDUserDepartMsg> dDUserDepartMsgs)
+        /// <param name="ddUpdateBindUserParam">手动绑定用户参数实体</param>
+        /// <returns>返回手动绑定结果</returns>
+        public async Task<TableData> UpdateBindUser(DDUpdateBindUserParam ddUpdateBindUserParam)
         {
-            await UnitWork.BatchDeleteAsync<DDUserDepartMsg>(dDUserDepartMsgs.ToArray());
-            await UnitWork.SaveAsync();
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            if (string.IsNullOrEmpty(ddUpdateBindUserParam.UserId) || string.IsNullOrEmpty(ddUpdateBindUserParam.DDUserId))
+            {
+                result.Code = 500;
+                result.Message = "用户id或钉钉用户id不能为空";
+            }
+            else
+            {
+                var ddUsers = await UnitWork.Find<DDUserMsg>(r => r.UserId == ddUpdateBindUserParam.DDUserId && r.IsBind == true).ToListAsync();
+                if (ddUsers != null && ddUsers.Count() > 0)
+                {
+                    result.Code = 500;
+                    result.Message = "该用户id已经被绑定，不允许重复绑定";
+                }
+                else
+                {
+                    var dbContext = UnitWork.GetDbContext<DDBindUser>();
+                    using (var transaction = await dbContext.Database.BeginTransactionAsync())
+                    {
+                        try
+                        {
+                            //绑定用户
+                            await UnitWork.AddAsync<DDBindUser>(new DDBindUser()
+                            {
+                                UserId = ddUpdateBindUserParam.UserId,
+                                DDUserId = ddUpdateBindUserParam.DDUserId
+                            });
+
+                            //修改用户绑定状态
+                            await UnitWork.UpdateAsync<DDUserMsg>(r => r.UserId == ddUpdateBindUserParam.DDUserId, r => new DDUserMsg()
+                            {
+                                IsBind = true
+                            });
+
+                            await UnitWork.SaveAsync();
+                            await transaction.CommitAsync();
+                            result.Message = "手动绑定成功";
+                        }
+                        catch (Exception ex)
+                        {
+                            await transaction.RollbackAsync();
+                            result.Code = 500;
+                            result.Message = "手动绑定失败：" + ex.Message.ToString();
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
 
         /// <summary>
-        /// 删除绑定钉钉用户
+        /// 解除绑定
         /// </summary>
-        /// <param name="dDBindUsers">钉钉绑定用户实体</param>
-        /// <returns></returns>
-        public async Task DeleteDDBindUser(List<DDBindUser> dDBindUsers)
+        /// <param name="ddUserId">钉钉用户Id</param>
+        /// <returns>返回解绑结果</returns>
+        public async Task<TableData> DeleteBindUser(string ddUserId)
         {
-            await UnitWork.BatchDeleteAsync<DDBindUser>(dDBindUsers.ToArray());
-            await UnitWork.SaveAsync();
+            var result = new TableData();
+            if (string.IsNullOrEmpty(ddUserId))
+            {
+                result.Code = 500;
+                result.Message = "id不能为空";
+            }
+            else
+            {
+                await UnitWork.DeleteAsync<DDBindUser>(r => r.DDUserId == ddUserId);
+                await UnitWork.UpdateAsync<DDUserMsg>(r => r.UserId == ddUserId, r => new DDUserMsg()
+                {
+                    IsBind = false
+                });
+
+                await UnitWork.SaveAsync();
+                result.Message = "解绑成功";
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 查询未绑定用户信息
+        /// </summary>
+        /// <param name="query">查询未绑定用户实体</param>
+        /// <returns>返回未绑定用户信息</returns>
+        public async Task<TableData> GetNotBindUser(QueryDDUserMsg query)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            //条件查询未绑定用户信息
+            var obj = UnitWork.Find<DDUserMsg>(r => r.IsBind == false);
+            var ddUsers = (obj.WhereIf(!string.IsNullOrEmpty(query.UserId), r => r.UserId.Contains(query.UserId))
+                                   .WhereIf(!string.IsNullOrEmpty(query.UserName), r => r.UserName.Contains(query.UserName))
+                                   .WhereIf(!string.IsNullOrEmpty(query.UserPhone), r => r.UserPhone.Contains(query.UserPhone))).ToList();
+
+            if (ddUsers != null && ddUsers.Count() > 0)
+            {
+                //查询未绑定部门信息
+                var objDepart = UnitWork.Find<DDDepartMsg>(r => (ddUsers.Select(x => x.UserId).ToList()).Contains(r.UserId));
+                var ddDeparts = objDepart.WhereIf(!string.IsNullOrEmpty(query.DepartName), r => r.DepartName.Contains(query.DepartName)).ToList();
+
+                //合并部门
+                List<QueryDDUserMsg> queryDDUserMsgs = new List<QueryDDUserMsg>();
+                foreach (DDUserMsg item in ddUsers)
+                {
+                    string departName = string.Join(",", (ddDeparts.GroupBy(r => new { r.UserId, r.DepartName }).Where(r => r.Key.UserId == item.UserId).Select(r => r.Key.DepartName)).ToList());
+                    queryDDUserMsgs.Add(new QueryDDUserMsg()
+                    {
+                        UserId = item.UserId,
+                        UserName = item.UserName,
+                        UserPhone = item.UserPhone,
+                        DepartName = departName
+                    });
+                }
+
+                result.Data = queryDDUserMsgs.Skip((query.page - 1) * query.limit).Take(query.limit).ToList();
+                result.Count = ddUsers.Count();
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取一级部门
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetOneLevelDeparts()
+        {
+            var result = new TableData();
+            if (access_token != "")
+            {
+                try
+                {
+                    List<DDDepartMsgs> dDDepartMsgs = new List<DDDepartMsgs>();
+                    DDDepartResult dDDepartResult = new DDDepartResult();
+
+                    //钉钉推送文本消息实体
+                    DDDepartParam dDDepartParam = new DDDepartParam()
+                    {
+                        dept_id = 1,
+                        language = "zh_CN"
+                    };
+
+                    //调用钉钉官方接口获取部门列表
+                    dDDepartResult = JsonConvert.DeserializeObject<DDDepartResult>(HttpHelpers.HttpPostAsync($"https://oapi.dingtalk.com/topapi/v2/department/listsub?access_token={access_token}", JsonConvert.SerializeObject(dDDepartParam)).Result);
+                    _logger.LogError(dDDepartResult.errmsg);
+                    if (dDDepartResult != null && dDDepartResult.errmsg == "ok")
+                    {
+                        foreach (DDDepartResultMsg item in dDDepartResult.result)
+                        {
+                            dDDepartMsgs.Add(new DDDepartMsgs()
+                            {
+                                departId = item.dept_id,
+                                departName = item.name
+                            });
+                        }
+                    }
+
+                    result.Data = dDDepartMsgs;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.Message.ToString());
+                    result.Message = ex.Message.ToString();
+                    result.Code = 500;
+                }
+            }
+
+            return result;
         }
     }
 }

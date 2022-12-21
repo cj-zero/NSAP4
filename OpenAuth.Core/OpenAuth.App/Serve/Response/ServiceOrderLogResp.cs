@@ -50,7 +50,15 @@ namespace OpenAuth.App.Serve.Response
         /// <summary>
         /// 接单人姓名
         /// </summary>
+        public string RecepUserId { get; set; }
+        /// <summary>
+        /// 接单人姓名
+        /// </summary>
         public string RecepUserName { get; set; }
+        /// <summary>
+        /// 接单人部门
+        /// </summary>
+        public string RecepUserDept { get; set; }
         /// <summary>
         /// 联系人
         /// </summary>
@@ -72,9 +80,25 @@ namespace OpenAuth.App.Serve.Response
         /// </summary>
         public string Supervisor { get; set; }
         /// <summary>
+        /// 主管名字
+        /// </summary>
+        public string SupervisorId { get; set; }
+        /// <summary>
+        /// 主管部门
+        /// </summary>
+        public string SuperVisorDept { get; set; }
+        /// <summary>
         /// 销售名字
         /// </summary>
         public string SalesMan { get; set; }
+        /// <summary>
+        /// 销售名字
+        /// </summary>
+        public string SalesManId { get; set; }
+        /// <summary>
+        /// 销售部门
+        /// </summary>
+        public string SalesManDept { get; set; }
         /// <summary>
         /// SAP服务单ID
         /// </summary>
@@ -106,5 +130,23 @@ namespace OpenAuth.App.Serve.Response
         public int? FromId { get; set; }
         public List<ServiceWorkOrder> ServiceWorkOrders { get; set; }
         public List<string> MaterialTypes { get; set; }
+       
+        /// <summary>
+        /// 是否承包
+        /// </summary>
+        public int? IsContracting { get; set; }
+        /// <summary>
+        /// 所需技能
+        /// </summary>
+        public string Skill { get; set; }
+        /// <summary>
+        /// 经度
+        /// </summary>
+        public decimal? Longitude { get; set; }
+        /// <summary>
+        /// 纬度
+        /// </summary>
+        public decimal? Latitude { get; set; }
+
     }
 }

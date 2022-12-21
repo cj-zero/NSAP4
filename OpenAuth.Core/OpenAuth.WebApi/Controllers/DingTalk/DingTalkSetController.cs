@@ -6,6 +6,7 @@ using OpenAuth.App.Response;
 using OpenAuth.App.Interface;
 using OpenAuth.Repository.Interface;
 using Serilog;
+using Infrastructure;
 using OpenAuth.App.DDVoice;
 using OpenAuth.App.DDVoice.EntityHelp;
 
@@ -42,7 +43,7 @@ namespace OpenAuth.WebApi.Controllers.DingTalk
         /// <param name="departIds"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> GetPayTermSetList(List<DDDepartMsg> departIds)
+        public async Task<TableData> GetPayTermSetList(List<DDDepartMsgs> departIds)
         {
             var result = new TableData();
             try
@@ -54,7 +55,7 @@ namespace OpenAuth.WebApi.Controllers.DingTalk
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
+                Log.Logger.Error($"地址：{Request.Path}，参数：{departIds.ToJson()} 错误：{result.Message}");
             }
 
             return result;
@@ -65,12 +66,12 @@ namespace OpenAuth.WebApi.Controllers.DingTalk
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetLasterDepartUserMsg()
+        public async Task<TableData> GetLasterDepartUserMsg(string departId)
         {
             var result = new TableData();
             try
             {
-                await _ddVoiceApp.GetDDLasterDepartUserMsg();
+                await _ddVoiceApp.GetDDLasterDepartUserMsg(departId);
                 result.Message = "操作成功";
                 return result;
             }
@@ -94,8 +95,98 @@ namespace OpenAuth.WebApi.Controllers.DingTalk
             var result = new TableData();
             try
             {
-                result.Message = await _ddVoiceApp.GetAutoDDBindUser();
-                return result;
+                return await _ddVoiceApp.GetAutoDDBindUser();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 手动绑定
+        /// </summary>
+        /// <param name="request">手动绑定用户实体</param>
+        /// <returns>返回手动绑定结果</returns>
+        [HttpPost]
+        public async Task<TableData> UpdateBindUser(DDUpdateBindUserParam request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _ddVoiceApp.UpdateBindUser(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()} 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 解除绑定
+        /// </summary>
+        /// <param name="ddUserId">钉钉用户Id</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetDelBindUser(string ddUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _ddVoiceApp.DeleteBindUser(ddUserId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ddUserId.ToJson()} 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取未绑定用户
+        /// </summary>
+        /// <param name="req">查询未绑定用户实体</param>
+        /// <returns>返回未绑定用户信息</returns>
+        [HttpPost]
+        public async Task<TableData> GetNotBindUser(QueryDDUserMsg req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _ddVoiceApp.GetNotBindUser(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()} 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取一级部门信息
+        /// </summary>
+        /// <returns>返回一级部门信息</returns>
+        [HttpGet]
+        public async Task<TableData> GetOneLevelDeparts()
+        {
+            var result = new TableData();
+            try
+            {
+                return await _ddVoiceApp.GetOneLevelDeparts();
             }
             catch (Exception ex)
             {

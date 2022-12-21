@@ -114,6 +114,11 @@ namespace OpenAuth.Repository.Domain
         [Description("技术员NSAPId")]
         public string CurrentUserNsapId { get; set; }
         /// <summary>
+        /// 技术员等级
+        /// </summary>
+        [NotMapped]
+        public string TechnicianLevel { get; set; }
+        /// <summary>
         /// 呼叫主题
         /// </summary>
         [Description("呼叫主题")]

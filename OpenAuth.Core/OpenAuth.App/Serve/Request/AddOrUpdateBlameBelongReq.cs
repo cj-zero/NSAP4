@@ -47,7 +47,7 @@ namespace OpenAuth.App.Serve.Request
         /// <summary>
         /// 附件
         /// </summary>
-        public List<string> FileIds { get; set; }
+        public List<string> FileIds { get; set; } = new List<string>();
         /// <summary>
         /// 是否草稿
         /// </summary>
@@ -60,10 +60,51 @@ namespace OpenAuth.App.Serve.Request
         /// 来源 1-erp 2-app
         /// </summary>
         public int? Source { get; set; }
+
+        /// <summary>
+        /// 预估金额说明
+        /// </summary>
+        public string AffectRemark { get; set; }
+
+        /// <summary>
+        /// 预估工时
+        /// </summary>
+        public string AffectHour { get; set; }
+
+        /// <summary>
+        /// 预估责任人
+        /// </summary>
+        public string AffectUser { get; set; }
+        /// <summary>
+        /// 预估责任人
+        /// </summary>
+        public string AffectUserName { get; set; }
+
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string MaterialCode { get; set; }
+
+        /// <summary>
+        /// 客户编码
+        /// </summary>
+        public string cardCode { get; set; }
+
+
+        /// <summary>
+        /// 客户名称
+        /// </summary>
+        public string cardName { get; set; }
+
+        /// <summary>
+        /// 生产部门
+        /// </summary>
+        public string ProductOrg { get; set; }
+        
         /// <summary>
         /// 归属部门
         /// </summary>
-        public virtual List<AddBlameBelongOrgReq> OrgInfos { get; set; }
+        // public virtual List<AddBlameBelongOrgReq> OrgInfos { get; set; }
     }
 
     public class AddBlameBelongOrgReq
