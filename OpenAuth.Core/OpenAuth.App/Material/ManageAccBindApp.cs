@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Presentation;
+﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Infrastructure;
 using Infrastructure.Export;
@@ -410,38 +411,75 @@ namespace OpenAuth.App.Material
                 Creatorid = loginContext.User.Id,
                 UpdateDate = DateTime.Now,
                 Updaterid = loginContext.User.Id,
-                IsDelete = 0,
-                ScriptFlag = req.Flag
+                IsDelete = 0
             };
+            if (req.Flag == 1)
+            {
+                var rateAnnix = JsonConvert.DeserializeObject<List<RateAnnixSpec>>(req.detports);
+                List<RateAnnix> ralist = new List<RateAnnix>();
+                foreach (var item in rateAnnix)
+                {
+                    ralist.Add(new RateAnnix { 
+                        Contribution = item.Contribution,
+                        Delayed = item.Delayed,
+                        HighDifficulty = item.HighDifficulty,
+                        Level = item.Level,
+                        LowDifficulty = item.LowDifficulty,
+                        MediumDifficulty = item.MediumDifficulty,
+                        Name = item.Name,
+                        OnTime = item.OnTime,
+                        OnTimePer=item.OnTimePer,
+                        OnTimeSc=item.OnTimeSc,
+                        OverQ=item.OverQ,
+                        OverSc=item.OverSc,
+                        Product=item.Product,
+                        Rank=item.Rank,
+                        Score=item.Score,
+                        SuperDifficulty=item.SuperDifficulty,
+                        Total=item.Total,
+                        TotalQ=item.TotalQ,
+                        TotalSc=item.TotalSc,
+                        TotalScore=item.TotalScore,
+                        IsDelete = 0,
+                        CreateDate = DateTime.Now,
+                        Month = req.Time
+                    });
+                }
+                await UnitWork.BatchAddAsync<RateAnnix, int>(ralist.ToArray()) ;
+
+            }
             await UnitWork.AddAsync<RateDetail, int>(addItem);
             await UnitWork.SaveAsync();
             return result;
         }
 
         /// <summary>
-        /// 获取对应月份归档记录
+        /// 获取对应月份草稿记录
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<ArchiveData> GetArchives(DetailData req)
+        public async Task<ArchiveData> GetArchivesScript(DetailData req)
         {
             ArchiveData archiveData = new ArchiveData();
-            List<RateDetail> adata = new List<RateDetail>();
-             //adata = UnitWork.Find<RateDetail>(a => a.Time == req.Time && a.ScriptFlag == 0).OrderByDescending(a=>a.CreateDate).ToList();
-            if (string.IsNullOrEmpty(req.Time) && !string.IsNullOrEmpty(req.Name))
-            {
-                adata = UnitWork.Find<RateDetail>(a => a.Data.Contains(req.Name) && a.ScriptFlag == req.Flag).OrderByDescending(a => a.CreateDate).ToList();
-            }
-            if (!string.IsNullOrEmpty(req.Time) && string.IsNullOrEmpty(req.Name))
-            {
-                adata = UnitWork.Find<RateDetail>(a => a.Time == req.Time && a.ScriptFlag == req.Flag).OrderByDescending(a => a.CreateDate).ToList();
-            }
-            if (!string.IsNullOrEmpty(req.Time) && !string.IsNullOrEmpty(req.Name))
-            {
-                adata = UnitWork.Find<RateDetail>(a => a.Time == req.Time && a.Data.Contains(req.Name) && a.ScriptFlag == req.Flag).OrderByDescending(a => a.CreateDate).ToList();
-            }
+            RateDetail adata = new RateDetail();
+            #region rejected code
+            //adata = UnitWork.Find<RateDetail>(a => a.Time == req.Time && a.ScriptFlag == 0).OrderByDescending(a=>a.CreateDate).ToList();
+            //if (string.IsNullOrEmpty(req.Time) && !string.IsNullOrEmpty(req.Name))
+            //{
+            //    adata = UnitWork.Find<RateDetail>(a => a.Data.Contains(req.Name) && a.ScriptFlag == req.Flag).OrderByDescending(a => a.CreateDate).ToList();
+            //}
+            //if (!string.IsNullOrEmpty(req.Time) && string.IsNullOrEmpty(req.Name))
+            //{
+            //    adata = UnitWork.Find<RateDetail>(a => a.Time == req.Time && a.ScriptFlag == req.Flag).OrderByDescending(a => a.CreateDate).ToList();
+            //}
+            //if (!string.IsNullOrEmpty(req.Time) && !string.IsNullOrEmpty(req.Name))
+            //{
+            //    adata = UnitWork.Find<RateDetail>(a => a.Time == req.Time && a.Data.Contains(req.Name) && a.ScriptFlag == req.Flag).OrderByDescending(a => a.CreateDate).ToList();
+            //}
+            #endregion
 
-            
+             adata = UnitWork.Find<RateDetail>(a => a.Time == req.Time).OrderByDescending(a => a.CreateDate).FirstOrDefault();
+
             if (adata!=null)
             {
                 archiveData.ArchiveDatas = adata;
@@ -453,6 +491,47 @@ namespace OpenAuth.App.Material
             }
             return archiveData;
         }
+
+
+        /// <summary>
+        /// 获取对应月份归档记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<ArchiveDataA> GetArchives(DetailDataA req)
+        {
+            ArchiveDataA archiveData = new ArchiveDataA();
+            string filterQuery = "";
+
+            if (!string.IsNullOrEmpty(req.Name) && string.IsNullOrEmpty(req.Time))
+            {
+                filterQuery += string.Format(@" where name = '{0}' ", req.Name);
+            }
+
+            if (!string.IsNullOrEmpty(req.Time) && string.IsNullOrEmpty(req.Name))
+            {
+                filterQuery += string.Format(@"  where  month = '{0}' ", req.Time);
+            }
+
+            if (!string.IsNullOrEmpty(req.Time) && !string.IsNullOrEmpty(req.Name))
+            {
+                filterQuery += string.Format(@"  where  month =  '{0}'  and   name =  '{1}' ",req.Name, req.Time);
+            }
+
+            var finalquery = "select  *  from   RateAnnix  "+ filterQuery + "  limit " + (req.page-1)*req.limit + " , " + req.limit;
+            var countquery = "select count(1) count  from  RateAnnix   " + filterQuery;
+
+            var detailList = UnitWork.ExcuteSql<RateAnnix>(ContextType.DefaultContextType, finalquery, CommandType.Text, null);
+            var detailCount = UnitWork.ExcuteSql<CardCountDto>(ContextType.DefaultContextType, countquery, CommandType.Text, null);
+            archiveData.Count = detailCount.FirstOrDefault().count;
+            if (detailList.Count !=0)
+            {
+                archiveData.ArchiveDatas.AddRange(detailList);
+            }
+            
+            return archiveData;
+        }
+
 
         public  TableData GetDataA(MaterialDataReq req)
         {

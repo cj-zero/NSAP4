@@ -71,8 +71,6 @@ namespace OpenAuth.Repository.Domain
         public int IsDelete { get; set; }
 
 
-        public int ScriptFlag { get; set; }
-
     }
 
 

@@ -172,14 +172,37 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
         /// <summary>
+        /// 获取对应月份归档草稿记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<ArchiveData>> GetArchivesScript([FromBody]  DetailData req)
+        {
+            var result = new Response<ArchiveData>();
+            try
+            {
+                result.Result = await _app.GetArchivesScript(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
         /// 获取对应月份归档记录
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response<ArchiveData>> GetArchives([FromBody]  DetailData req)
+        public async Task<Response<ArchiveDataA>> GetArchives([FromBody] DetailDataA req)
         {
-            var result = new Response<ArchiveData>();
+            var result = new Response<ArchiveDataA>();
             try
             {
                 result.Result = await _app.GetArchives(req);

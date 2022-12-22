@@ -358,8 +358,15 @@ namespace OpenAuth.Repository.Domain.View
     public class DetailData
     {
         public string Time { get; set; }
+    }
+
+    public class DetailDataA
+    {
+        public string Time { get; set; }
         public string Name { get; set; }
-        public int Flag { get; set; }
+        public int limit { get; set; }
+
+        public int page { get; set; }
     }
 
 
@@ -375,7 +382,16 @@ namespace OpenAuth.Repository.Domain.View
         /// <summary>
         /// 数据
         /// </summary>
-        public List<RateDetail> ArchiveDatas { get; set; }
+        public RateDetail ArchiveDatas { get; set; }
+    }
+
+    public class ArchiveDataA
+    {
+        public int Count { get; set; }
+        /// <summary>
+        /// 数据
+        /// </summary>
+        public List<RateAnnix> ArchiveDatas { get; set; } = new List<RateAnnix>();
     }
 
     /// <summary>
@@ -520,6 +536,56 @@ namespace OpenAuth.Repository.Domain.View
 
         public string FirstNameAndLastName { get; set; }
     }
+
+
+    public class RateAnnixSpec
+    {
+        public string Level { get; set; }
+
+        public string Name { get; set; }
+
+        public string LowDifficulty { get; set; }
+
+        public string MediumDifficulty { get; set; }
+
+        public string HighDifficulty { get; set; }
+
+        public string SuperDifficulty { get; set; }
+
+        public string OnTime { get; set; }
+
+        public string Delayed { get; set; }
+
+        public string Total { get; set; }
+
+        public string TotalSc { get; set; }
+
+        public string TotalQ { get; set; }
+
+        public string OnTimePer { get; set; }
+
+        public string OnTimeSc { get; set; }
+
+        public string OverQ { get; set; }
+
+        public string OverSc { get; set; }
+
+        public string Score { get; set; }
+
+        public string TotalScore { get; set; }
+
+        public string Rank { get; set; }
+
+        public string Contribution { get; set; }
+
+        public string Product { get; set; }
+
+        public string Month { get; set; }
+
+
+    }
+
+
 
 
 }
