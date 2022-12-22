@@ -571,6 +571,40 @@ namespace OpenAuth.App
             cacheContext.Set(currentSession.Token, currentSession, DateTime.Now.AddDays(10));
             return currentSession.Token;
         }
+        /// <summary>
+        /// 根据app用户信息获取token
+        /// </summary>
+        /// <param name="passportId"></param>
+        /// <returns></returns>
+        public string GetTokenByPassportId(int passportId)
+        {
+            string token = string.Empty;
+            var userMap = UnitWork.Find<AppUserMap>(a => a.AppUserId == passportId).FirstOrDefault();
+            if (userMap == null)
+            {
+                return token;
+            }
+            var userId = userMap.UserID;
+            var userInfo = UnitWork.Find<User>(u => u.Id == userId).FirstOrDefault();
+            if (userInfo == null)
+            {
+                return token;
+            }
+            var currentSession = new UserAuthSession
+            {
+                Account = userInfo.Account,
+                Name = userInfo.Name,
+                Token = Guid.NewGuid().ToString().GetHashCode().ToString("x"),
+                AppKey = "openauth",
+                CreateTime = DateTime.Now
+            };
+
+            RedisCacheContext cacheContext = new RedisCacheContext();
+            //创建Session
+            cacheContext.Set(currentSession.Token, currentSession, DateTime.Now.AddDays(10));
+            return currentSession.Token;
+        }
+
 
         /// <summary>
         /// 判断是否关联了帐号

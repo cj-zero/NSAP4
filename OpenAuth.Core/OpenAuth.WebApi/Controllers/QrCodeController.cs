@@ -4,6 +4,8 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using Infrastructure;
@@ -17,6 +19,8 @@ using MySqlX.XDevAPI.Common;
 using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain.Sap;
 using Quartz.Impl.Calendar;
 using Serilog;
 
@@ -30,12 +34,15 @@ namespace OpenAuth.WebApi.Controllers
     public class QrCodeController : ControllerBase
     {
         private readonly UserManagerApp _app;
+        private readonly HttpClienService _httpClienService;
 
         public IConfiguration Configuration { get; }
-        public QrCodeController(UserManagerApp app, IConfiguration configuration)
+        public QrCodeController(UserManagerApp app, IConfiguration configuration,
+            HttpClienService httpClienService)
         {
             _app = app;
             Configuration = configuration;
+            this._httpClienService = httpClienService;
         }
 
         /// <summary>
@@ -63,6 +70,38 @@ namespace OpenAuth.WebApi.Controllers
             MemoryStream ms = new MemoryStream();
             bitmap.Save(ms, ImageFormat.Jpeg);
             return File(ms.ToArray(), "image/png");
+        }
+
+        /// <summary>
+        /// 从passport获取二维码
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [AllowAnonymous]
+        public Response<Dictionary<string, string>> GetV2()
+        {
+            var response = new Response<Dictionary<string, string>>();
+            //获取当前服务地址及端口
+            string qrUrl = "http://passport.neware.work/api/Account2/getLoginQRCode";
+            var resultJson = HttpGet(qrUrl);
+            var result = JsonConvert.DeserializeObject<dynamic>(resultJson);
+            if (result.code != "200")
+            {
+                response.Code = 500;
+                response.Message = "passport请求失败";
+                return response;
+            }
+            string codeId = result.data.codeId;
+            string qrcode = result.data.codeContent;
+            var bitmap = QRCoderHelper.GetPTQRCode(qrcode, 5);
+            MemoryStream ms = new MemoryStream();
+            bitmap.Save(ms, ImageFormat.Jpeg);
+            var bas64str = "data:image/png;base64," + Convert.ToBase64String(ms.ToArray());
+            Dictionary<string, string> dic = new Dictionary<string, string>();
+            dic.Add("img", bas64str);
+            dic.Add("codeId", codeId);
+            response.Result = dic;
+            return response;
         }
 
         /// <summary>
@@ -137,5 +176,70 @@ namespace OpenAuth.WebApi.Controllers
 
             return response;
         }
+        /// <summary>
+        /// 验证登录状态
+        /// </summary>
+        /// <param name="codeId">二维码随机码</param>
+        /// <returns></returns>
+        [HttpGet]
+        [AllowAnonymous]
+        public Response<Dictionary<string, string>> ValidateLoginStateV2(string codeId)
+        {
+            var response = new Response<Dictionary<string, string>>();
+            string appUserId = string.Empty;
+            string url = $"http://passport.neware.work/api/Account2/ValidateLoginQRCode?codeId={codeId}";
+            var resultjson = HttpGet(url);
+            var result = JsonConvert.DeserializeObject<dynamic>(resultjson);
+            if (result.code != "200")
+            {
+                response.Code = 500;
+                response.Message = "passport请求失败";
+                return response;
+            }
+            int passportId = result.data.passportId;
+            Dictionary<string, string> dic = new Dictionary<string, string>();
+            string passportToken = result.data.identityToken;
+            dic.Add("passportToken", passportToken);
+            try
+            {
+                //查询用户信息
+                var token = _app.GetTokenByPassportId(passportId);
+                if (string.IsNullOrEmpty(token))
+                {
+                    response.Code = 205;
+                    response.Message = "用户未登录";
+                    return response;
+                }
+                dic.Add("erpToken", token);
+                response.Result = dic;
+            }
+            catch (Exception ex)
+            {
+                response.Code = 500;
+                response.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{codeId}， 错误：{response.Message}");
+            }
+
+            return response;
+        }
+
+        private string HttpGet(string url)
+        {
+            string result;
+            //string url = $"https://passport.neware.work/v/?rm={rd}";
+            try
+            {
+                var webClient = new WebClient { Encoding = Encoding.UTF8 };
+
+                result = webClient.DownloadString(url);
+            }
+            catch (Exception ex)
+            {
+                result = ex.Message;
+            }
+
+            return result;
+        }
     }
 }
+
