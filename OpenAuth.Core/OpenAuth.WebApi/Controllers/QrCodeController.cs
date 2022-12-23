@@ -192,8 +192,8 @@ namespace OpenAuth.WebApi.Controllers
             var result = JsonConvert.DeserializeObject<dynamic>(resultjson);
             if (result.code != "200")
             {
-                response.Code = 500;
-                response.Message = "passport请求失败";
+                response.Code = 205;
+                response.Message = "用户未登录";
                 return response;
             }
             int passportId = result.data.passportId;
