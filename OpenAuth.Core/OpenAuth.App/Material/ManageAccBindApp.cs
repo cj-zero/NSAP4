@@ -390,6 +390,64 @@ namespace OpenAuth.App.Material
         }
 
         /// <summary>
+        /// 导出归档
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<byte[]> ExportAUtility(RateAReq req)
+        {
+            // RateAReq    List<ArchieveExport> req
+            List <ArchieveExport> archieveExport = new List < ArchieveExport>();
+            string filterQuery = "";
+
+            if (!string.IsNullOrEmpty(req.Name) && string.IsNullOrEmpty(req.Time))
+            {
+                filterQuery += string.Format(@" where name = '{0}' ", req.Name);
+            }
+
+            if (!string.IsNullOrEmpty(req.Time) && string.IsNullOrEmpty(req.Name))
+            {
+                filterQuery += string.Format(@"  where  month = '{0}' ", req.Time);
+            }
+
+            if (!string.IsNullOrEmpty(req.Time) && !string.IsNullOrEmpty(req.Name))
+            {
+                filterQuery += string.Format(@"  where  month =  '{0}'  and   name =  '{1}' ", req.Name, req.Time);
+            }
+            var finalquery = "select  *  from   RateAnnix  " + filterQuery ;
+            var detailList = UnitWork.ExcuteSql<RateAnnix>(ContextType.DefaultContextType, finalquery, CommandType.Text, null);
+            foreach (var item in detailList)
+            {
+                archieveExport.Add(new ArchieveExport { 
+                    Month = item.Month,
+                    Level = item.Level,
+                    Name = item.Name,
+                    LowDifficulty = item.LowDifficulty,
+                    MediumDifficulty = item.MediumDifficulty,
+                    HighDifficulty = item.HighDifficulty,
+                    SuperDifficulty = item.SuperDifficulty,
+                    Total = item.Total,
+                    TotalSc = item.TotalSc,
+                    OnTime = item.OnTime,
+                    Delayed = item.Delayed,
+                    TotalQ = item.TotalQ,
+                    OnTimePer=item.OnTimePer,
+                    OnTimeSc=item.OnTimeSc,
+                    OverQ = item.OverQ,
+                    OverSc=item.OverSc,
+                    Contribution=item.Contribution,
+                    Score=item.Score,
+                    Product=item.Product,
+                    TotalScore=item.TotalScore,
+                    Rank=item.Rank
+                });
+            }
+
+            return await ExportAllHandler.ExporterExcel(archieveExport);
+            //return File(ExportAllHandler.ExporterExcel(req), "application/octet-stream", "test.xlsx");
+        }
+
+        /// <summary>
         /// 保存评分表
         /// </summary>
         /// <param name="req"></param>

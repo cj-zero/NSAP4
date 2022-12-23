@@ -467,6 +467,12 @@ namespace OpenAuth.Repository.Domain.View
         public List<RateTableExport> texports = new List<RateTableExport>();
     }
 
+    public class RateAReq
+    {
+        public string Time { get; set; }
+        public string Name { get; set; }
+    }
+
 
     public class RateTableExport
     {
@@ -490,6 +496,53 @@ namespace OpenAuth.Repository.Domain.View
         public string TotalScore { get; set; }
         [ExporterHeader(DisplayName = "等级")]
         public string RateLevel { get; set; }
+    }
+
+    public class ArchieveExport
+    {
+        [ExporterHeader(DisplayName = "归档月份")]
+        public string Month { get; set; }
+        [ExporterHeader(DisplayName = "岗位级别")]
+        public string Level { get; set; }
+        [ExporterHeader(DisplayName = "姓名")]
+        public string Name { get; set; }
+        [ExporterHeader(DisplayName = "一般难度（件*0.5）")]
+        public string LowDifficulty { get; set; }
+        [ExporterHeader(DisplayName = "中等难度（件*1）")]
+        public string MediumDifficulty { get; set; }
+        [ExporterHeader(DisplayName = "高等难度（件*1）")]
+        public string HighDifficulty { get; set; }
+        [ExporterHeader(DisplayName = "特级难度（件*1）")]
+        public string SuperDifficulty { get; set; }
+        [ExporterHeader(DisplayName = "总件数")]
+        public string Total { get; set; }
+        [ExporterHeader(DisplayName = "图纸完成量分值（满分70分）")]
+        public string TotalSc { get; set; }
+        [ExporterHeader(DisplayName = "按时完成")]
+        public string OnTime { get; set; }
+        [ExporterHeader(DisplayName = "延迟完成")]
+        public string Delayed { get; set; }
+        [ExporterHeader(DisplayName = "总完成量")]
+        public string TotalQ { get; set; }
+        [ExporterHeader(DisplayName = "按时完成率")]
+        public string OnTimePer { get; set; }
+        [ExporterHeader(DisplayName = "按时完成分值（满分15分）")]
+        public string OnTimeSc { get; set; }
+        [ExporterHeader(DisplayName = "超额完成（件）")]
+        public string OverQ { get; set; }
+        [ExporterHeader(DisplayName = "超额完成（满分10分）")]
+        public string OverSc { get; set; }
+        [ExporterHeader(DisplayName = "岗位贡献（满分5分）")]
+        public string Contribution { get; set; }
+        [ExporterHeader(DisplayName = "分数")]
+        public string Score { get; set; }
+        [ExporterHeader(DisplayName = "生产评分")]
+        public string Product { get; set; }
+        [ExporterHeader(DisplayName = "总分")]
+        public string TotalScore { get; set; }
+        [ExporterHeader(DisplayName = "等级")]
+        public string Rank { get; set; }
+
     }
 
     public class SerieManageData

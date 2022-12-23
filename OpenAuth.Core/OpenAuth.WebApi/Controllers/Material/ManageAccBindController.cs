@@ -216,6 +216,20 @@ namespace OpenAuth.WebApi.Controllers.Material
             return result;
         }
 
+
+        /// <summary>
+        /// 导出归档
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<IActionResult> ExportArchiveUtility([FromBody] RateAReq req)
+        {
+            var data = await _app.ExportAUtility(req);
+
+            return File(data, "application/octet-stream", "Rate.xlsx");
+        }
+
         /// <summary>
         /// 导出评分表
         /// </summary>
