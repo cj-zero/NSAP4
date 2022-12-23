@@ -579,7 +579,7 @@ namespace OpenAuth.App
         public string GetTokenByPassportId(int passportId)
         {
             string token = string.Empty;
-            var userMap = UnitWork.Find<AppUserMap>(a => a.AppUserId == passportId).FirstOrDefault();
+            var userMap = UnitWork.Find<AppUserMap>(a => a.PassPortId == passportId).FirstOrDefault();
             if (userMap == null)
             {
                 return token;
