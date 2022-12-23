@@ -1467,9 +1467,10 @@ namespace OpenAuth.App.Material
                         {
 
                             #region 创建审批流程
-                            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("物料报价单"));
+                            //var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("物料报价单"));
+                            var mf = await UnitWork.Find<FlowScheme>(c => c.SchemeName == "物料报价单").FirstOrDefaultAsync();
                             var afir = new AddFlowInstanceReq();
-                            afir.SchemeId = mf.FlowSchemeId;
+                            afir.SchemeId = mf.Id;
                             afir.FrmType = 2;
                             afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
 
@@ -1638,10 +1639,12 @@ namespace OpenAuth.App.Material
                         var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(QuotationObj.FlowInstanceId)).FirstOrDefaultAsync();
                         if (string.IsNullOrWhiteSpace(QuotationObj.FlowInstanceId)|| (flowInstanceObj != null && flowInstanceObj.FrmData != FrmData))
                         {
+                            //flowscheme
                             #region 创建审批流程
-                            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("物料报价单"));
+                            var mf = await UnitWork.Find<FlowScheme>(c => c.SchemeName == "物料报价单").FirstOrDefaultAsync();
+                            //var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("物料报价单"));
                             var afir = new AddFlowInstanceReq();
-                            afir.SchemeId = mf.FlowSchemeId;
+                            afir.SchemeId = mf.Id;
                             afir.FrmType = 2;
                             afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
                             afir.CustomName = $"物料报价单" + DateTime.Now;
