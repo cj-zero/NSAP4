@@ -402,7 +402,7 @@ namespace OpenAuth.App.Material
 
             if (!string.IsNullOrEmpty(req.Name) && string.IsNullOrEmpty(req.Time))
             {
-                filterQuery += string.Format(@" where name = '{0}' ", req.Name);
+                filterQuery += string.Format(@" where name like '%{0}%' ", req.Name);
             }
 
             if (!string.IsNullOrEmpty(req.Time) && string.IsNullOrEmpty(req.Name))
@@ -412,7 +412,7 @@ namespace OpenAuth.App.Material
 
             if (!string.IsNullOrEmpty(req.Time) && !string.IsNullOrEmpty(req.Name))
             {
-                filterQuery += string.Format(@"  where  month =  '{0}'  and   name =  '{1}' ", req.Name, req.Time);
+                filterQuery += string.Format(@"  where  month =  '{0}'  and   name like  '%{1}%' ", req.Time, req.Name);
             }
             var finalquery = "select  *  from   RateAnnix  " + filterQuery ;
             var detailList = UnitWork.ExcuteSql<RateAnnix>(ContextType.DefaultContextType, finalquery, CommandType.Text, null);
@@ -563,7 +563,7 @@ namespace OpenAuth.App.Material
 
             if (!string.IsNullOrEmpty(req.Name) && string.IsNullOrEmpty(req.Time))
             {
-                filterQuery += string.Format(@" where name = '{0}' ", req.Name);
+                filterQuery += string.Format(@" where name like '%{0}%' ", req.Name);
             }
 
             if (!string.IsNullOrEmpty(req.Time) && string.IsNullOrEmpty(req.Name))
@@ -573,7 +573,7 @@ namespace OpenAuth.App.Material
 
             if (!string.IsNullOrEmpty(req.Time) && !string.IsNullOrEmpty(req.Name))
             {
-                filterQuery += string.Format(@"  where  month =  '{0}'  and   name =  '{1}' ",req.Name, req.Time);
+                filterQuery += string.Format(@"  where  month =  '{0}'  and   name like  '%{1}%' ",req.Time, req.Name);
             }
 
             var finalquery = "select  *  from   RateAnnix  "+ filterQuery + "  limit " + (req.page-1)*req.limit + " , " + req.limit;
