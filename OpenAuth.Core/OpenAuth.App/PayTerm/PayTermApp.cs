@@ -4113,7 +4113,6 @@ namespace OpenAuth.App.PayTerm
                 {
                     int slpCode = (int)saleOrdrs.FirstOrDefault().SlpCode;
                     var userids = UnitWork.Find<sbo_user>(r => r.sale_id == slpCode && r.sbo_id == Define.SBO_ID).Select(r => r.user_id).FirstOrDefault();
-                    saleOrderFlowSCHelp.Name = await UnitWork.Find<base_user>(r => r.user_id == userids).Select(r => r.user_nm).FirstOrDefaultAsync();
                     saleOrderFlowSCHelp.Dept = _userDepartMsgHelp.GetUserIdDepart(Convert.ToInt32(userids));
 
                     //获取生产单
@@ -4124,6 +4123,7 @@ namespace OpenAuth.App.PayTerm
                         if (oworLs != null && oworLs.Count() > 0)
                         {
                             saleOrderFlowSCHelp.DataTime = owors.FirstOrDefault().UpdateDate;
+                            saleOrderFlowSCHelp.Name = owors.FirstOrDefault().U_WO_LTDW;
                             saleOrderFlowSCHelp.Flag = true;
                         }
                         else
@@ -4159,7 +4159,7 @@ namespace OpenAuth.App.PayTerm
                         var odlnCs = odlns.Where(r => r.DocStatus == "C").ToList();
                         if (odlnCs != null && odlnCs.Count() > 0)
                         {
-                            saleOrderFlowJHHelp.DataTime = odlnCs.FirstOrDefault().UpdateDate;
+                            saleOrderFlowJHHelp.DataTime = odlnCs.FirstOrDefault().UpdateDate;                            
                             saleOrderFlowJHHelp.Flag = true;
                         }
                         else
