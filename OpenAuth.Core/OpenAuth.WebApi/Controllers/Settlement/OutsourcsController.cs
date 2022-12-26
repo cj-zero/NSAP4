@@ -64,7 +64,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> BatchAccraditation(List<AccraditationOutsourcReq> req) 
+        public async Task<Response> BatchAccraditation(List<AccraditationOutsourcReq> req)
         {
             var result = new Response();
             await _app.BatchAccraditation(req);
@@ -76,7 +76,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> ASingleRejection(AccraditationOutsourcReq req) 
+        public async Task<TableData> ASingleRejection(AccraditationOutsourcReq req)
         {
             return await _app.ASingleRejection(req);
         }
@@ -94,7 +94,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 await _app.SingleRecall(req);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 result.Message = ex?.Message ?? ex?.InnerException?.Message ?? "";
                 result.Code = 500;
@@ -133,6 +133,19 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> Load([FromQuery] QueryoutsourcListReq request)
         {
             return await _app.Load(request);
+        }
+        /// <summary>
+        /// 导出待支付Excel
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> Export([FromQuery] QueryoutsourcListReq req)
+        {
+            var data = await _app.Export(req);
+
+
+            return File(data, "application/vnd.ms-excel");
         }
 
         /// <summary>
@@ -182,7 +195,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> ServiceOrderDetails(QueryoutsourcListReq request) 
+        public async Task<TableData> ServiceOrderDetails(QueryoutsourcListReq request)
         {
             return await _app.ServiceOrderDetails(request);
         }
@@ -216,9 +229,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpPost]
         public async Task<Response> CreateReport(CreateReportReq req)
         {
-            var result = new Response();
-            await _app.CreateReport(req);
-            return result;
+            return await _app.CreateReport(req);
         }
 
         /// <summary>
@@ -227,9 +238,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpPost]
         public async Task<Response> RevocationReport(QueryoutsourcListReq req)
         {
-            var result = new Response();
-            await _app.RevocationReport(req.Id);
-            return result;
+            return await _app.RevocationReport(req.Id);
         }
 
         /// <summary>
@@ -238,9 +247,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpPost]
         public async Task<Response> DissolutionReport(QueryoutsourcListReq req)
         {
-            var result = new Response();
-            await _app.DissolutionReport(req.Id);
-            return result;
+            return await _app.DissolutionReport(req.Id);
         }
 
         /// <summary>
@@ -281,6 +288,16 @@ namespace OpenAuth.WebApi.Controllers
         //{
         //    await _app.Test();
         //}
+
+        /// <summary>
+        /// 定时刷新数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task UpdateDataJob()
+        {
+            await _app.UpdateDataJob();
+        }
 
         public OutsourcsController(OutsourcApp app)
         {

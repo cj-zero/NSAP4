@@ -52,7 +52,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 是否是当前月份
         /// </summary>
-        public bool?  IsMonth { get; set; }
+        public bool? IsMonth { get; set; }
         /// <summary>
         /// 开始时间
         /// </summary>
@@ -97,5 +97,10 @@ namespace OpenAuth.App.Request
         public string Name { get; set; }
         public int? Status { get; set; }
         public int? ReportId { get; set; }
+
+        public string OrgName { get; set; }
+        public decimal MinMoney { get; set; }
+        public decimal MaxMoney { get; set; }
+
     }
 }

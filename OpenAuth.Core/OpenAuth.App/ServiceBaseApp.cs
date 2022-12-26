@@ -184,7 +184,16 @@ namespace OpenAuth.App
         public string MoneyToCoin(decimal amount, int count)
         {
             amount = amount == 0 ? 0.00M : amount;
-            return string.Format("{0:N0}", Math.Truncate(amount)) + "." + (Math.Round(amount, count)).ToString().Split(".")[1];
+            if ((amount.ToString()).Contains("."))
+            {
+                return string.Format("{0:N0}", Math.Truncate(amount)) + "." + (Math.Round(amount, count)).ToString().Split(".")[1];
+            }
+            else
+            {
+                amount = Convert.ToDecimal(amount.ToString() + ".00");
+                return string.Format("{0:N0}", Math.Truncate(amount)) + "." + (Math.Round(amount, count)).ToString().Split(".")[1];
+            }
+
         }
     }
 }
