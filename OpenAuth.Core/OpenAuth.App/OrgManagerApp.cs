@@ -129,11 +129,11 @@ namespace OpenAuth.App
                         join c in UnitWork.Find<AppUserMap>(null)
                         on a.Id equals c.UserID into ac
                         from c in ac.DefaultIfEmpty()
-                        join o in UnitWork.Find < OpenAuth.Repository.Domain.Org >(null)
+                        join o in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null)
                         on b.SecondId equals o.Id into bo
                         from botemp in bo.DefaultIfEmpty()
 
-                        select new UserOrg {Id = a.Id, Name = a.Name, SecondId = b.SecondId, SecondName= botemp.Name, AppUserId = c.AppUserId };
+                        select new UserOrg { Id = a.Id, Name = a.Name, SecondId = b.SecondId, SecondName = botemp.Name, AppUserId = c.AppUserId };
 
             List<object> trees = new List<object>();
             GetTree(trees, "", org, query);
@@ -204,7 +204,7 @@ namespace OpenAuth.App
         /// <param name="id"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public async Task<OpenAuth.Repository.Domain.Org> GetOrgInfo(string id,string name)
+        public async Task<OpenAuth.Repository.Domain.Org> GetOrgInfo(string id, string name)
         {
             return await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).WhereIf(!string.IsNullOrWhiteSpace(id), c => c.Id == id).WhereIf(!string.IsNullOrWhiteSpace(name), c => c.Name == name).FirstOrDefaultAsync();
         }
@@ -230,7 +230,7 @@ namespace OpenAuth.App
 
         //    }
         //    //var child = org.Where(c => c.ParentId == pid).ToList();
-            
+
         //}
 
         /// <summary>
@@ -255,8 +255,8 @@ namespace OpenAuth.App
             var reimburseOrgResps = data.GroupBy(g => g.ParentName).Select(s => new ReimburseOrgResp { Label = GetOrgName(s.Key), Value = GetOrgName(s.Key), Children = s.ToList() }).ToList();
             reimburseOrgResps.Add(new ReimburseOrgResp
             {
-                Label="公司",
-                Value= "公司",
+                Label = "公司",
+                Value = "公司",
             });
             reimburseOrgResps.Add(new ReimburseOrgResp
             {
@@ -321,9 +321,12 @@ namespace OpenAuth.App
         {
             var query = await (from a in UnitWork.Find<User>(null)
                                join b in UnitWork.Find<Relevance>(c => c.Key == "OrgRole" && c.SecondId == orgId) on a.Id equals b.FirstId
+                               join c in UnitWork.Find<Repository.Domain.Org>(null) on b.SecondId equals c.Id
                                select new
                                {
-                                   a
+                                   a.Id,
+                                   a.Name,
+                                   OrgName = c.Name
                                }).FirstOrDefaultAsync();
             return query;
         }
