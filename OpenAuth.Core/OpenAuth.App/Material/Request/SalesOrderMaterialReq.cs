@@ -105,6 +105,15 @@ namespace OpenAuth.App.Material.Request
         public List<statisticsTable> data { get; set; } = new List<statisticsTable>();
 }
 
+    public class MCDetail
+    {
+        public int ItemTypeID { get; set; }
+
+        public string ItemCode { get; set; }
+
+        public int Contract_id { get; set; }
+    }
+
     public class MaterialRsp
     {
         public int id { get; set; }

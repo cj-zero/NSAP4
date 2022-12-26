@@ -28,6 +28,7 @@ using NPOI.OpenXmlFormats.Dml;
 using MySql.Data.MySqlClient;
 using Microsoft.Extensions.Logging;
 using OpenAuth.App.Client;
+using OpenAuth.App.ClientRelation.Response;
 
 namespace OpenAuth.App.Material
 {
@@ -102,7 +103,7 @@ namespace OpenAuth.App.Material
             var querydata = from n in modeldata
                             join m in manageData
                             on new { DocEntry = "SE-" + n.Field<string>("DocEntry"), itemCode = n.Field<string>("ItemCode") }
-                            equals new { DocEntry = m.Field<string>("DocEntry"), itemCode = m.Field<string>("itemCode") } into temp
+                            equals new { DocEntry = m.Field<string>("DocEntry"), itemCode = m.Field<string>("itemCode") !=null ? m.Field<string>("itemCode").Trim() : m.Field<string>("itemCode") } into temp
                             from t in temp.DefaultIfEmpty()
                             select new MaterialRsp
                             {
@@ -205,16 +206,46 @@ namespace OpenAuth.App.Material
                 querydata = querydata.OrderByDescending(q => q.SubmitTime);
             }
             var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
-            //20221217 replace the itemCode according to the request
-            //foreach (var item in data)
-            //{
-            //    if (item.ItemCode.Contains("M"))
-            //    {
-            //        string sql2 = string.Format(@" SELECT * from sale_contract_review_detail  where contract_id =  {0} ", item.ContractReviewCode);
+            //20221226 replace the itemCode according to the request
+            var MDetailList = new List<MCDetail>();
+            foreach (var item in data)
+            {
 
-            //    }
-            //}
-
+                if (item.ItemCode.StartsWith("M") && !MDetailList.Exists(a=>a.ItemCode == item.ItemCode))
+                {
+                    string sql2 = string.Format(@" SELECT  ItemCode, ItemTypeID , Contract_id    from sale_contract_review_detail  where contract_id =  {0} ", item.ContractReviewCode);
+                   var  itemMList =  UnitWork.ExcuteSql<MCDetail>(ContextType.NsapBoneDbContextType, sql2, CommandType.Text, null);
+                    MDetailList.AddRange(itemMList);
+                }
+            }
+        
+            //79 套线     80 钣金     81 机加
+            foreach (var mitem in data)
+            {
+                if (mitem.ItemCode.Contains("M") && MDetailList.Exists(a => a.Contract_id == mitem.ContractReviewCode))
+                {
+                    //var mtypeid = MDetailList.Where(a => a.Contract_id == mitem.ContractReviewCode).FirstOrDefault().ItemTypeID;
+                    //var mdetail = MDetailList.Where(a => a.Contract_id == mitem.ContractReviewCode).FirstOrDefault();
+                    if (mitem.ItemTypeName == "套线")
+                    {
+                        // 79
+                        mitem.ItemName = MDetailList.Where(a => a.Contract_id == mitem.ContractReviewCode && a.ItemTypeID == 79).FirstOrDefault().ItemCode;
+                        //mitem.ItemTypeName = "套线";
+                    }
+                    if (mitem.ItemTypeName == "钣金")
+                    {
+                        //80
+                        mitem.ItemName = MDetailList.Where(a => a.Contract_id == mitem.ContractReviewCode && a.ItemTypeID == 80).FirstOrDefault().ItemCode;
+                    }
+                    if (mitem.ItemTypeName != "钣金"  && mitem.ItemTypeName != "套线")
+                    {
+                        //81
+                        mitem.ItemName = MDetailList.Where(a => a.Contract_id == mitem.ContractReviewCode && a.ItemTypeID == 81).FirstOrDefault().ItemCode;
+                        mitem.ItemTypeName = "机加";
+                    }
+                    
+                }
+            }
 
             result.Data = data;
             result.Count = querydata.Count();
