@@ -52,6 +52,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 bool rIsOpenSap = IsOpenSap == "1" ? true : false;
+                ItemCode = ItemCode.Contains("'") ? ItemCode.Replace("'", "''") : ItemCode;
                 if (Operating == "add")
                 {
                     data = _serviceSaleOrderApp.SelectMaterialsInventoryData(ItemCode, SboId, rIsOpenSap, Operating);
@@ -87,6 +88,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         {
             var result = new Response<SelectSingleStoreOitmInfoDto>();
             bool rIsOpenSap = IsOpenSap == "1" ? true : false;
+            ItemCode = ItemCode.Contains("'") ? ItemCode.Replace("'","''") : ItemCode;
             result.Result = _serviceSaleOrderApp.SelectSingleStoreOitmInfo(ItemCode, SboId, rIsOpenSap);
             return result;
         }
