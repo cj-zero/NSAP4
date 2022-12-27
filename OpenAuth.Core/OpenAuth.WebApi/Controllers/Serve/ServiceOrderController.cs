@@ -517,6 +517,29 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 呼叫服务工单详情
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ServiceWorkOrderListDetail([FromQuery] int serviceOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _serviceOrderApp.ServiceWorkOrderListDetail(serviceOrderId);
+                result.Count = result.Data.Count;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{serviceOrderId}， 错误：{result.Message}");
+            }
+            return result;
+        }
+        
+        /// <summary>
         /// 根据服务单的服务呼叫状态分类,统计各个状态的总数
         /// </summary>
         /// <param name="req"></param>
