@@ -1993,7 +1993,6 @@ namespace OpenAuth.App
                 });
                 query = query.Where(q => sids.Contains(q.Id));
             }
-
             //根据员工信息获取员工部门信息
             var user = loginContext.User;
             var orgInfo = await _userManagerApp.GetUserOrgInfo(user.Id); //部门信息
@@ -2028,7 +2027,8 @@ namespace OpenAuth.App
                 }
 
             }
-            else if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("工程主管")) && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看服务ID")))
+            else if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("工程主管")) && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.User.Account.Equals("chenwangxiong")
+                && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看服务ID")))
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后文员")))
                 {
