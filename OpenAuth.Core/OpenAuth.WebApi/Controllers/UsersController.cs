@@ -267,6 +267,27 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 根据UserId获取PassportID/AppUserID
+        /// </summary>
+        /// <param name="appUserId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetAppUserIDByErpUserId(string Id)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetAppUserIDByErpUserId(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{Id}， 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
         /// 获取用户全部信息
         /// </summary>
         /// <returns></returns>
