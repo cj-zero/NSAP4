@@ -134,7 +134,8 @@ namespace OpenAuth.App.Material
                                 SubmitNo = n.Field<Int64?>("SubmitNo"),
                                 ProjectNo = t == null ? "" : t.Field<string>("_System_objNBS"),
                                 //ProCreatedDate = t == null ? "" : t.Field<string>("CreatedDate"),
-                                ProduceNo = n.Field<int?>("ProductNo")
+                                ProduceNo = n.Field<int?>("ProductNo"),
+                                Process = t == null ? 0 : t.Field<double?>("progress")
                             };
             //先把数据加载到内存
             if (!string.IsNullOrWhiteSpace(req.ProjectNo))

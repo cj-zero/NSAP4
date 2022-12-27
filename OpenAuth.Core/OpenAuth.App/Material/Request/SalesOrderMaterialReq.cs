@@ -139,6 +139,8 @@ namespace OpenAuth.App.Material.Request
         public Int64? SubmitNo { get; set; }
         public string ProjectNo { get; set; }
         public int? ProduceNo { get; set; }
+
+        public double? Process { get; set; }
     }
 
     public class statisticsTable
