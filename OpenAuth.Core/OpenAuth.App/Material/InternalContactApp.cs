@@ -2540,9 +2540,15 @@ namespace OpenAuth.App.Material
             //{
             //    return new List<product_owor_wor1>();
             //}
-            var sql = @$"SELECT a.DocEntry as ProductionId,a.ItemCode,a.txtitemName as ItemName,a.PlannedQty,a.CmpltQty,a.U_WO_LTDW as Org,a.PlannedQty - a.CmpltQty as OpenQty,a.U_BOM_BBH as Version,Warehouse,Type as OrderType FROM product_owor a
-                        where a.CreateDate >= '{req.StartExcelTime.Date}' and a.CreateDate<'{req.EndExcelTime.AddDays(1).Date}' and a.ItemCode='{req.ItemCode}'  ORDER BY DocEntry desc";
-            var query = UnitWork.Query<product_owor_wor1>(sql).Select(c => new product_owor_wor1
+            var parameters = new List<object>();
+            parameters.Add(req.StartExcelTime.Date);
+            parameters.Add(req.EndExcelTime.AddDays(1).Date);
+            parameters.Add(req.ItemCode);
+
+
+            var sql = @"SELECT a.DocEntry as ProductionId,a.ItemCode,a.txtitemName as ItemName,a.PlannedQty,a.CmpltQty,a.U_WO_LTDW as Org,a.PlannedQty - a.CmpltQty as OpenQty,a.U_BOM_BBH as Version,Warehouse,Type as OrderType FROM product_owor a
+                        where a.CreateDate >= {0} and a.CreateDate<{1} and a.ItemCode={2}  ORDER BY DocEntry desc";
+            var query = UnitWork.Query<product_owor_wor1>(sql, parameters.ToArray()).Select(c => new product_owor_wor1
             {
                 ProductionId = c.ProductionId,
                 ItemCode = c.ItemCode,

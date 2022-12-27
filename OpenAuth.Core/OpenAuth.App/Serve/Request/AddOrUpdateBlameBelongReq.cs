@@ -88,13 +88,13 @@ namespace OpenAuth.App.Serve.Request
         /// <summary>
         /// 客户编码
         /// </summary>
-        public string cardCode { get; set; }
+        public string CardCode { get; set; }
 
 
         /// <summary>
         /// 客户名称
         /// </summary>
-        public string cardName { get; set; }
+        public string CardName { get; set; }
 
         /// <summary>
         /// 生产部门
