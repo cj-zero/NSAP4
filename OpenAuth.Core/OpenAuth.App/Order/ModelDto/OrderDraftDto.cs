@@ -241,6 +241,16 @@ namespace OpenAuth.App.Order.ModelDto
     public class OrderItemInfo
     {
         /// <summary>
+        /// 子集
+        /// </summary>
+        public List<OrderItemInfo> childBillSalesDetails { get; set; }
+
+        /// <summary>
+        /// 物料配置Id
+        /// </summary>
+        public int item_cfg_id { get; set; }
+
+        /// <summary>
         /// 物料编码
         /// </summary>
         public string ItemCode { get; set; }

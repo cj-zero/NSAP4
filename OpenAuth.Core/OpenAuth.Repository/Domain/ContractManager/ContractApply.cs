@@ -40,6 +40,12 @@ namespace OpenAuth.Repository.Domain
         }
 
         /// <summary>
+        /// 合同申请单号
+        /// </summary>
+        [Description("合同申请单号")]
+        public int? ContractNum { get; set; }
+
+        /// <summary>
         /// 合同申请单编号
         /// </summary>
         [Description("合同申请单编号")]
