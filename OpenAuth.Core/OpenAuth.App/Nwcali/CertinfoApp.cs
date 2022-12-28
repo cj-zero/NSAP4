@@ -1340,7 +1340,7 @@ namespace OpenAuth.App
                                         EntrustmentDetail obj = new EntrustmentDetail();
                                         obj.LineNum = i.ToString();
                                         obj.EntrustmentId = single.Id;
-                                        obj.ItemName = data.Dscription.Split(',')[0].Split('-')[0];
+                                        obj.ItemName = data.Dscription;
                                         obj.ItemCode = data.ItemCode;
                                         obj.Quantity = string.IsNullOrEmpty(data.Quantity) ? 0 : Convert.ToInt32(data.Quantity.Split(".")[0]);
                                         obj.Sort = i;
@@ -1402,7 +1402,7 @@ namespace OpenAuth.App
                                     EntrustmentDetail entrustmentDetail = new EntrustmentDetail();
                                     entrustmentDetail.EntrustmentId = item.Id;
                                     entrustmentDetail.ItemCode = groupItem.Key;
-                                    entrustmentDetail.ItemName = items.ItemName.Split(',')[0].Split('-')[0];
+                                    entrustmentDetail.ItemName = items.ItemName;
                                     entrustmentDetail.SerialNumber = items.MnfSerial;
                                     entrustmentDetail.Quantity = 1;
                                     entrustmentDetail.LineNum = line + "-" + line2;
