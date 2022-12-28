@@ -196,12 +196,14 @@ namespace OpenAuth.WebApi.Controllers
                 response.Message = "用户未登录";
                 return response;
             }
+            Log.Logger.Error("二维码错误日志：" + resultjson);
             int passportId = result.data.passportId;
             Dictionary<string, string> dic = new Dictionary<string, string>();
             string passportToken = result.data.identityToken;
             dic.Add("passportToken", passportToken);
             try
             {
+                Log.Logger.Error("二维码错误日志：" + passportId);
                 //查询用户信息
                 var token = _app.GetTokenByPassportId(passportId);
                 if (string.IsNullOrEmpty(token))
