@@ -580,7 +580,6 @@ namespace OpenAuth.WebApi.Controllers
                 if (loginContext.User.Name == "韦京生" || loginContext.User.Name == "郭睿心")
                 {
                     viewFull = powers.ViewFull;
-
                 }
 
                 viewSelf = powers.ViewSelf;

@@ -3161,6 +3161,10 @@ namespace OpenAuth.App
                 model.CalibrationCertificate.SiteCode = baseInfo.SiteCode;
                 model.CalibrationCertificate.Temperature = baseInfo.Temperature;
                 model.CalibrationCertificate.RelativeHumidity = baseInfo.RelativeHumidity;
+
+                //获取字典备注
+                var remark = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_CNASModelRemark") && u.DtValue == "1").FirstOrDefaultAsync();
+                model.CalibrationCertificate.Remark = remark.Name;
                 #endregion
                 #region Main Standards Used
                 for (int i = 0; i < baseInfo.Etalons.Count; i++)

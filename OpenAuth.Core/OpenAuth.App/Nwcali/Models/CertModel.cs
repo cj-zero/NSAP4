@@ -42,6 +42,7 @@ namespace OpenAuth.App.Nwcali.Models
         public string EntrustedUnit { get; set; }
         public string EntrustedUnitAdress { get; set; }
         public string EntrustedDate { get; set; }
+        public string Remark { get; set; }
     }
     public class MainStandardsUsed
     {
