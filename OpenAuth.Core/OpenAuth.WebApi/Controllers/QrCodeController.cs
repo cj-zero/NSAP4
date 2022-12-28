@@ -5,6 +5,8 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -84,10 +86,16 @@ namespace OpenAuth.WebApi.Controllers
             //获取当前服务地址及端口
             string qrUrl = "http://passport.neware.work/api/Account2/getLoginQRCode";
             var resultJson = HttpGet(qrUrl);
+            if (string.IsNullOrWhiteSpace(resultJson) && !IsJson(resultJson))
+            {
+                response.Code = 205;
+                response.Message = "passport请求失败";
+                return response;
+            }
             var result = JsonConvert.DeserializeObject<dynamic>(resultJson);
             if (result.code != "200")
             {
-                response.Code = 500;
+                response.Code = 205;
                 response.Message = "passport请求失败";
                 return response;
             }
@@ -189,17 +197,36 @@ namespace OpenAuth.WebApi.Controllers
             string appUserId = string.Empty;
             string url = $"http://passport.neware.work/api/Account2/ValidateLoginQRCode?codeId={codeId}";
             var resultjson = HttpGet(url);
-            var result = JsonConvert.DeserializeObject<dynamic>(resultjson);
-            if (result.code != "200")
+            if (string.IsNullOrWhiteSpace(resultjson) && !IsJson(resultjson))
             {
                 response.Code = 205;
-                response.Message = "用户未登录";
+                response.Message = "请求出错";
                 return response;
             }
-            int passportId = result.data.passportId;
+            int passportId = -1;
             Dictionary<string, string> dic = new Dictionary<string, string>();
-            string passportToken = result.data.identityToken;
-            dic.Add("passportToken", passportToken);
+            try
+            {
+                var result = JsonConvert.DeserializeObject<dynamic>(resultjson);
+                if (!(bool)result.success)
+                {
+                    response.Code = 205;
+                    response.Message = result.message;
+                    return response;
+                }
+                passportId = result.data.passportId;
+                string passportToken = result.data.identityToken;
+                dic.Add("passportToken", passportToken);
+            }
+            catch(Exception ex)
+            {
+                response.Code = 205;
+                response.Message = ex.Message;
+            }
+            if(passportId == -1)
+            {
+                return response;
+            }
             try
             {
                 //查询用户信息
@@ -215,30 +242,63 @@ namespace OpenAuth.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                response.Code = 500;
+                response.Code = 205;
                 response.Message = ex.InnerException?.Message ?? ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{codeId}， 错误：{response.Message}");
             }
 
             return response;
         }
-
+        /// <summary>
+        /// 发送Get请求
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         private string HttpGet(string url)
         {
-            string result;
-            //string url = $"https://passport.neware.work/v/?rm={rd}";
+            string result = string.Empty;
             try
             {
-                var webClient = new WebClient { Encoding = Encoding.UTF8 };
-
-                result = webClient.DownloadString(url);
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                request.ContentType = "application/json;charset=utf-8";
+                using (WebResponse response = request.GetResponse())
+                {
+                    using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+                    {
+                        return reader.ReadToEnd().Trim();
+                    }
+                }
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                result = ex.Message;
+                result = string.Empty;
             }
-
             return result;
+        }
+        /// <summary>
+        /// 判断是否是json
+        /// </summary>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        private bool IsJson(string result)
+        {
+            bool isJson = true;
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                return false;
+            }
+            try
+            {
+                isJson = result.IndexOf("{") > -1 && result.IndexOf("}") > -1;
+                if (isJson)
+                {
+                    isJson = JsonConvert.DeserializeObject<dynamic>(result);
+                }
+            }
+            catch(Exception ex)
+            {
+            }
+            return isJson;
         }
     }
 }

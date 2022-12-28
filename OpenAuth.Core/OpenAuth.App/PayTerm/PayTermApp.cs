@@ -4065,14 +4065,14 @@ namespace OpenAuth.App.PayTerm
                 saleOrderFlowGCHelp.Name = "刘静";
                 saleOrderFlowGCHelp.Dept = "E2";
                 saleOrderFlowGCHelp.DataTime = betaSubFinalViews.Count() == 0 ? DateTime.Now : betaSubFinalViews.FirstOrDefault().Start;
-                saleOrderFlowGCHelp.Flag = betaSubFinalViews.Count() == 0 ? false : true;
+                saleOrderFlowGCHelp.Flag = betaSubFinalViews.Count() == 0 ? 1 : 3;
                 saleOrderFlowHelps.Add(saleOrderFlowGCHelp);
                 #endregion
 
                 #region 采购
                 SaleOrderFlowHelp saleOrderFlowHelp = new SaleOrderFlowHelp();
                 saleOrderFlowHelp.ModelName = "采购";
-                saleOrderFlowHelp.Flag = false;
+                saleOrderFlowHelp.Flag = 1;
 
                 //获取采购单关联表
                 var buyporrels = await UnitWork.Find<buy_porrel>(r => r.sbo_id == Define.SBO_ID && r.RelDoc_Entry == saleId).ToListAsync();
@@ -4089,12 +4089,12 @@ namespace OpenAuth.App.PayTerm
                         if (comBuyopors != null && comBuyopors.Count() > 0)
                         {
                             saleOrderFlowHelp.DataTime = comBuyopors.FirstOrDefault().UpdateDate;
-                            saleOrderFlowHelp.Flag = true;
+                            saleOrderFlowHelp.Flag = 3;
                         }
                         else
                         {
                             saleOrderFlowHelp.DataTime = buyopors.FirstOrDefault().CreateDate;
-                            saleOrderFlowHelp.Flag = false;
+                            saleOrderFlowHelp.Flag = 2;
                         }
                     }
                 }
@@ -4105,7 +4105,7 @@ namespace OpenAuth.App.PayTerm
                 #region 生产
                 SaleOrderFlowHelp saleOrderFlowSCHelp = new SaleOrderFlowHelp();
                 saleOrderFlowSCHelp.ModelName = "生产";
-                saleOrderFlowSCHelp.Flag = false;
+                saleOrderFlowSCHelp.Flag = 1;
 
                 //获取销售订单
                 var saleOrdrs = await UnitWork.Find<sale_ordr>(r => r.CANCELED == "N" && r.sbo_id == Define.SBO_ID && r.DocEntry == saleId).ToListAsync();
@@ -4124,12 +4124,12 @@ namespace OpenAuth.App.PayTerm
                         {
                             saleOrderFlowSCHelp.DataTime = owors.FirstOrDefault().UpdateDate;
                             saleOrderFlowSCHelp.Name = owors.FirstOrDefault().U_WO_LTDW;
-                            saleOrderFlowSCHelp.Flag = true;
+                            saleOrderFlowSCHelp.Flag = 3;
                         }
                         else
                         {
                             saleOrderFlowSCHelp.DataTime = owors.FirstOrDefault().CreateDate;
-                            saleOrderFlowSCHelp.Flag = false;
+                            saleOrderFlowSCHelp.Flag = 2;
                         }
                     }
                 }
@@ -4140,7 +4140,7 @@ namespace OpenAuth.App.PayTerm
                 #region 交货
                 SaleOrderFlowHelp saleOrderFlowJHHelp = new SaleOrderFlowHelp();
                 saleOrderFlowJHHelp.ModelName = "交货";
-                saleOrderFlowJHHelp.Flag = false;
+                saleOrderFlowJHHelp.Flag = 1;
 
                 //获取交货单明细
                 var dln1s = await UnitWork.Find<sale_dln1>(r => r.sbo_id == Define.SBO_ID && r.BaseEntry == saleId).ToListAsync();
@@ -4160,12 +4160,12 @@ namespace OpenAuth.App.PayTerm
                         if (odlnCs != null && odlnCs.Count() > 0)
                         {
                             saleOrderFlowJHHelp.DataTime = odlnCs.FirstOrDefault().UpdateDate;                            
-                            saleOrderFlowJHHelp.Flag = true;
+                            saleOrderFlowJHHelp.Flag = 3;
                         }
                         else
                         {
                             saleOrderFlowJHHelp.DataTime = odlns.FirstOrDefault().CreateDate;
-                            saleOrderFlowJHHelp.Flag = false;
+                            saleOrderFlowJHHelp.Flag = 2;
                         }
                     }
                 }
@@ -4176,7 +4176,7 @@ namespace OpenAuth.App.PayTerm
                 #region 收款
                 SaleOrderFlowHelp saleOrderFlowSKHelp = new SaleOrderFlowHelp();
                 saleOrderFlowSKHelp.ModelName = "收款";
-                saleOrderFlowSKHelp.Flag = false;
+                saleOrderFlowSKHelp.Flag = 1;
                 if (saleOrdrs != null && saleOrdrs.Count() > 0)
                 {
                     int slpCode = (int)saleOrdrs.FirstOrDefault().SlpCode;
@@ -4211,11 +4211,12 @@ namespace OpenAuth.App.PayTerm
                         if (saleOrdrs.FirstOrDefault().DocTotal == saleOrderORCTs.FirstOrDefault().sum_DocTotal)
                         {
                             saleOrderFlowSKHelp.DataTime = saleOrdrs.FirstOrDefault().UpdateDate;
-                            saleOrderFlowSKHelp.Flag = true;
+                            saleOrderFlowSKHelp.Flag = 3;
                         }
                         else
                         {
                             saleOrderFlowSKHelp.DataTime = saleOrdrs.FirstOrDefault().CreateDate;
+                            saleOrderFlowSKHelp.Flag = 2;
                         }
                     }
                 }
@@ -4229,7 +4230,7 @@ namespace OpenAuth.App.PayTerm
                 saleOrderFlowComHelp.Name = "";
                 saleOrderFlowComHelp.Dept = "";
                 saleOrderFlowComHelp.DataTime = DateTime.Now;
-                saleOrderFlowComHelp.Flag = (saleOrderFlowGCHelp.Flag && saleOrderFlowHelp.Flag && saleOrderFlowSCHelp.Flag && saleOrderFlowJHHelp.Flag && saleOrderFlowSKHelp.Flag) ? true : false;
+                saleOrderFlowComHelp.Flag = (saleOrderFlowGCHelp.Flag == 3 && saleOrderFlowHelp.Flag == 3 && saleOrderFlowSCHelp.Flag == 3 && saleOrderFlowJHHelp.Flag == 3 && saleOrderFlowSKHelp.Flag == 3) ? 3 : 1;
                 saleOrderFlowHelps.Add(saleOrderFlowComHelp);
                 #endregion
 

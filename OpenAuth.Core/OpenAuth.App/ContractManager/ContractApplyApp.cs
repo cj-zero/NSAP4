@@ -106,6 +106,7 @@ namespace OpenAuth.App.ContractManager
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.ItemName), r => r.ItemName.Contains(request.ItemName))
                                             .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
                                             .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ContractNum), r => r.ContractNum == Convert.ToInt32(request.ContractNum))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus)).ToList();
 
                     //通过反射将字段作为参数传入
@@ -137,6 +138,7 @@ namespace OpenAuth.App.ContractManager
                     {
                         Id = r.a.Id,
                         ContractNo = r.a.ContractNo,
+                        ContractNum = r.a.ContractNum,
                         CustomerCode = r.a.CustomerCode,
                         CustomerName = r.a.CustomerName,
                         CompanyType = r.a.CompanyType,
@@ -194,6 +196,7 @@ namespace OpenAuth.App.ContractManager
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.ItemName), r => r.ItemName.Contains(request.ItemName))
                                             .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
                                             .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ContractNum), r => r.ContractNum == Convert.ToInt32(request.ContractNum))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus)).ToList();
 
                     //通过反射将字段作为参数传入
@@ -225,6 +228,7 @@ namespace OpenAuth.App.ContractManager
                     {
                         Id = r.a.Id,
                         ContractNo = r.a.ContractNo,
+                        ContractNum = r.a.ContractNum,
                         CustomerCode = r.a.CustomerCode,
                         CustomerName = r.a.CustomerName,
                         CompanyType = r.a.CompanyType,
@@ -328,6 +332,7 @@ namespace OpenAuth.App.ContractManager
                                            select new
                                            {
                                                a.Id,
+                                               a.ContractNum,
                                                a.ContractNo,
                                                a.CustomerCode,
                                                a.CustomerName,
@@ -1620,6 +1625,7 @@ namespace OpenAuth.App.ContractManager
                         {
                             UpdateTime = DateTime.Now,
                             ContractNo = obj.ContractNo,
+                            ContractNum = obj.ContractNum,
                             CustomerCode = obj.CustomerCode,
                             CustomerName = obj.CustomerName,
                             CompanyType = obj.CompanyType,
@@ -1653,6 +1659,7 @@ namespace OpenAuth.App.ContractManager
                             {
                                 UpdateTime = DateTime.Now,
                                 ContractNo = obj.ContractNo,
+                                ContractNum = obj.ContractNum,
                                 CustomerCode = obj.CustomerCode,
                                 CustomerName = obj.CustomerName,
                                 CompanyType = obj.CompanyType,
@@ -1710,6 +1717,7 @@ namespace OpenAuth.App.ContractManager
                             {
                                 UpdateTime = DateTime.Now,
                                 ContractNo = obj.ContractNo,
+                                ContractNum = obj.ContractNum,
                                 CustomerCode = obj.CustomerCode,
                                 CustomerName = obj.CustomerName,
                                 CompanyType = obj.CompanyType,
@@ -3763,6 +3771,7 @@ namespace OpenAuth.App.ContractManager
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), r => r.CreateName.Contains(request.CreateName))
                                     .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
                                     .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
+                                    .WhereIf(!string.IsNullOrWhiteSpace(request.ContractNum), r => r.ContractNum == Convert.ToInt32(request.ContractNum))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus)).ToList();
 
             //通过反射将字段作为参数传入
@@ -3794,6 +3803,7 @@ namespace OpenAuth.App.ContractManager
             {
                 Id = r.a.Id,
                 ContractNo = r.a.ContractNo,
+                ContractNum = r.a.ContractNum,
                 CustomerCode = r.a.CustomerCode,
                 CustomerName = r.a.CustomerName,
                 CompanyType = r.a.CompanyType,

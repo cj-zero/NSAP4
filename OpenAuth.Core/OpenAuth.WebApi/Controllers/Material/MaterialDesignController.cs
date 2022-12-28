@@ -498,7 +498,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             if (!string.IsNullOrWhiteSpace(ItemName))
             {
-                sql += " and n.ItemName = '" + ItemName + "'";
+                sql += " and n.ItemName = '" + ItemName.Replace("\'", "\"") + "'";
             }
             return UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null);
         }
