@@ -88,14 +88,14 @@ namespace OpenAuth.WebApi.Controllers
             var resultJson = HttpGet(qrUrl);
             if (string.IsNullOrWhiteSpace(resultJson) && !IsJson(resultJson))
             {
-                response.Code = 500;
+                response.Code = 205;
                 response.Message = "passport请求失败";
                 return response;
             }
             var result = JsonConvert.DeserializeObject<dynamic>(resultJson);
             if (result.code != "200")
             {
-                response.Code = 500;
+                response.Code = 205;
                 response.Message = "passport请求失败";
                 return response;
             }
@@ -199,7 +199,7 @@ namespace OpenAuth.WebApi.Controllers
             var resultjson = HttpGet(url);
             if (string.IsNullOrWhiteSpace(resultjson) && !IsJson(resultjson))
             {
-                response.Code = 500;
+                response.Code = 205;
                 response.Message = "请求出错";
                 return response;
             }
@@ -220,8 +220,8 @@ namespace OpenAuth.WebApi.Controllers
             }
             catch(Exception ex)
             {
-                response.Code = 500;
-                response.Message = "请求出错";
+                response.Code = 205;
+                response.Message = ex.Message;
             }
             if(passportId == -1)
             {
@@ -242,7 +242,7 @@ namespace OpenAuth.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                response.Code = 500;
+                response.Code = 205;
                 response.Message = ex.InnerException?.Message ?? ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{codeId}， 错误：{response.Message}");
             }
