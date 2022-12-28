@@ -189,7 +189,6 @@ namespace OpenAuth.WebApi.Controllers
             string appUserId = string.Empty;
             string url = $"http://passport.neware.work/api/Account2/ValidateLoginQRCode?codeId={codeId}";
             var resultjson = HttpGet(url);
-            Log.Logger.Error($"二维码Id：{codeId}，返回参数：{resultjson}");
             var result = JsonConvert.DeserializeObject<dynamic>(resultjson);
             if (result.code != "200")
             {
@@ -204,7 +203,6 @@ namespace OpenAuth.WebApi.Controllers
             dic.Add("passportToken", passportToken);
             try
             {
-                Log.Logger.Error($"二维码Id：{codeId}，passportId：{passportId}");
                 //查询用户信息
                 var token = _app.GetTokenByPassportId(passportId);
                 if (string.IsNullOrEmpty(token))
