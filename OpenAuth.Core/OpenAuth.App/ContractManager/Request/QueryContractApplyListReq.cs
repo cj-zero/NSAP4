@@ -26,6 +26,11 @@ namespace OpenAuth.App.Request
         public string ContractNo { get; set; }
 
         /// <summary>
+        /// 合同申请单号
+        /// </summary>
+        public string ContractNum { get; set; }
+
+        /// <summary>
         /// 申请人Id
         /// </summary>
         public string CreateId { get; set; }

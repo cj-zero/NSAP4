@@ -1291,10 +1291,11 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 strSql += ",d.U_RelDoc";
             }
-            strSql += ",d.LineStatus,d.BaseEntry,d.BaseLine,d.BaseType";
+            strSql += ",d.LineStatus,d.BaseEntry,d.BaseLine,d.BaseType,IFNULL(c.item_cfg_id,0) item_cfg_id";
             strSql += string.Format(" FROM {0}." + tablename + " d", "nsap_bone");
             strSql += string.Format(" LEFT JOIN {0}.store_oitw w ON d.ItemCode=w.ItemCode AND d.WhsCode=w.WhsCode AND d.sbo_id=w.sbo_id", "nsap_bone");
             strSql += string.Format(" LEFT JOIN {0}.store_oitm m ON d.ItemCode=m.ItemCode AND d.sbo_id=m.sbo_id", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.base_item_cfg c ON d.ItemCode = c.ItemCode AND type_id='0'", "nsap_bone");
             strSql += string.Format(" LEFT JOIN (select d1.sbo_id,d1.BaseEntry ,d1.BaseLine,SUM(d1.Quantity) as SumQuantity from {0}.sale_DLN1 d1 inner join {0}.sale_odln d0 on d0.docentry=d1.docentry and d0.sbo_id=d1.sbo_id where d0.Canceled='N' AND d1.BaseType=17 and d1.BaseEntry=" + DocNum + " GROUP BY d1.sbo_id,d1.BaseEntry,d1.BaseLine) as T on d.sbo_id=T.sbo_id and d.DocEntry=T.BaseEntry and  d.LineNum=T.BaseLine  ", "nsap_bone");
             strSql += string.Format(" WHERE d.DocEntry=" + DocNum + " AND d.sbo_id={0}", SboId);
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
@@ -1310,7 +1311,28 @@ namespace OpenAuth.WebApi.Controllers.Order
                     tempr["LineStatus"] = statusobj == null ? "" : statusobj.ToString();
                 }
             }
-            tableData.Data = dts.Tolist<OrderItemInfo>();
+           
+            //物料数据映射到订单物料实体数据集
+            List<OrderItemInfo> orderItemInfos = dts.Tolist<OrderItemInfo>();
+            foreach (OrderItemInfo item in orderItemInfos)
+            {
+                if (item.item_cfg_id != 0)
+                {
+                    //将子物料添加为主物料的child
+                    List<SaleItemDtoChild> saleItemDtoChildren = _serviceSaleOrderApp.GetItemConfigList(item.item_cfg_id.ToString(), item.WhsCode);
+                    item.childBillSalesDetails = new List<OrderItemInfo>();
+                    foreach (SaleItemDtoChild itemChild in saleItemDtoChildren)
+                    {
+                        OrderItemInfo orderItemInfo = orderItemInfos.Where(r => r.ItemCode == itemChild.ItemCode).FirstOrDefault();
+                        if (orderItemInfo != null)
+                        {
+                            item.childBillSalesDetails.Add(orderItemInfo);
+                        }
+                    }
+                }
+            }
+
+            tableData.Data = orderItemInfos;
             return tableData;
         }
 
