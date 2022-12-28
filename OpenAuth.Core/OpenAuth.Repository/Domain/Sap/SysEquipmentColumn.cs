@@ -98,5 +98,10 @@ namespace OpenAuth.Repository.Domain
         /// 预估提成
         /// </summary>
         public decimal? Commission { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Father { get; set; }
     }
 }

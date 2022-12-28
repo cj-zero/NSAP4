@@ -3385,6 +3385,31 @@ namespace OpenAuth.App
 
 
             result.Count = list.Count();
+
+
+
+            var dateMoney = list.GroupBy(x => new { x.Type, x.PayTime.Value.Year, x.PayTime.Value.Month })
+           .Select(grp => new dateMoney { Type = grp.Key.Type, date = grp.Key.Year + "." + grp.Key.Month.ToString("00"), Money = grp.Sum(a => a.TotalMoney) })
+           .ToList();
+            for (int i = 1; i <= 5; i++)
+            {
+                for (var j = req.StartDate.ToDateTime(); j < req.EndDate; j =j.AddMonths(1))
+                {
+                    string strDate = j.ToString("yyyy.MM");
+                    if (!dateMoney.Any(a => a.Type == i && a.date == strDate))
+                    {
+                        dateMoney.Add(new dateMoney()
+                        {
+
+                            Type = i,
+                            date = strDate,
+                            Money = 0
+                        });
+                    }
+                }
+            }
+
+            dateMoney = dateMoney.OrderBy(a => a.Type).ThenBy(a => a.date).ToList();
             list = list.OrderByDescending(a => a.PayTime).Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToList();
             var ServiceOrderIds = list.Select(a => a.ServiceOrderId).Distinct().ToList();
@@ -3409,14 +3434,19 @@ namespace OpenAuth.App
                 blameBelongMoney = blameBelongMoney,
                 totalMoney = totalMoney,
             };
-            //decimal commissionMonery, reimburseMonery, outsourcMonery, wagesMonery;
-            //decimal blameBelongMonery = 0;
             result.Data = new
             {
                 data = list,
                 detail = detail,
+                dateMoney = dateMoney
             };
             return result;
+        }
+        public class dateMoney 
+        {
+            public int Type { get; set; }
+            public string date { get; set; }
+            public decimal? Money { get; set; }
         }
         public List<HistoryDetailForUserResp> GetWages(string CreateUserId)
         {

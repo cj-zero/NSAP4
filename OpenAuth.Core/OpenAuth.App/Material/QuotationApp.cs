@@ -88,7 +88,7 @@ namespace OpenAuth.App.Material
                                 .WhereIf(ServiceOrderids.Count() > 0, q => ServiceOrderids.Contains(q.ServiceOrderId))
                                 .WhereIf(request.Remark != null, q => q.Remark.Contains(request.Remark))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CancelRequest), q => q.CancelRequest == int.Parse(request.CancelRequest))
-                                .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), q => q.QuotationMergeMaterials.Any(x => x.MaterialCode == request.MaterialCode))
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), q => q.QuotationMergeMaterials.Any(x => x.MaterialCode .Contains( request.MaterialCode)))
                                 .WhereIf(request.IsFinlish == 1, q => q.DeliveryMethod == "1" && q.Status == 2)//首页报表已完成条件
                                 .WhereIf(request.IsFinlish == 2, q => q.DeliveryMethod != "1")//首页报表 未完成条件
                                 .Select(q => new
@@ -741,8 +741,9 @@ namespace OpenAuth.App.Material
             var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.DocEntry,a.ItemCode,c.ItemName,c.BuyUnitMsr,d.OnHand, d.WhsCode,a.BaseQty as Quantity ,c.lastPurPrc from WOR1 a 
 						join OITM c on a.itemcode = c.itemcode
 						join OITW d on a.itemcode=d.itemcode 
-						where d.WhsCode= @WhsCode", parameter).WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
-                        .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => s.ItemName.Contains(request.PartDescribe))
+						where d.WhsCode= @WhsCode", parameter)
+                        //.WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
+                        //.WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => s.ItemName.Contains(request.PartDescribe))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.AppPartCode),s=> s.ItemName.Contains(request.AppPartCode) || s.ItemCode.Contains(request.AppPartCode))
                         .Where(s=> baseEntryList.Contains(s.DocEntry.ToString())).Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = request.ManufacturerSerialNumbers, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
 
@@ -761,8 +762,8 @@ namespace OpenAuth.App.Material
                         from ITT1 a
 	                        JOIN OITM c ON a.code = c.itemcode
 	                        JOIN OITW d ON a.code= d.itemcode  where a.Father=@MaterialCode and d.WhsCode=@WhsCode) a join OITM c on c.ItemCode=a.ItemCode", parameter)
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
+                    //.WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
+                    //.WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
                     .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
             }
             else
@@ -776,6 +777,42 @@ namespace OpenAuth.App.Material
                 );
                 Equipments = EquipmentsObj;
             }
+
+            if (Equipments.Count() > 0 )
+            {
+
+                string listItemCode = string.Join(",", Equipments.Select(c => "'" + c.ItemCode.Replace("'","''") + "'" ));
+
+                parameter = new SqlParameter[]
+                {
+                   new SqlParameter("WhsCode", request.WhsCode)
+                };
+
+               var  Equipments2 = await UnitWork.Query<SysEquipmentColumn>(@$"select a.* ,c.lastPurPrc from (select a.Father as MnfSerial,a.Code as ItemCode,c.ItemName,a.U_DUnit as BuyUnitMsr,d.OnHand,d.WhsCode,a.Quantity,a.Father
+                        from ITT1 a
+	                        JOIN OITM c ON a.code = c.itemcode
+	                        JOIN OITW d ON a.code= d.itemcode  where a.Father in ( {listItemCode} ) and d.WhsCode=@WhsCode) a join OITM c on c.ItemCode=a.ItemCode", parameter)
+                    .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc, Father = s.Father }).ToListAsync();
+                foreach (var item in Equipments2)
+                {
+                    var num = Equipments.Where(a => a.ItemCode == item.Father).FirstOrDefault().Quantity;
+                    if (num != null )
+                    {
+                        item.Quantity = num * item.Quantity;
+                    }
+                }
+                Equipments.AddRange(Equipments2);
+                if (!string.IsNullOrWhiteSpace(request.PartCode))
+                {
+                    Equipments = Equipments.Where(s => s.ItemCode.Contains(request.PartCode)).ToList();
+                }
+                if (!string.IsNullOrWhiteSpace(request.PartDescribe))
+                {
+                    Equipments = Equipments.Where(s => s.ItemName.Contains(request.PartDescribe)).ToList();
+                }
+            }
+
+
             if (request.IsWarranty == null || (bool)request.IsWarranty == false)
             {
                 var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
