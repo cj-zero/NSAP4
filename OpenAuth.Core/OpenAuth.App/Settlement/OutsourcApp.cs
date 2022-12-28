@@ -1180,7 +1180,7 @@ namespace OpenAuth.App
 
                     await UnitWork.UpdateAsync<Outsourc>(o => o.Id == req.outsourcId, u => new Outsourc
                     {
-                        //TotalMoney = obj.TotalMoney,
+                        TotalMoney = obj.TotalMoney,
                         FlowInstanceId = outsourcObj.FlowInstanceId,
                         UpdateTime = DateTime.Now,
                         //todo:补充或调整自己需要的字段
@@ -1368,6 +1368,9 @@ namespace OpenAuth.App
                     await _quotationApp.TimeOfDelivery((int)outsourcObj.QuotationId);
                 }
                 await _flowInstanceApp.Verification(VerificationReqModle);
+
+                //刷数据任务
+                await UpdateDataJob(outsourcObj.CreateUserId);
             }
             await UnitWork.UpdateAsync<Outsourc>(r => r.Id == outsourcObj.Id, r => new Outsourc
             {
@@ -2281,12 +2284,21 @@ namespace OpenAuth.App
         /// 刷新数据任务
         /// </summary>
         /// <returns></returns>
-        public async Task UpdateDataJob()
+        public async Task UpdateDataJob(string userId = "")
         {
             if (DateTime.Now.ToString("yyyy-MM-dd") == (DateTime.Now.Year.ToString() + "-" + DateTime.Now.Month + "-01"))
             {
                 List<int> moneys = new List<int>() { 30, 35, 40, 45, 50, 60 };
-                List<string> userNames = await UnitWork.Find<Outsourc>(null).GroupBy(r => new { r.CreateUser }).Select(r => r.Key.CreateUser).ToListAsync();
+                List<string> userNames = new List<string>();
+                if (userId == "")
+                {
+                    userNames = await UnitWork.Find<Outsourc>(null).GroupBy(r => new { r.CreateUser }).Select(r => r.Key.CreateUser).ToListAsync();
+                }
+                else
+                {
+                    userNames = await UnitWork.Find<Outsourc>(r => r.CreateUserId == userId).GroupBy(r => new { r.CreateUser }).Select(r => r.Key.CreateUser).ToListAsync();
+                }
+
                 string StartDateTime = (new DateTime(DateTime.Now.Year, DateTime.Now.AddMonths(-1).Month, 1)).ToString("yyyy-MM-dd");
                 string EndDateTime = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)).ToString("yyyy-MM-dd");
                 foreach (string name in userNames)
