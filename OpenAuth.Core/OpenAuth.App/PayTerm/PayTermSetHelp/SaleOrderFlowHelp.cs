@@ -8,7 +8,7 @@ namespace OpenAuth.App.PayTerm.PayTermSetHelp
     {
         public SaleOrderFlowHelp()
         {
-            this.Flag = false;
+            this.Flag = 0;
             this.Name = string.Empty;
             this.Dept = string.Empty;
         }
@@ -36,7 +36,7 @@ namespace OpenAuth.App.PayTerm.PayTermSetHelp
         /// <summary>
         /// 标识
         /// </summary>
-        public bool Flag { get; set; }
+        public int Flag { get; set; }
     }
 
     public class SaleOrderORCT
