@@ -2286,7 +2286,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task UpdateDataJob(string userId = "")
         {
-            if (DateTime.Now.ToString("yyyy-MM-dd") == (DateTime.Now.Year.ToString() + "-" + DateTime.Now.Month + "-01"))
+            if (DateTime.Now.ToString("yyyy-MM") == (DateTime.Now.Year.ToString() + "-" + DateTime.Now.Month))
             {
                 List<int> moneys = new List<int>() { 30, 35, 40, 45, 50, 60 };
                 List<string> userNames = new List<string>();
@@ -2319,15 +2319,15 @@ namespace OpenAuth.App
                         switch (item)
                         {
                             case 30:
-                                strSql.AppendFormat(" limit 0,100 ) t on on o.Id = t.Id set o.TotalMoney = 30");
+                                strSql.AppendFormat(" limit 1,100 ) t on o.Id = t.Id set o.TotalMoney = 30");
                                 strSqlOut.AppendFormat(" limit 0 ,100) t on oe.Id = t.eId set oe.Money = 30");
                                 break;
                             case 35:
-                                strSql.AppendFormat(" limit 100,50 ) t on on o.Id = t.Id set o.TotalMoney = 35");
+                                strSql.AppendFormat(" limit 100,50 ) t on o.Id = t.Id set o.TotalMoney = 35");
                                 strSqlOut.AppendFormat(" limit 100 ,50) t on oe.Id = t.eId set oe.Money = 35");
                                 break;
                             case 40:
-                                strSql.AppendFormat(" limit 150,50 ) t on on o.Id = t.Id set o.TotalMoney = 40");
+                                strSql.AppendFormat(" limit 150,50 ) t on  o.Id = t.Id set o.TotalMoney = 40");
                                 strSqlOut.AppendFormat(" limit 150 ,50) t on oe.Id = t.eId set oe.Money = 40");
                                 break;
                             case 45:
@@ -2335,7 +2335,7 @@ namespace OpenAuth.App
                                 strSqlOut.AppendFormat(" limit 200 ,50) t on oe.Id = t.eId set oe.Money = 45");
                                 break;
                             case 50:
-                                strSql.AppendFormat(" limit 250,50 ) t on on o.Id = t.Id set o.TotalMoney = 50");
+                                strSql.AppendFormat(" limit 250,50 ) t on  o.Id = t.Id set o.TotalMoney = 50");
                                 strSqlOut.AppendFormat(" limit 250 ,50) t on oe.Id = t.eId set oe.Money = 50");
                                 break;
                         }
