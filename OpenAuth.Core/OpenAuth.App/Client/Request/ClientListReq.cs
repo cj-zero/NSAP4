@@ -8,7 +8,16 @@ namespace OpenAuth.App.Client.Request
     public class ClientListReq : PageReq
     {
         public string qtype { get; set; }
-        public string query { get; set; }
+        //public string query { get; set; }
+
+        public string sbo_id { get; set; }
+
+        public string CardCode { get; set; }
+
+        public string free_Text { get; set; }
+
+        public string Technician { get; set; }
+
         public string sortname { get; set; }
         public string sortorder { get; set; }
 
