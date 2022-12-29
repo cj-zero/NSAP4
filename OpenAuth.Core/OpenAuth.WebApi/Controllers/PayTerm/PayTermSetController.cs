@@ -712,7 +712,7 @@ namespace OpenAuth.WebApi.Controllers.PayTerm
         /// <param name="clientListReq"></param>
         /// <returns></returns>
         [HttpPost]
-        public TableData GetClientList(ClientListReq clientListReq)
+        public TableData GetClientList(ClientListReqPay clientListReq)
         {
             int rowCount = 0;
             var result = new TableData();
