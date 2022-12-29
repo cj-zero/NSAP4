@@ -868,6 +868,7 @@ namespace OpenAuth.WebApi.Controllers
             var baseInfo = await _nwcaliCertApp.GetInfo(serialNumber);
             if (baseInfo != null)
             {
+                await _nwcaliCertApp.SetIssuser(baseInfo);
                 if (!string.IsNullOrWhiteSpace(baseInfo.CNASPdfPath))
                 {
                     System.Net.HttpWebRequest request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(baseInfo.CNASPdfPath);
