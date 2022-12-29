@@ -210,6 +210,57 @@ namespace OpenAuth.App.Response
         /// </summary>
         [ExporterHeader(DisplayName = "完工报告备注")]
         public string CompletionReporRemark { get; set; }
-        
+
     }
-}
+
+
+    public class ServiceOrderNewExcelDto
+    {
+        [ExporterHeader(DisplayName = "服务单号")]
+        public int? U_SAP_ID { get; set; }
+        /// <summary>
+        /// 终端客户代码
+        /// </summary>
+        [ExporterHeader(DisplayName = "终端客户代码")]
+        public string TerminalCustomerId { get; set; }
+
+        /// <summary>
+        /// 终端客户
+        /// </summary>
+        [ExporterHeader(DisplayName = "终端客户")]
+        public string TerminalCustomer { get; set; }
+     
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        [ExporterHeader(DisplayName = "物料编码")]
+        public string MaterialCode { get; set; }
+
+        /// <summary>
+        /// 制造商序列号
+        /// </summary>
+        [ExporterHeader(DisplayName = "制造商序列号")]
+        public string ManufacturerSerialNumber { get; set; }
+     
+        /// <summary>
+        /// 当前接单技术员名称
+        /// </summary>
+        [ExporterHeader(DisplayName = "技术员")]
+        public string CurrentUser { get; set; }
+        /// <summary>
+        /// 工单提交时间
+        /// </summary>
+        [ExporterHeader(DisplayName = "工单提交时间")]
+        public System.DateTime? SubmitDate { get; set; }
+        /// <summary>
+        /// 故障描述
+        /// </summary>
+        [ExporterHeader(DisplayName = "故障描述")]
+        public string TroubleDescription { get; set; }
+        /// <summary>
+        /// 过程描述
+        /// </summary>
+        [ExporterHeader(DisplayName = "过程描述")]
+        public string ProcessDescription { get; set; }
+
+    } }

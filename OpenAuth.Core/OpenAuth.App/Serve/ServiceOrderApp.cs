@@ -4085,6 +4085,59 @@ namespace OpenAuth.App
             var bytes = await exporter.ExportAsByteArray(list);
             return bytes;
         }
+        /// <summary>
+        /// 导出excel
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<byte[]> ExportExcelNew(QueryServiceOrderListReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            List<string> techName = new List<string>();
+            List<int> status = new List<int>();
+            if (!string.IsNullOrWhiteSpace(req.QryTechName))
+                techName = req.QryTechName.Split(",").ToList();
+            if (!string.IsNullOrWhiteSpace(req.QryStateList))
+            {
+                var num = req.QryStateList.Split(",");
+                status = Array.ConvertAll(num, int.Parse).ToList();
+            }
+            if (req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null)
+            {
+                throw new CommonException("创建时间输入有误！", Define.INVALID_TOKEN);
+            }
+            #region MyRegion
+            var query = await (from a in UnitWork.Find<ServiceOrder>(c => c.CreateTime >= req.QryCreateTimeFrom
+                                && c.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddDays(1) && c.VestInOrg == 1)
+                                join b in UnitWork.Find<ServiceDailyReport>(null) on a.Id equals b.ServiceOrderId
+                                select new { a.U_SAP_ID, a.TerminalCustomerId, a.TerminalCustomer, a.CreateTime, b.MaterialCode, b.ManufacturerSerialNumber, b.CreaterName, b.TroubleDescription, b.ProcessDescription }).ToListAsync();
+            var list = new List<ServiceOrderNewExcelDto>();
+            foreach (var serviceOrder in query)
+            {
+                list.Add(new ServiceOrderNewExcelDto
+                {
+                    U_SAP_ID = serviceOrder.U_SAP_ID,
+                    TerminalCustomer = serviceOrder.TerminalCustomer,
+                    TerminalCustomerId = serviceOrder.TerminalCustomerId,
+                    MaterialCode = serviceOrder.MaterialCode,
+                    ManufacturerSerialNumber = serviceOrder.ManufacturerSerialNumber,
+                    CurrentUser = serviceOrder.CreaterName,
+                    SubmitDate = serviceOrder.CreateTime,
+                    TroubleDescription = string.Join(",", GetServiceTroubleAndSolution(serviceOrder.TroubleDescription, "description")),
+                    ProcessDescription = string.Join(",", GetServiceTroubleAndSolution(serviceOrder.ProcessDescription, "description")),
+                });
+            }
+            IExporter exporter = new ExcelExporter();
+            var bytes = await exporter.ExportAsByteArray(list);
+            return bytes;
+            #endregion
+        }
+
 
         /// <summary>
         /// 获取技术员位置信息
