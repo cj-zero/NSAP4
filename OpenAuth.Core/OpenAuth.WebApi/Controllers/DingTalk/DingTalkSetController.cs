@@ -9,6 +9,7 @@ using Serilog;
 using Infrastructure;
 using OpenAuth.App.DDVoice;
 using OpenAuth.App.DDVoice.EntityHelp;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OpenAuth.WebApi.Controllers.DingTalk
 {
@@ -196,6 +197,26 @@ namespace OpenAuth.WebApi.Controllers.DingTalk
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// 钉钉推送消息
+        /// <param name="msgType">消息类型</param>
+        /// <param name="remarks">文本消息</param>
+        /// <param name="userIds">需要发送的用户Id</param>
+        /// <returns></returns>
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task DDSendMsg(string msgType, string remarks, string userIds)
+        {
+            try
+            {
+                 await _ddVoiceApp.DDSendMsg(msgType, remarks, userIds);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{ex.Message.ToString()}");
+            }
         }
     }
 }
