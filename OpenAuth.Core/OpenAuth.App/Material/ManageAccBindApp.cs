@@ -60,12 +60,12 @@ namespace OpenAuth.App.Material
 
         public async Task<bool> SendDDBomMsg(string proNo)
         {
-            //-- 刘西林  204d4c43-c7c6-11ea-bc9e-54bf645e326d
-           // --陈迎    1708dddd - c8ae - 4cf4 - b321 - bc9e216bea4f
-           // -- 胡呈期  207dedd2 - c7c6 - 11ea - bc9e - 54bf645e326d
-            string liuxilinuserId = "204d4c43-c7c6-11ea-bc9e-54bf645e326d";
-            string e1chenyinguserId = "1708dddd-c8ae-4cf4-b321-bc9e216bea4f";
-            string huchengqiuserId = "207dedd2-c7c6-11ea-bc9e-54bf645e326d";
+            //-- 刘西林  204d4c43-c7c6-11ea-bc9e-54bf645e326d           05132101297908
+            // --陈迎    1708dddd - c8ae - 4cf4 - b321 - bc9e216bea4f      16515413562544875
+            // -- 胡呈期  207dedd2 - c7c6 - 11ea - bc9e - 54bf645e326d  263116285332401528
+            string liuxilinuserId = "05132101297908";
+            string e1chenyinguserId = "16515413562544875";
+            string huchengqiuserId = "263116285332401528";
             string remarks = "有新的BOM单导入任务：产品编号【" + proNo + "】，请及时处理";
             await _dDVoice.DDSendMsg("text", remarks, liuxilinuserId);
             await _dDVoice.DDSendMsg("text", remarks, e1chenyinguserId);
