@@ -2890,7 +2890,7 @@ namespace OpenAuth.App
                 var userInfo = userList.Where(c => c.Id == item["user_id"].ToString()).FirstOrDefault();
                 list.Add(new
                 {
-                    userId = item["user_id"].ToString(),
+                    user_id = item["user_id"].ToString(),
                     auto_count = item["auto_count"].ToString(),
                     hand_count = item["hand_count"].ToString(),
                     hours = item["hours"].ToString(),
