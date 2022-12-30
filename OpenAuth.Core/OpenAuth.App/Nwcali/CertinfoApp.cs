@@ -2887,10 +2887,10 @@ namespace OpenAuth.App
                                   select new { userName = b.Name, orgName = d.Name, b.Id }).ToListAsync();
             foreach (var item in taskObj["data"])
             {
-                var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
+                var userInfo = userList.Where(c => c.Id == item["user_id"].ToString()).FirstOrDefault();
                 list.Add(new
                 {
-                    userId = item["userId"].ToString(),
+                    userId = item["user_id"].ToString(),
                     auto_count = item["auto_count"].ToString(),
                     hand_count = item["hand_count"].ToString(),
                     hours = item["hours"].ToString(),
@@ -2915,7 +2915,7 @@ namespace OpenAuth.App
             List<object> list = new List<object>();
             var beginTime = ((DateTimeOffset)StartTime).ToUnixTimeSeconds();
             var endTime = ((DateTimeOffset)EndTime).ToUnixTimeSeconds();
-            string url = $"{_appConfiguration.Value.AnalyticsReportUrl}c-char2?userId={user_id}&beginTs={beginTime}&endTs={endTime}";
+            string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-char2?userId={user_id}&beginTs={beginTime}&endTs={endTime}";
             HttpHelper helper = new HttpHelper(url);
             Dictionary<string, string> dic = null;
             var data = helper.Get(dic, url);
@@ -2948,14 +2948,12 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="user_id"></param>
         /// <param name="StartTime"></param>
-        /// <param name="EndTime"></param>
         /// <returns></returns>
-        public TableData CalibrationHourReport(string user_id, DateTime StartTime, DateTime EndTime)
+        public TableData CalibrationHourReport(string user_id, DateTime StartTime)
         {
             TableData result = new TableData();
             var beginTime = ((DateTimeOffset)StartTime).ToUnixTimeSeconds();
-            var endTime = ((DateTimeOffset)EndTime).ToUnixTimeSeconds();
-            string url = $"{_appConfiguration.Value.AnalyticsReportUrl}c-char3?userId={user_id}&beginTs={beginTime}&endTs={endTime}";
+            string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-char3?userId={user_id}&ts={beginTime}";
             HttpHelper helper = new HttpHelper(url);
             Dictionary<string, string> dic = null;
             var data = helper.Get(dic, url);

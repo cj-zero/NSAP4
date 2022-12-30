@@ -469,13 +469,12 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="user_id"></param>
         /// <param name="StartTime"></param>
-        /// <param name="EndTime"></param>
         /// <returns></returns>
         [HttpGet]
-        public TableData CalibrationHourReport(string user_id, DateTime StartTime, DateTime EndTime)
+        public TableData CalibrationHourReport(string user_id, DateTime StartTime)
         {
             TableData result = new TableData();
-            result = _app.CalibrationHourReport(user_id, StartTime, EndTime);
+            result = _app.CalibrationHourReport(user_id, StartTime);
             return result;
         }
 
