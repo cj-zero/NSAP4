@@ -1176,6 +1176,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     ViewCustom = true;
                     ViewSales = true;
                 }
+
                 tableData.Data = _serviceSaleOrderApp.QuerySaleDeliveryDetails(DocNum, ViewCustom, tablename, ViewSales, SboId, isSql);
             }
             catch (Exception e)
@@ -1367,7 +1368,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
             try
             {
-                bool ViewCustom = false;
+                bool ViewCustom = true;
                 bool ViewSales = false;
                 int billSboId = 0; bool isSql = true;
                 if (int.Parse(SboId) == SboID || SboId == "") { billSboId = SboID; } else { billSboId = int.Parse(SboId); isSql = false; }
@@ -1379,7 +1380,20 @@ namespace OpenAuth.WebApi.Controllers.Order
                     ViewSales = Powers.ViewSales;
                 }
                 if (ations == "copy") { ViewCustom = true; ViewSales = true; }
-                result.Data = _serviceSaleOrderApp.QuerySaleDeliveryDetailsV1(DocNum, true, tablename, true, billSboId, isSql);
+
+                var loginContext = _auth.GetCurrentUser();
+                if (loginContext == null)
+                {
+                    throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+                }
+
+                //当前用户如果属于PMC部门隐藏客户名称
+                if (loginContext.Orgs.Any(r => r.Name.Equals("PMC")))
+                {
+                    ViewCustom = false;
+                }
+
+                result.Data = _serviceSaleOrderApp.QuerySaleDeliveryDetailsV1(DocNum, ViewCustom, tablename, true, billSboId, isSql);
             }
             catch (Exception e)
             {
@@ -2235,7 +2249,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         [HttpPost]
         [Route("GridDataBindDetails")]
-        public TableData GridDataBindDetails(SalesOrderListReq request)
+        public TableData GridDataBindDetails(SalesOrderDetailListReq request)
         {
             int rowCount = 0;
 
@@ -2270,7 +2284,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 //if (isOpen == "0")
                 //{
-                result.Data = _serviceSaleOrderApp.SelectBillView(request.limit, request.page, request.query, request.sortname, request.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount);
+                result.Data = _serviceSaleOrderApp.SelectBillView(request.limit, request.page, request, request.sortname, request.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount);
                 //}
                 //else
                 //{

@@ -108,7 +108,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 }
                 else
                 {
-                    DataTable dts = _serviceSaleOrderApp.SelectBillViewInfo(out rowCount, model.limit, model.page, model.query, model.sortname, model.sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSales);
+                    DataTable dts = _serviceSaleOrderApp.SelectBillViewInfo(out rowCount, model.limit, model.page, "", model.sortname, model.sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSales);
                     result.Data = dts;
                     result.Count = rowCount;
                 }
@@ -432,7 +432,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         [HttpPost]
         [Route("GridDataBindDetails")]
-        public TableData GridDataBindDetails(SalesOrderListReq model)
+        public TableData GridDataBindDetails(SalesOrderDetailListReq model)
         {
             int rowCount = 0;
             var result = new TableData();
@@ -469,7 +469,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 //if (isOpen == "0")
                 //{
 
-                var data = _serviceSaleOrderApp.SelectBillView(model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount);
+                var data = _serviceSaleOrderApp.SelectBillView(model.limit, model.page, model, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount);
 
 
                 List<SaleOrderDetailT> saleOrderDetails = data.Tolist<SaleOrderDetailT>();
