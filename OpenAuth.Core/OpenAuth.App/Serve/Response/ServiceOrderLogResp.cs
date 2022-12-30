@@ -148,5 +148,31 @@ namespace OpenAuth.App.Serve.Response
         /// </summary>
         public decimal? Latitude { get; set; }
 
+        /// <summary>
+        /// IW号
+        /// </summary>
+        public string IW { get; set; }
+
+        /// <summary>
+        /// 主题
+        /// </summary>
+        public string Theme { get; set; }
+        /// <summary>
+        /// ID
+        /// </summary>
+        public int? InternalId { get; set; }
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public DateTime? InternalCreateTime { get; set; }
+        /// <summary>
+        /// 创建人
+        /// </summary>
+        public string InternalCreateUser { get; set; }
+        /// <summary>
+        /// 是否领料
+        /// </summary>
+        public bool? IsPicking { get; set; } =false;
+
     }
 }

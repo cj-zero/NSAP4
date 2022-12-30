@@ -527,8 +527,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result.Data = await _serviceOrderApp.ServiceWorkOrderListDetail(serviceOrderId);
-                result.Count = result.Data.Count;
+                result = await _serviceOrderApp.ServiceWorkOrderListDetail(serviceOrderId);
             }
             catch (Exception ex)
             {

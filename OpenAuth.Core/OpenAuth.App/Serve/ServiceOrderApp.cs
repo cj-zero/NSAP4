@@ -2046,6 +2046,22 @@ namespace OpenAuth.App
             }
             var resultsql = await query.OrderByDescending(q => q.CreateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
 
+
+            List<int> ServiceOrderIds = resultsql.Select(a => a.Id).ToList();
+            List<int?> ServiceOrderId1s = resultsql.Where(a => a.VestInOrg ==1).Select(a => (int?)a.Id).ToList();
+            List<int?> ServiceOrderId2s = resultsql.Where(a => a.VestInOrg ==2).Select(a => (int?)a.Id).ToList();
+            var internalContact1 = (from a in UnitWork.Find<InternalContactServiceOrder>(a => ServiceOrderId1s.Contains(a.ServiceOrderId))
+                                               join b in UnitWork.Find<InternalContact>(null) on a.InternalContactId equals b.Id
+                                               select new { a.ServiceOrderId,b.IW,b.Theme, InternalId = b.Id, InternalCreateUser = b.CreateUser, InternalCreateTime = b.CreateTime }).ToList();
+
+            var internalContact2 = (from a in UnitWork.Find<InternalContact>(null)
+                                               join b in UnitWork.Find<InternalContactTask>(null) on a.Id equals b.InternalContactId
+                                               join c in UnitWork.Find<InternalContactTaskServiceOrder>(null) on b.Id equals c.InternalContactTaskId
+                                               where ServiceOrderId2s.Contains(c.ServiceOrderId)
+                                               select new { c.ServiceOrderId, a.IW, a.Theme, InternalId = a.Id, InternalCreateUser = a.CreateUser, InternalCreateTime = a.CreateTime }).ToList();
+
+            var quotation = UnitWork.Find<Quotation>(a => ServiceOrderIds.Contains(a.ServiceOrderId) && (a.QuotationStatus == 11 || a.QuotationStatus == 12)).ToList();
+
             List<string> userId = new List<string>();
             userId.AddRange(resultsql.Select(a => a.RecepUserId));
             userId.AddRange(resultsql.Select(a => a.SalesManId));
@@ -2132,6 +2148,26 @@ namespace OpenAuth.App
                 if (item.VestInOrg == 1)
                 {
                     item.MaterialTypes = item.ServiceWorkOrders.Select(s => s.MaterialCode.IndexOf("-") == -1 ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))).Distinct().ToList();
+
+                    var internalContact = internalContact1.FirstOrDefault(a => a.ServiceOrderId == item.ServiceOrderId);
+                    item.IW = internalContact?.IW;
+                    item.Theme = internalContact?.Theme;
+                    item.InternalId = internalContact?.InternalId;
+                    item.InternalCreateUser = internalContact?.InternalCreateUser;
+                    item.InternalCreateTime = internalContact?.InternalCreateTime;
+                }
+                else
+                {
+                    var internalContact = internalContact2.FirstOrDefault(a => a.ServiceOrderId == item.ServiceOrderId);
+                    item.IW = internalContact?.IW;
+                    item.Theme = internalContact?.Theme;
+                    item.InternalId = internalContact?.InternalId;
+                    item.InternalCreateUser = internalContact?.InternalCreateUser;
+                    item.InternalCreateTime = internalContact?.InternalCreateTime;
+                }
+                if (quotation.Any(a => a.ServiceOrderId == item.ServiceOrderId))
+                {
+                    item.IsPicking = true;
                 }
                 foreach (var item2 in item.ServiceWorkOrders)
                 {
