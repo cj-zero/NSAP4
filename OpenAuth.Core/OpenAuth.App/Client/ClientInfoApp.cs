@@ -238,7 +238,7 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 查询列表
         /// </summary>
-        public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder,
+        public DataTable SelectClientList(int limit, int page, string sbo_id, string CardCode, string free_Text, string Technician, string sortname, string sortorder,
             int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull,
             int depID, string label, string contectTel, string slpName, string isReseller, int? Day, string CntctPrsn, string address,
             string U_CardTypeStr, string U_ClientSource, string U_CompSector, string U_TradeType, string U_StaffScale,
@@ -496,17 +496,33 @@ namespace OpenAuth.App.Client
             }
             if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
                 sortString = string.Format("{0} {1}", sortname, sortorder.ToUpper());
-            if (!string.IsNullOrEmpty(query))
+            //if (!string.IsNullOrEmpty(query))
+            //{
+            //    string[] whereArray = query.Split('`');
+            //    for (int i = 1; i < whereArray.Length; i++)
+            //    {
+            //        string[] p = whereArray[i].Split(':');
+            //        if (!string.IsNullOrEmpty(p[1]))
+            //        {
+            //            filterString.AppendFormat("AND T.{0} LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL().Replace("*", "%"));
+            //        }
+            //    }
+            //}
+            if (!string.IsNullOrEmpty(sbo_id))
             {
-                string[] whereArray = query.Split('`');
-                for (int i = 1; i < whereArray.Length; i++)
-                {
-                    string[] p = whereArray[i].Split(':');
-                    if (!string.IsNullOrEmpty(p[1]))
-                    {
-                        filterString.AppendFormat("AND T.{0} LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL().Replace("*", "%"));
-                    }
-                }
+                filterString.AppendFormat("AND T.sbo_id LIKE '%{0}%' ", sbo_id.Trim().FilterSQL().Replace("*", "%"));
+            }
+            if (!string.IsNullOrEmpty(CardCode))
+            {
+                filterString.AppendFormat("AND T.CardCode LIKE '%{0}%' ", CardCode.Trim().FilterSQL().Replace("*", "%"));
+            }
+            if (!string.IsNullOrEmpty(free_Text))
+            {
+                filterString.AppendFormat("AND T.free_Text LIKE '%{0}%' ", free_Text.Trim().FilterSQL().Replace("*", "%"));
+            }
+            if (!string.IsNullOrEmpty(Technician))
+            {
+                filterString.AppendFormat("AND T.Technician LIKE '%{0}%' ", Technician.Trim().FilterSQL().Replace("*", "%"));
             }
             StringBuilder filedName = new StringBuilder();
             StringBuilder tableName = new StringBuilder();

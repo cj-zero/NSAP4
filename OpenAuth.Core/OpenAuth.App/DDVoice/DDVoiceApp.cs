@@ -70,9 +70,17 @@ namespace OpenAuth.App.DDVoice
         {
             var loginContext = _auth.GetCurrentUser();
             string agent_Id = _ddSettingHelp.GetDDKey("Agent_Id");
+            string userName = "";
+            string userId = "";
             if (loginContext == null)
             {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+                userName = "超级管理员";
+                userId = "00000000-0000-0000-0000-000000000000";
+            }
+            else
+            {
+                userName = loginContext.User.Name;
+                userId = loginContext.User.Id;
             }
 
             if (access_token != "")
@@ -109,8 +117,8 @@ namespace OpenAuth.App.DDVoice
                         MsgType = "钉钉工作通知",
                         MsgContent = dDSendResult.errmsg,
                         MsgResult = dDSendResult.errmsg == "ok" ? "成功" : "失败",
-                        CreateName = loginContext.User.Name,
-                        CreateUserId = loginContext.User.Id,
+                        CreateName = userName,
+                        CreateUserId = userId,
                         CreateTime = DateTime.Now
                     });
 

@@ -172,7 +172,7 @@ namespace OpenAuth.WebApi.Controllers.Client
             try
             {
                 result.Data = _clientInfoApp.SelectClientList(clientListReq.limit, clientListReq.page,
-                    clientListReq.query, clientListReq.sortname, clientListReq.sortorder, sboid, userId, rIsViewSales,
+                    clientListReq.sbo_id, clientListReq.CardCode, clientListReq.free_Text, clientListReq.Technician, clientListReq.sortname, clientListReq.sortorder, sboid, userId, rIsViewSales,
                     rIsViewSelf, rIsViewSelfDepartment, rIsViewFull, depID, clientListReq.Label, clientListReq.ContectTel, clientListReq.SlpName, clientListReq.isReseller, clientListReq.Day, clientListReq.CntctPrsn, clientListReq.address
                     , clientListReq.U_CardTypeStr, clientListReq.U_ClientSource, clientListReq.U_CompSector, clientListReq.U_TradeType, clientListReq.U_StaffScale,
                     clientListReq.CreateStartTime, clientListReq.CreateEndTime, clientListReq.DistributionStartTime, clientListReq.DistributionEndTime,

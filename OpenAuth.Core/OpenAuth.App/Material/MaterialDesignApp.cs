@@ -57,6 +57,11 @@ namespace OpenAuth.App.Material
             #region 注释
             DateTime nowTime = DateTime.Now;
             var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
 
             string sql = string.Format(@" select  *   from   (select TO_DAYS(NOW())-TO_DAYS(n.SubmitTime) as SubmitDay,IFNULL(TO_DAYS(NOW())-TO_DAYS(n.UrlUpdate),0)  as UrlDay, n.Id,n.DocEntry,n.U_ZS,n.CardCode,n.CardName,n.ItemCode,n.ItemDesc,n.SlpName,n.ContractReviewCode,n.custom_req,n.ItemTypeName,n.ItemName,n.SubmitTime, n.VersionNo,n.FileUrl,
                                          n.DemoUpdate, n.UrlUpdate, n.Quantity, n.IsDemo, m.Id SubmitNo, s.DocEntry ProductNo,row_number() OVER(PARTITION BY n.itemCode,n.CardCode,n.SlpName, n.itemTypeName) AS rn
@@ -211,7 +216,10 @@ namespace OpenAuth.App.Material
             var MDetailList = new List<MCDetail>();
             foreach (var item in data)
             {
-
+                if ( loginContext.Orgs.Exists(a => a.Name == "PMC"))
+                {
+                    item.CardName = "*";
+                }
                 if (item.ItemCode.StartsWith("M") && !MDetailList.Exists(a=>a.ItemCode == item.ItemCode))
                 {
                     string sql2 = string.Format(@" SELECT  ItemCode, ItemTypeID , Contract_id    from sale_contract_review_detail  where contract_id =  {0} ", item.ContractReviewCode);

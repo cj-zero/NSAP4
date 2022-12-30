@@ -32,7 +32,7 @@ namespace Infrastructure.Excel
         public double Measured_Value { get; set; }
 
         [Column(8)]
-        public int Scale { get; set; }
+        public double Scale { get; set; }
 
         [Column(9)]
         public double Standard_Value { get; set; }

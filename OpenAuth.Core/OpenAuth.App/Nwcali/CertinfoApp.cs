@@ -2771,8 +2771,8 @@ namespace OpenAuth.App
             {
                 sns = sns,
                 passportIDs = ids,
-                beginTime = req.StartTime.Value.GetTimeStamp() - 28800,
-                endTime = req.EndTime.Value.GetTimeStamp() - 28800,
+                beginTime = ((DateTimeOffset)req.StartTime.Value).ToUnixTimeSeconds(),
+                endTime = ((DateTimeOffset)req.EndTime.Value).ToUnixTimeSeconds(),
                 taskType = req.taskType == 0 ? null : req.taskType
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
@@ -2850,6 +2850,129 @@ namespace OpenAuth.App
             var bytes = await exporter.ExportAsByteArray(list);
             return bytes;
         }
+
+        /// <summary>
+        /// 用户校准月报
+        /// </summary>
+        /// <param name="StartTime"></param>
+        /// <param name="EndTime"></param>
+        /// <returns></returns>
+        public async Task<TableData> CalibrationMonthReport(DateTime StartTime,DateTime EndTime)
+        {
+            TableData result = new TableData();
+            List<object> list = new List<object>();
+            var beginTime = ((DateTimeOffset)StartTime).ToUnixTimeSeconds();
+            var endTime = ((DateTimeOffset)EndTime).ToUnixTimeSeconds();
+            string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-char1?beginTs={beginTime}&endTs={endTime}";
+            HttpHelper helper = new HttpHelper(url);
+            Dictionary<string, string> dic = null;
+            var data = helper.Get(dic, url);
+            JObject taskObj = JObject.Parse(data);
+            if (taskObj == null || taskObj["code"].ToString() != "1001")
+            {
+                result.Code = 500;
+                result.Message = $"{url}接口异常!";
+                return result;
+            }
+            if (taskObj["data"].Count() <= 0)
+            {
+                result.Data = list;
+                return result;
+            }
+            var erpUserIds = taskObj["data"].Select(c => c["user_id"].ToString()).ToList().Distinct();
+            var userList = await (from b in UnitWork.Find<User>(null)
+                                  join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
+                                  join d in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on c.SecondId equals d.Id
+                                  where erpUserIds.Contains(b.Id) && c.Key == Define.USERORG
+                                  select new { userName = b.Name, orgName = d.Name, b.Id }).ToListAsync();
+            foreach (var item in taskObj["data"])
+            {
+                var userInfo = userList.Where(c => c.Id == item["user_id"].ToString()).FirstOrDefault();
+                list.Add(new
+                {
+                    user_id = item["user_id"].ToString(),
+                    auto_count = item["auto_count"].ToString(),
+                    hand_count = item["hand_count"].ToString(),
+                    hours = item["hours"].ToString(),
+                    userName = userInfo == null ? "" : userInfo.userName,
+                    orgName = userInfo == null ? "" : userInfo.orgName
+                });
+            }
+            result.Data = list;
+            return result;
+        }
+
+        /// <summary>
+        /// 用户校准日报
+        /// </summary>
+        /// <param name="user_id"></param>
+        /// <param name="StartTime"></param>
+        /// <param name="EndTime"></param>
+        /// <returns></returns>
+        public TableData CalibrationDayReport(string user_id, DateTime StartTime, DateTime EndTime)
+        {
+            TableData result = new TableData();
+            List<object> list = new List<object>();
+            var beginTime = ((DateTimeOffset)StartTime).ToUnixTimeSeconds();
+            var endTime = ((DateTimeOffset)EndTime).ToUnixTimeSeconds();
+            string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-char2?userId={user_id}&beginTs={beginTime}&endTs={endTime}";
+            HttpHelper helper = new HttpHelper(url);
+            Dictionary<string, string> dic = null;
+            var data = helper.Get(dic, url);
+            JObject taskObj = JObject.Parse(data);
+            if (taskObj == null || taskObj["code"].ToString() != "1001")
+            {
+                result.Code = 500;
+                result.Message = $"{url}接口异常!";
+                return result;
+            }
+            if (taskObj["data"].Count() <= 0)
+            {
+                result.Data = list;
+                return result;
+            }
+            foreach (var item in taskObj["data"])
+            {
+                list.Add(new
+                {
+                    day = DateTimeOffset.FromUnixTimeSeconds(Convert.ToInt64(item["day"])).LocalDateTime,
+                    hours = item["hours"].ToString(),
+                });
+            }
+            result.Data = list;
+            return result;
+        }
+
+        /// <summary>
+        /// 用户校准时报
+        /// </summary>
+        /// <param name="user_id"></param>
+        /// <param name="StartTime"></param>
+        /// <returns></returns>
+        public TableData CalibrationHourReport(string user_id, DateTime StartTime)
+        {
+            TableData result = new TableData();
+            var beginTime = ((DateTimeOffset)StartTime).ToUnixTimeSeconds();
+            string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-char3?userId={user_id}&ts={beginTime}";
+            HttpHelper helper = new HttpHelper(url);
+            Dictionary<string, string> dic = null;
+            var data = helper.Get(dic, url);
+            JObject taskObj = JObject.Parse(data);
+            if (taskObj == null || taskObj["code"].ToString() != "1001")
+            {
+                result.Code = 500;
+                result.Message = $"{url}接口异常!";
+                return result;
+            }
+            if (taskObj["data"].Count() <= 0)
+            {
+                result.Data = new {};
+                return result;
+            }
+            result.Data = taskObj["data"];
+            return result;
+        }
+
 
         /// <summary>
         /// 烤机结果
