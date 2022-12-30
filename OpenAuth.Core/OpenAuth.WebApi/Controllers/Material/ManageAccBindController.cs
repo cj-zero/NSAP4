@@ -13,6 +13,7 @@ using System.IO;
 using Newtonsoft.Json.Linq;
 using Magicodes.ExporterAndImporter.Core.Models;
 using OpenAuth.App.Response;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OpenAuth.WebApi.Controllers.Material
 {
@@ -92,6 +93,29 @@ namespace OpenAuth.WebApi.Controllers.Material
             try
             {
                 result.Result = await _app.UpdateBindUtility(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// BOM单导入3.0后钉钉工作通知
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        [HttpPost]
+        public async Task<Response<bool>> BomNoticeUtility([FromBody] BomRequest req)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _app.SendDDBomMsg(req.ProductNo);
             }
             catch (Exception ex)
             {

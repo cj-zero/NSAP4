@@ -221,6 +221,11 @@ namespace OpenAuth.Repository.Domain.View
         public List<string> checkList { get; set; }
     }
 
+    public class BomRequest
+    {
+        public string ProductNo { get; set; }
+    }
+
     public class BindUtilityUpdateRequest
     {
 

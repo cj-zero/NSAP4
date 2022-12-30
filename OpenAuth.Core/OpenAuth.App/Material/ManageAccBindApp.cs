@@ -10,9 +10,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using NPOI.HPSF;
+using NPOI.SS.Formula.Functions;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
 using OpenAuth.App.ClientRelation;
 using OpenAuth.App.Clue.ModelDto;
+using OpenAuth.App.DDVoice;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material.Request;
 using OpenAuth.App.Order;
@@ -42,16 +44,33 @@ namespace OpenAuth.App.Material
     {
         ServiceBaseApp _serviceBaseApp;
         private ILogger<ManageAccBindApp> _logger;
+        private readonly DDVoiceApp _dDVoice;
 
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public ManageAccBindApp(IUnitWork unitWork, IAuth auth, ILogger<ManageAccBindApp> logger, ServiceBaseApp serviceBaseApp) : base(unitWork, auth)
+        public ManageAccBindApp(IUnitWork unitWork, IAuth auth, ILogger<ManageAccBindApp> logger, ServiceBaseApp serviceBaseApp, DDVoiceApp dDVoice) : base(unitWork, auth)
         {
             _serviceBaseApp = serviceBaseApp;
             _logger = logger;
+            _dDVoice = dDVoice;
+        }
+
+        public async Task<bool> SendDDBomMsg(string proNo)
+        {
+            //-- 刘西林  204d4c43-c7c6-11ea-bc9e-54bf645e326d
+           // --陈迎    1708dddd - c8ae - 4cf4 - b321 - bc9e216bea4f
+           // -- 胡呈期  207dedd2 - c7c6 - 11ea - bc9e - 54bf645e326d
+            string liuxilinuserId = "204d4c43-c7c6-11ea-bc9e-54bf645e326d";
+            string e1chenyinguserId = "1708dddd-c8ae-4cf4-b321-bc9e216bea4f";
+            string huchengqiuserId = "207dedd2-c7c6-11ea-bc9e-54bf645e326d";
+            string remarks = "有新的BOM单导入任务：产品编号【" + proNo + "】，请及时处理";
+            await _dDVoice.DDSendMsg("text", remarks, liuxilinuserId);
+            await _dDVoice.DDSendMsg("text", remarks, e1chenyinguserId);
+            await _dDVoice.DDSendMsg("text", remarks, huchengqiuserId);
+            return true;
         }
 
         /// <summary>
