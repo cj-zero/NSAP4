@@ -2914,7 +2914,7 @@ namespace OpenAuth.App.Material
             {
                 HttpHelper httpHelper = new HttpHelper(_appConfiguration.Value.ERP3Url);
                 var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", saleOrderId.ToString() }, { "Indicator", category.DtCode } }, "/spv/exportsaleorder.ashx");
-                if (resultApi["msg"] == "success")
+                if (resultApi!=null &&resultApi["msg"] == "success")
                 {
                     contractFile = resultApi["url"].Replace("192.168.0.208", "218.17.149.195").ToString();
                     return contractFile;
@@ -3707,6 +3707,14 @@ namespace OpenAuth.App.Material
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
 
+            var contract = (from a in UnitWork.Find<ORDR >(null)
+                            join b in UnitWork.Find<ORCT>(null) on a.DocEntry equals b.U_XSDD into ab
+                            from b in ab.DefaultIfEmpty()
+                            where saleOrderId.Contains(a.DocEntry)
+                       select new { a.DocEntry, b.OpenBal, a.DocTotal }).ToList();
+
+
+
             var commissionOrder = (from a in queryObj
                                    join b in serviceOrder on a.ServiceOrderId equals b.Id
                                    join c in quoation on a.SalesOrderId equals c.SalesOrderId
@@ -3729,7 +3737,9 @@ namespace OpenAuth.App.Material
                                        b.ManufacturerSerialNumber,
                                        b.FromTheme,
                                        b.MaterialCode,
-                                       CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? a.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + a.CreateUser
+                                       CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? a.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + a.CreateUser,
+                                       OpenBal = contract.FirstOrDefault(s => s.DocEntry == a.SalesOrderId)?.OpenBal,
+                                       DocTotal = contract.FirstOrDefault(s => s.DocEntry == a.SalesOrderId)?.DocTotal,
                                    }).ToList();
             result.Data = commissionOrder;
             return result;
@@ -4151,6 +4161,9 @@ namespace OpenAuth.App.Material
             });
             files.Add(new FileResp { FileName = "销售合同.pdf", FileType = "销售合同", FilePath = contractFile });
             files.Add(new FileResp { FileName = "装箱发货清单.pdf", FileType = "装箱发货清单", FilePath = quaotion.Id.ToString() });
+
+            var items = margeMatrials.Select(a => a.MaterialCode).ToList();
+            var MaterialPrice = UnitWork.Find<OITM>(a => items.Contains(a.ItemCode)).Select(a => new { a.ItemCode, a.LastPurPrc }).ToList();
             result.Data = new
             {
                 commissionOrder.Id,
@@ -4169,7 +4182,8 @@ namespace OpenAuth.App.Material
                     c.DiscountPrices,
                     c.TotalPrice,
                     HLC = 0,
-                    c.Commission
+                    c.Commission,
+                    LastPurPrc = MaterialPrice.FirstOrDefault(a => a.ItemCode == c.MaterialCode)?.LastPurPrc,
                 }),
                 Files = files,
                 OperationHistory = operationHistories
@@ -4622,5 +4636,40 @@ namespace OpenAuth.App.Material
             _userManagerApp = userManagerApp;
         }
 
+        public async Task<TableData> GetCommissionOrderMoney(int commissionOrderId)
+        {
+            var result = new TableData();
+            result.Data = UnitWork.Find<CommissionOrderMoney>(a => a.CommissionOrderId == commissionOrderId).ToList();
+            return result;
+        }
+        public async Task<TableData> AddOrUptCommissionOrderMoney(List<CommissionOrderMoney> list)
+        {
+            var result = new TableData();
+            result.Message = "保存成功";
+            try
+            {
+                foreach (var item in list)
+                {
+                    if (item.Id > 0)
+                    {
+                        UnitWork.Update(item);
+                    }
+                    else
+                    {
+                        UnitWork.Add<CommissionOrderMoney, int>(item);
+                    }
+                }
+                UnitWork.Save();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = "销售费用保存失败,请重试！" + ex.Message;
+            }
+            return result;
+
+
+        }
+           
     }
 }

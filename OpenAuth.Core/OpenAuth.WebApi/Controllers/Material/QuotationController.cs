@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App.Material;
 using OpenAuth.App.Material.Request;
 using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain.Material;
 using OpenAuth.WebApi.Model;
 using Serilog;
 
@@ -1161,6 +1162,52 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+        /// <summary>
+        /// 查看销售费用
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCommissionOrderMoney(int commissionOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetCommissionOrderMoney(commissionOrderId);
+            }
+            catch (Exception ex)
+            {
 
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{commissionOrderId}, 错误：{result.Message}");
+            }
+            return result;
+
+
+        }
+        /// <summary>
+        /// 保存销售费用
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AddOrUptCommissionOrderMoney(List<CommissionOrderMoney> req)
+        {
+
+            var result = new TableData();
+            try
+            {
+                return await _app.AddOrUptCommissionOrderMoney(req);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req}, 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }

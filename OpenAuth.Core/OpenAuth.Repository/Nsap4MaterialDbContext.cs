@@ -79,6 +79,9 @@ namespace OpenAuth.Repository
         public virtual DbSet<CommonUsedMaterial> CommonUsedMaterials { get; set; }
         public virtual DbSet<MaterialRange> MaterialRanges { get; set; }
         public virtual DbSet<CommissionOrder> CommissionOrders { get; set; }
+        public virtual DbSet<CommissionOrderMoney> CommissionOrderMoney { get; set; }
+
+        
         public virtual DbSet<CommissionReport> CommissionReports { get; set; }
         public virtual DbSet<CommissionReportOperationHistory> CommissionReportOperationHistorys { get; set; }
 

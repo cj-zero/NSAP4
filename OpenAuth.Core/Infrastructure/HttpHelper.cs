@@ -103,7 +103,7 @@ namespace Infrastructure
         public T Get<T>(Dictionary<string, string> parameters, string requestUri) where T : class
         {
             string jsonString = Get(parameters, requestUri);
-            if (string.IsNullOrEmpty(jsonString))
+            if (string.IsNullOrEmpty(jsonString) ||jsonString == "err")
                 return null;
 
             return JsonHelper.Instance.Deserialize<T>(jsonString);
