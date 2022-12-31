@@ -7020,7 +7020,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             }
             else
             {
-                return SelectBillViewInfo(out rowCount, model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, uSboId, ViewSelfDepartment, DepID, ViewCustom, ViewSales);
+                return SelectBillViewInfo(out rowCount, model.limit, model.page, "", model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, uSboId, ViewSelfDepartment, DepID, ViewCustom, ViewSales);
             }
         }
         /// <summary>
@@ -11296,7 +11296,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         /// 查看视图【行明细 - 帐套关闭】
         /// </summary>
         /// <returns></returns>
-        public DataTable SelectBillView(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, out int rowCount)
+        public DataTable SelectBillView(int pageSize, int pageIndex, SalesOrderDetailListReq model, string sortname, string sortorder, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, out int rowCount)
         {
 
             string sortString = string.Empty;
@@ -11305,68 +11305,55 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
                 sortString = string.Format("{0} {1}", sortname, sortorder.ToUpper());
             #region 搜索条件
-            if (!string.IsNullOrEmpty(filterQuery))
+            filterString += string.Format("a.sbo_id={0} AND ", SboID);
+            if (!string.IsNullOrEmpty(model.DocEntry))
             {
-                string[] fields = filterQuery.Split('`');
-                string[] p = fields[0].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
+                filterString += string.Format("a.DocEntry = '{0}' AND ", model.DocEntry);
+            }
+
+            if (!string.IsNullOrEmpty(model.CardCode))
+            {
+                filterString += string.Format("(a.CardCode LIKE '%{0}%' OR a.CardName LIKE '%{0}%') AND ", model.CardCode);
+            }
+
+            if (!string.IsNullOrEmpty(model.ItemCode))
+            {
+                filterString += string.Format("(b.ItemCode LIKE '%{0}%' OR b.Dscription LIKE '%{0}%') AND ", model.ItemCode);
+            }
+
+            if (!string.IsNullOrEmpty(model.DocStatus))
+            {
+                if (model.DocStatus == "ON") { filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') AND "); }
+                if (model.DocStatus == "OY") { filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') AND "); }
+                if (model.DocStatus == "CY") { filterString += string.Format(" a.CANCELED = 'Y' AND "); }
+                if (model.DocStatus == "CN") { filterString += string.Format(" (a.DocStatus = 'C' AND a.CANCELED = 'N') AND "); }
+                if (model.DocStatus == "NC") { filterString += string.Format(" a.CANCELED = 'N' AND "); }
+            }
+
+            if (!string.IsNullOrEmpty(model.Comments))
+            {
+                filterString += string.Format("a.Comments LIKE '%{0}%' AND ", model.Comments);
+            }
+
+            if (!string.IsNullOrEmpty(model.SlpName))
+            {
+                filterString += string.Format("c.SlpName LIKE '%{0}%' AND ", model.SlpName);
+            }
+
+            if ((type == "OPDN" || type == "OPOR" || type == "ORDR"))
+            {
+                if (!string.IsNullOrEmpty(model.NumAtCard))
                 {
-                    filterString += string.Format("a.sbo_id = {0} AND ", p[1]);
-                }
-                p = fields[1].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("{0} LIKE '{1}' AND ", p[0], p[1].FilterSQL().Trim());
-                }
-                p = fields[2].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("({0} LIKE '%{1}%' OR a.CardName LIKE '%{1}%') AND ", p[0], p[1].FilterWildCard());
-                }
-                p = fields[3].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("({0} LIKE '%{1}%' OR b.Dscription LIKE '%{1}%') AND ", p[0], p[1].FilterWildCard());
-                }
-                p = fields[4].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    if (p[1] == "ON") { filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') AND "); }
-                    if (p[1] == "OY") { filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') AND "); }
-                    if (p[1] == "CY") { filterString += string.Format(" a.CANCELED = 'Y' AND "); }
-                    if (p[1] == "CN") { filterString += string.Format(" (a.DocStatus = 'C' AND a.CANCELED = 'N') AND "); }
-                    if (p[1] == "NC") { filterString += string.Format(" a.CANCELED = 'N' AND "); }
-                }
-                p = fields[5].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("a.Comments LIKE '%{0}%' AND ", p[1].FilterWildCard());
-                }
-                p = fields[6].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("{0} LIKE '%{1}%' AND ", p[0], p[1].FilterSQL().Trim());
-                }
-                if ((type == "OPDN" || type == "OPOR" || type == "ORDR") && fields.Length > 7)
-                {
-                    p = fields[7].Split(':');
-                    if (!string.IsNullOrEmpty(p[1]))
-                    {
-                        filterString += string.Format("{0} LIKE '%{1}%' AND ", p[0], p[1].FilterSQL().Trim());
-                    }
-                }
-                if (type == "OPDN" && fields.Length > 8)
-                {
-                    p = fields[8].Split(':');
-                    if (!string.IsNullOrEmpty(p[1]))
-                    {
-                        filterString += string.Format("{0}={1} AND ", p[0], p[1].FilterSQL().Trim());
-                    }
+                    filterString += string.Format("a.NumAtCard LIKE '%{0}%' AND ", model.NumAtCard);
                 }
             }
-            else
+
+            if (type == "OPDN")
             {
-                filterString += string.Format("a.sbo_id={0} AND ", SboID);
+                if (!string.IsNullOrEmpty(model.NumAtCard))
+                {
+                    filterString += string.Format("a.NumAtCard={0} AND ", model.NumAtCard);
+                }
             }
             #endregion
 

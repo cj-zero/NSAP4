@@ -682,6 +682,13 @@ namespace OpenAuth.App
 
                     #region 生成中文版
                     //获取委托单
+                    await _nwcaliCertApp.SetIssuser(baseInfo);
+                    var calibrationTechnician = await UnitWork.Find<UserSign>(r => r.UserName.Equals(baseInfo.Issuer)).FirstOrDefaultAsync();
+                    if (calibrationTechnician != null)
+                    {
+                        model.CalibrationTechnician = await GetSignBase64(calibrationTechnician.PictureId);
+                    }
+
                     var entrustment = await GetEntrustment(model.CalibrationCertificate.TesterSn);
                     model.CalibrationCertificate.EntrustedUnit = entrustment?.CertUnit;
                     model.CalibrationCertificate.EntrustedUnitAdress = entrustment?.CertCountry + entrustment?.CertProvince + entrustment?.CertCity + entrustment?.CertAddress;

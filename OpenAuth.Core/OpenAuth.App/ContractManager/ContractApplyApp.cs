@@ -2416,7 +2416,7 @@ namespace OpenAuth.App.ContractManager
             }
             else
             {
-                return SelectBillViewInfo(out rowCount, model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, uSboId, ViewSelfDepartment, DepID, ViewCustom, ViewSales);
+                return SelectBillViewInfo(out rowCount, model.limit, model.page, "", model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, uSboId, ViewSelfDepartment, DepID, ViewCustom, ViewSales);
             }
         }
 

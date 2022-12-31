@@ -646,6 +646,8 @@ namespace OpenAuth.App.Client
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_clerk_tech I ON I.sbo_id=A.sbo_id AND I.CardCode=A.CardCode ", "nsap_bone");
                 clientTable = _serviceSaleOrderApp.SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), limit, page, sortString, filterString.ToString(), out rowCount);
             }
+            clientTable.Columns.Add("SlpId", typeof(String));
+            clientTable.Columns.Add("TechnicianId", typeof(String));
             for (int i = 0; i < clientTable.Rows.Count; i++)
             {
                 string slpname = clientTable.Rows[i]["SlpName"].ToString();
@@ -653,6 +655,10 @@ namespace OpenAuth.App.Client
                 var recepUserOrgInfo = GetUserOrgInfo("", slpname + "," + technician);
                 clientTable.Rows[i]["SlpName"] = recepUserOrgInfo.FirstOrDefault(q => q.Name == slpname) == null ? clientTable.Rows[i]["SlpName"] : recepUserOrgInfo.FirstOrDefault(q => q.Name == slpname).OrgName + "-" + clientTable.Rows[i]["SlpName"];
                 clientTable.Rows[i]["Technician"] = recepUserOrgInfo.FirstOrDefault(q => q.Name == technician) == null ? clientTable.Rows[i]["Technician"] : recepUserOrgInfo.FirstOrDefault(q => q.Name == technician).OrgName + "-" + clientTable.Rows[i]["Technician"];
+                //20221231 add return personid func  FYI: At the end of the year still working :-}
+                clientTable.Rows[i]["SlpId"] = recepUserOrgInfo.FirstOrDefault(q => q.Name == slpname) == null ? "" : recepUserOrgInfo.FirstOrDefault(q => q.Name == slpname).Id;
+                clientTable.Rows[i]["TechnicianId"] = recepUserOrgInfo.FirstOrDefault(q => q.Name == technician) == null ? "" : recepUserOrgInfo.FirstOrDefault(q => q.Name == technician).Id;
+
             }
 
             return clientTable;

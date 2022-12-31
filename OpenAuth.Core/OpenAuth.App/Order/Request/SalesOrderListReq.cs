@@ -8,7 +8,7 @@ namespace OpenAuth.App.Order.Request
     public class SalesOrderListReq : PageReq
     {
         public string qtype { get; set; }
-        public string query { get; set; }
+        //public string query { get; set; }
         public string DocEntry { get; set; }
         public string CardCode { get; set; }
         public string DocStatus { get; set; }
@@ -19,5 +19,13 @@ namespace OpenAuth.App.Order.Request
         public string IsContract { get; set; }
         public string sortname { get; set; }
         public string sortorder { get; set; }
+    }
+
+    public class SalesOrderDetailListReq : SalesOrderListReq
+    {
+        public string ItemCode { get; set; }
+        public string NumAtCard { get; set; }
+        public string BeginDate { get; set; }
+        public string EndDate { get; set; }
     }
 }
