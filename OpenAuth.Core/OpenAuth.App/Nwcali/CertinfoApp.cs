@@ -682,6 +682,7 @@ namespace OpenAuth.App
 
                     #region 生成中文版
                     //获取委托单
+                    await _nwcaliCertApp.SetIssuser(baseInfo);
                     var entrustment = await GetEntrustment(model.CalibrationCertificate.TesterSn);
                     model.CalibrationCertificate.EntrustedUnit = entrustment?.CertUnit;
                     model.CalibrationCertificate.EntrustedUnitAdress = entrustment?.CertCountry + entrustment?.CertProvince + entrustment?.CertCity + entrustment?.CertAddress;
@@ -741,9 +742,9 @@ namespace OpenAuth.App
                     await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { PdfPath = fileResp.FilePath, CNASPdfPath = fileRespCn.FilePath });
 
                     //生成证书文件后删除校准数据
-                    await UnitWork.DeleteAsync<Etalon>(x => x.NwcaliBaseInfoId == baseInfo.Id);
-                    await UnitWork.DeleteAsync<NwcaliPlcData>(x => x.NwcaliBaseInfoId == baseInfo.Id);
-                    await UnitWork.DeleteAsync<Repository.Domain.NwcaliTur>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+                    //await UnitWork.DeleteAsync<Etalon>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+                    //await UnitWork.DeleteAsync<NwcaliPlcData>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+                    //await UnitWork.DeleteAsync<Repository.Domain.NwcaliTur>(x => x.NwcaliBaseInfoId == baseInfo.Id);
 
                     await UnitWork.SaveAsync();
                     semaphoreSlim.Release();
