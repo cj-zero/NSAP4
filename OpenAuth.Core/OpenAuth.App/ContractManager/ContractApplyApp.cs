@@ -657,7 +657,7 @@ namespace OpenAuth.App.ContractManager
         public async Task<List<ApprovalNodeReq>> GetNodeMsg(ContractApply contract, string contractApplyId)
         {
             string userName = "";
-            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
+            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Code.Equals("contract"));
             string flowId = mf.FlowSchemeId;
             FlowScheme scheme = null;
             if (!string.IsNullOrEmpty(flowId))
