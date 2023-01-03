@@ -1,7 +1,11 @@
 ﻿using Infrastructure;
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
+using OpenAuth.Repository.Interface;
+using OpenAuth.Repository.Domain;
 using OpenAuth.App;
 
 namespace OpenAuth.WebApi.Controllers
@@ -14,11 +18,13 @@ namespace OpenAuth.WebApi.Controllers
     [ApiExplorerSettings(GroupName = "General")]
     public class SysConfController :ControllerBase
     {
+        private IUnitWork _UnitWork;
         private IOptions<AppSetting> _appConfiguration;
 
-        public SysConfController(IOptions<AppSetting> appConfiguration)
+        public SysConfController(IOptions<AppSetting> appConfiguration, IUnitWork unitWork)
         {
             _appConfiguration = appConfiguration;
+            _UnitWork = unitWork;
         }
 
         /// <summary>
@@ -27,12 +33,20 @@ namespace OpenAuth.WebApi.Controllers
         /// <returns></returns>
         [AllowAnonymous]
         [HttpGet]
-        public Response<bool> IsIdentityAuth()
+        public async Task<AppSetHelp> IsIdentityAuth()
         {
-            return new Response<bool>
+            AppSetHelp appSetHelp = new AppSetHelp();
+            appSetHelp.Result = _appConfiguration.Value.IsIdentityAuth;
+            var vl = _UnitWork.Find<VersionsLog>(null).OrderByDescending(r => r.CreateTime).FirstOrDefault();
+            if (vl != null)
             {
-                Result = _appConfiguration.Value.IsIdentityAuth
-            };
+                appSetHelp.Version = vl.VersionsNumber;
+                appSetHelp.VersionTime = vl.CreateTime.ToString("yyyy.MM.dd");
+                appSetHelp.Code = 200;
+                appSetHelp.Message = "操作成功";
+            }
+
+            return appSetHelp;
         }
     }
 }
