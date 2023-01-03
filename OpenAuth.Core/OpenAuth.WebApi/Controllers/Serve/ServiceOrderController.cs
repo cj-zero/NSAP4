@@ -835,7 +835,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet]
         public async Task<IActionResult> ExportExcel([FromQuery] QueryServiceOrderListReq req)
         {
-            var data = await _serviceOrderApp.ExportExcelNew(req);
+            var data = await _serviceOrderApp.ExportExcel(req);
 
 
             return File(data, "application/vnd.ms-excel");
