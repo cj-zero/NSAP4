@@ -194,6 +194,19 @@ namespace OpenAuth.Repository.Domain.View
         public int Status { get; set; }
     }
 
+
+    public class LevelMDetails
+    {
+        public string objnbs { get; set; }
+        public string itemcode { get; set; }
+        public string num { get; set; }
+        public string RecordGuid { get; set; }
+        public string levelm { get; set; }
+        public int deleted { get; set; }
+
+    }
+
+
     public class UserManageUtilityRequest
     {
 
