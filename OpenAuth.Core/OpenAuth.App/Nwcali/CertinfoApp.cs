@@ -1629,7 +1629,7 @@ namespace OpenAuth.App
                                 }
                                 else
                                 {
-                                    _logger.LogError("委托单物料明细为空");
+                                    //_logger.LogError("委托单物料明细为空");
                                 }
 
                                 ControlDataList controlDataList = new ControlDataList();
@@ -1640,7 +1640,7 @@ namespace OpenAuth.App
                                     ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
                                     if (returnResult.status != 200)
                                     {
-                                        _logger.LogError("委托单调用2接口失败：" + returnResult.message + " 参数：" + JsonConvert.SerializeObject(entrustment));
+                                       //_logger.LogError("委托单调用2接口失败：" + returnResult.message + " 参数：" + JsonConvert.SerializeObject(entrustment));
                                     }
                                     else
                                     {
@@ -1659,7 +1659,7 @@ namespace OpenAuth.App
                 }
                 else
                 {
-                    _logger.LogError("委托单调用1接口失败：" + calibrations.message);
+                    //_logger.LogError("委托单调用1接口失败：" + calibrations.message);
                 }
             }
             catch (Exception ex)

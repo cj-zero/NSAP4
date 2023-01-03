@@ -13,12 +13,14 @@ using OpenAuth.Repository.Interface;
 using OpenAuth.Repository.Domain;
 using Infrastructure.Extensions;
 using OpenAuth.App.Response;
+using Infrastructure.Cache;
 
 namespace OpenAuth.App.DDVoice
 {
     public class DDVoiceApp : OnlyUnitWorkBaeApp
     {
         private DDSettingHelp _ddSettingHelp;
+        private readonly ICacheContext _cacheContext;
         private List<DDDepartMsgs> afterDeptIds = new List<DDDepartMsgs>();
         private List<DDDepartMsgs> originalDepart = new List<DDDepartMsgs>() { new DDDepartMsgs() { departId = 1, departName = "深圳市新威尔电子有限公司" } };
         private ILogger<DDVoiceApp> _logger;
@@ -33,12 +35,13 @@ namespace OpenAuth.App.DDVoice
         /// <param name="logger"></param>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public DDVoiceApp(DDSettingHelp ddSettingHelp, ILogger<DDVoiceApp> logger, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        public DDVoiceApp(DDSettingHelp ddSettingHelp, ICacheContext cacheContext, ILogger<DDVoiceApp> logger, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
             _logger = logger;
             _UnitWork = unitWork;
             _auth = auth;
             _ddSettingHelp = ddSettingHelp;
+            _cacheContext = cacheContext;
             this.DDLogin();
         }
 
@@ -48,14 +51,25 @@ namespace OpenAuth.App.DDVoice
         /// <returns>返回token</returns>
         public void DDLogin()
         {
-            string appkey = _ddSettingHelp.GetDDKey("Appkey");//获取配置文件中钉钉Appkey
-            string appsecret = _ddSettingHelp.GetDDKey("Appsecret");//获取配置文件中钉钉Appsecret
-
-            //获取钉钉登录token
-            DDLogin ddLogin = JsonConvert.DeserializeObject<DDLogin>(HttpHelpers.Get($"https://oapi.dingtalk.com/gettoken?appkey={appkey}&appsecret={appsecret}"));
-            if (ddLogin != null && !string.IsNullOrEmpty(ddLogin.access_token))
+            //redis缓存token
+            var memberScore = _cacheContext.Get<string>("DDToken");
+            if (memberScore == null)
             {
-                access_token = ddLogin.access_token;
+                string appkey = _ddSettingHelp.GetDDKey("Appkey");//获取配置文件中钉钉Appkey
+                string appsecret = _ddSettingHelp.GetDDKey("Appsecret");//获取配置文件中钉钉Appsecret
+
+                //获取钉钉登录token
+                DDLogin ddLogin = JsonConvert.DeserializeObject<DDLogin>(HttpHelpers.Get($"https://oapi.dingtalk.com/gettoken?appkey={appkey}&appsecret={appsecret}"));
+                if (ddLogin != null && !string.IsNullOrEmpty(ddLogin.access_token))
+                {
+                    access_token = ddLogin.access_token;
+                }
+
+                _cacheContext.Set<string>("DDToken", access_token, DateTime.Now.AddHours(1).Date);
+            }
+            else
+            {
+                access_token = memberScore;
             }
         }
 
