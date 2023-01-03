@@ -48,7 +48,7 @@ namespace OpenAuth.App.PayTerm
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public PayTermApp(IUnitWork unitWork, IAuth auth, ICapPublisher capBus, UserDepartMsgHelp userDepartMsgHelp, SaleBusinessMethodHelp saleBusinessMethodHelp, ServiceBaseApp serviceBaseApp, ServiceSaleOrderApp serviceSaleOrderApp, DDVoiceApp dDVoiceApp, ManageAccBindApp manageAccBindApp) : base(unitWork, auth)
+        public PayTermApp(IUnitWork unitWork, IAuth auth, ICapPublisher capBus, UserDepartMsgHelp userDepartMsgHelp, SaleBusinessMethodHelp saleBusinessMethodHelp, DDVoiceApp dDVoiceApp, ServiceBaseApp serviceBaseApp, ServiceSaleOrderApp serviceSaleOrderApp, ManageAccBindApp manageAccBindApp) : base(unitWork, auth)
         {
             _UnitWork = unitWork;
             _auth = auth;

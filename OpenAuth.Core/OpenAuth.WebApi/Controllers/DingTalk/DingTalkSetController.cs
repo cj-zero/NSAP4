@@ -39,6 +39,16 @@ namespace OpenAuth.WebApi.Controllers.DingTalk
         }
 
         /// <summary>
+        /// 钉钉登录
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task DDLogin()
+        {
+            _ddVoiceApp.DDLogin();
+        }
+
+        /// <summary>
         /// 获取钉钉所有部门id
         /// </summary>
         /// <param name="departIds"></param>

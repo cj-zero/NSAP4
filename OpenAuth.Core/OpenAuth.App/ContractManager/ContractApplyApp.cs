@@ -657,7 +657,7 @@ namespace OpenAuth.App.ContractManager
         public async Task<List<ApprovalNodeReq>> GetNodeMsg(ContractApply contract, string contractApplyId)
         {
             string userName = "";
-            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
+            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Code.Equals("contract"));
             string flowId = mf.FlowSchemeId;
             FlowScheme scheme = null;
             if (!string.IsNullOrEmpty(flowId))
@@ -1461,7 +1461,7 @@ namespace OpenAuth.App.ContractManager
                         else
                         {
                             //创建合同管理审批流程
-                            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
+                            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Code.Equals("contract"));
                             var afir = new AddFlowInstanceReq();
                             afir.SchemeId = mf.FlowSchemeId;
                             afir.FrmType = 2;
@@ -1698,7 +1698,7 @@ namespace OpenAuth.App.ContractManager
                             if (string.IsNullOrWhiteSpace(obj.FlowInstanceId))
                             {
                                 //添加流程
-                                var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
+                                var mf = _moduleFlowSchemeApp.Get(m => m.Module.Code.Equals("contract"));
                                 var afir = new AddFlowInstanceReq();
                                 afir.SchemeId = mf.FlowSchemeId;
                                 afir.FrmType = 2;
