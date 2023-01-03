@@ -40,7 +40,7 @@ namespace OpenAuth.App.PayTerm
         private UserDepartMsgHelp _userDepartMsgHelp;
         private SaleBusinessMethodHelp _saleBusinessMethodHelp;
         private ManageAccBindApp _manageAccBindApp;
-        private readonly DDVoiceApp _dDVoice;
+        //private readonly DDVoiceApp _dDVoice;
         private List<string> RecePayTypes = new List<string>() { "预付/货前款", "货到款", "验收款", "质保款" };
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace OpenAuth.App.PayTerm
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public PayTermApp(IUnitWork unitWork, IAuth auth, ICapPublisher capBus, UserDepartMsgHelp userDepartMsgHelp, SaleBusinessMethodHelp saleBusinessMethodHelp, ServiceBaseApp serviceBaseApp, ServiceSaleOrderApp serviceSaleOrderApp, DDVoiceApp dDVoiceApp, ManageAccBindApp manageAccBindApp) : base(unitWork, auth)
+        public PayTermApp(IUnitWork unitWork, IAuth auth, ICapPublisher capBus, UserDepartMsgHelp userDepartMsgHelp, SaleBusinessMethodHelp saleBusinessMethodHelp, ServiceBaseApp serviceBaseApp, ServiceSaleOrderApp serviceSaleOrderApp, ManageAccBindApp manageAccBindApp) : base(unitWork, auth)
         {
             _UnitWork = unitWork;
             _auth = auth;
@@ -56,7 +56,7 @@ namespace OpenAuth.App.PayTerm
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _capBus = capBus;
             _userDepartMsgHelp = userDepartMsgHelp;
-            _dDVoice = dDVoiceApp;
+            //_dDVoice = dDVoiceApp;
             _saleBusinessMethodHelp = saleBusinessMethodHelp;
             _manageAccBindApp = manageAccBindApp;
         }
@@ -2507,7 +2507,7 @@ namespace OpenAuth.App.PayTerm
                                             remarks.Append("客户编码为" + dDSendSale.CardCode + "的客户 " + dDSendSale.CardName + ",将在" + dDSendSale.FreezeDateTime + " 即将冻结 ");
                                         }
 
-                                        await _dDVoice.DDSendMsg("text", remarks.ToString(), item);
+                                        //await _dDVoice.DDSendMsg("text", remarks.ToString(), item);
                                     }
                                     else
                                     {
@@ -2584,7 +2584,7 @@ namespace OpenAuth.App.PayTerm
                                                 cardCodeLists.Add(dDSendSale.CardCode);
                                             }
 
-                                            await _dDVoice.DDSendMsg("text", remarks.ToString(), item);
+                                            //await _dDVoice.DDSendMsg("text", remarks.ToString(), item);
                                         }
                                         else
                                         {
