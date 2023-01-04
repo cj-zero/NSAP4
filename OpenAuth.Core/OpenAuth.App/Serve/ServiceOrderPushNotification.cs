@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using OpenAuth.App.Order;
+using OpenAuth.App.Order.Request;
 
 namespace OpenAuth.App.Serve
 {
@@ -277,10 +278,11 @@ namespace OpenAuth.App.Serve
                 //查询数量
                 int rowCount = 0;
                 string filtequery = "job_id:`job_type_nm:`job_state:`job_nm:`customer:`applicator:`remarks:`base_entry:";
-                var userNames = await UnitWork.Find<base_user>(r => wfaobjs.Contains(Convert.ToInt32(r.user_id))).Select(r => new { r.user_id, r.user_nm}).ToListAsync(); 
+                var userNames = await UnitWork.Find<base_user>(r => wfaobjs.Contains(Convert.ToInt32(r.user_id))).Select(r => new { r.user_id, r.user_nm}).ToListAsync();
+                OrderSubmtToMeReq orderSubmtToMeReq = new OrderSubmtToMeReq();
                 foreach (int item in wfaobjs)
                 {          
-                    DataTable dt = _orderWorkbenchApp.GetSubmtToMe(1, 1, filtequery, "upd_dt", "desc", item, "13☉7☉1☉72", "", "", "", "", "", true, true, out rowCount);
+                    DataTable dt = _orderWorkbenchApp.GetSubmtToMe(1, 1, orderSubmtToMeReq, "upd_dt", "desc", item, "13☉7☉1☉72", "", "", "", "", "", true, true, out rowCount);
                     if (userNames != null && userNames.Count() > 0)
                     {
                         string userName = userNames.Where(r => r.user_id == item).Select(r => r.user_nm).FirstOrDefault();
