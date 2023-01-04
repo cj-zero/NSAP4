@@ -60,7 +60,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 viewSales = powers.ViewSales;
                 viewCustom = true;
             }
-            DataTable dt = _orderWorkbenchApp.GetSubmtToMe(orderSubmtToMeReq.limit, orderSubmtToMeReq.page, orderSubmtToMeReq.query, orderSubmtToMeReq.sortname, orderSubmtToMeReq.sortorder, UserID, orderSubmtToMeReq.types, orderSubmtToMeReq.Applicator, orderSubmtToMeReq.Customer, orderSubmtToMeReq.Status, orderSubmtToMeReq.BeginDate, orderSubmtToMeReq.EndDate, ViewCustom: viewCustom, ViewSales: viewSales, out rowCount);
+            DataTable dt = _orderWorkbenchApp.GetSubmtToMe(orderSubmtToMeReq.limit, orderSubmtToMeReq.page, orderSubmtToMeReq, orderSubmtToMeReq.sortname, orderSubmtToMeReq.sortorder, UserID, orderSubmtToMeReq.types, orderSubmtToMeReq.Applicator, orderSubmtToMeReq.Customer, orderSubmtToMeReq.Status, orderSubmtToMeReq.BeginDate, orderSubmtToMeReq.EndDate, ViewCustom: viewCustom, ViewSales: viewSales, out rowCount);
 
             List<SaleDeptSubToMe> saleDeptSubToMes = dt.Tolist<SaleDeptSubToMe>();
             foreach (SaleDeptSubToMe item in saleDeptSubToMes)
