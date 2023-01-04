@@ -4082,19 +4082,21 @@ namespace OpenAuth.App.PayTerm
                     if (buyopors != null && buyopors.Count() > 0)
                     {
                         var comBuyopors = buyopors.Where(r => r.DocStatus == "C").ToList();
-
-                        //采购信息
-                        saleOrderFlowHelp.Name = comBuyopors.FirstOrDefault().U_YGMD;
-                        saleOrderFlowHelp.Dept = _userDepartMsgHelp.GetUserNameDept(comBuyopors.FirstOrDefault().U_YGMD);
                         if (comBuyopors != null && comBuyopors.Count() > 0)
                         {
-                            saleOrderFlowHelp.DataTime = comBuyopors.FirstOrDefault().UpdateDate;
-                            saleOrderFlowHelp.Flag = 3;
-                        }
-                        else
-                        {
-                            saleOrderFlowHelp.DataTime = buyopors.FirstOrDefault().CreateDate;
-                            saleOrderFlowHelp.Flag = 2;
+                            //采购信息
+                            saleOrderFlowHelp.Name = comBuyopors.FirstOrDefault().U_YGMD;
+                            saleOrderFlowHelp.Dept = _userDepartMsgHelp.GetUserNameDept(comBuyopors.FirstOrDefault().U_YGMD);
+                            if (comBuyopors != null && comBuyopors.Count() > 0)
+                            {
+                                saleOrderFlowHelp.DataTime = comBuyopors.FirstOrDefault().UpdateDate;
+                                saleOrderFlowHelp.Flag = 3;
+                            }
+                            else
+                            {
+                                saleOrderFlowHelp.DataTime = buyopors.FirstOrDefault().CreateDate;
+                                saleOrderFlowHelp.Flag = 2;
+                            }
                         }
                     }
                 }
