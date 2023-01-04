@@ -1376,7 +1376,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 {
                     long AuthMap = _serviceSaleOrderApp.GetCurrentPage(UserID, billPageurl).AuthMap;
                     Powers Powers = new Powers(AuthMap);
-                    ViewCustom = Powers.ViewCustom;
+                    //ViewCustom = Powers.ViewCustom;
                     ViewSales = Powers.ViewSales;
                 }
                 if (ations == "copy") { ViewCustom = true; ViewSales = true; }
@@ -2196,16 +2196,14 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 //设置请求的路径
                 var url = $"http://shopapi.neware.work:8081/api/v1/product/shopproduct?erpCode={ErpCode}";
+                //var url = $"http://192.168.8.121:8082/api/v1/product/shopproduct?erpCode={ErpCode}";
                 ////使用注入的httpclientfactory获取client
                 var client = _httpClient.CreateClient();
                 client.BaseAddress = new Uri(url);
                 //设置请求体中的内容，并以post的方式请求
                 var response = await client.GetAsync(url);
 
-                //var request = new HttpRequestMessage(HttpMethod.Get, "http://shopapi.neware.work:8081/?ErpCode={ErpCode}");
-                //HttpResponseMessage response = await client.SendAsync(request);
-                //获取请求到数据，并转化为字符串
-                //result.Result = response.Content.ReadAsStringAsync().Result;
+
                 result.Result = JsonConvert.DeserializeObject<ShopProductDto>(response.Content.ReadAsStringAsync().Result);
 
             }
