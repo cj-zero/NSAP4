@@ -4253,10 +4253,10 @@ namespace OpenAuth.App.PayTerm
             StringBuilder strSql = new StringBuilder();
             strSql.AppendFormat("select d.ItemCode,c.DocEntry,c.U_YGMD,c.CreateDate,c.DocDueDate ");
             strSql.AppendFormat("from nsap_bone.sale_ordr a ");
-            strSql.AppendFormat("left join nsap_bone.buy_porrel b on a.Docentry = b.RelDoc_Entry ");
-            strSql.AppendFormat("left join nsap_bone.buy_opor c on b.POR_Entry = c.Docentry ");
-            strSql.AppendFormat("left join nsap_bone.buy_por1 d on c.Docentry = d.DocEntry ");
-            strSql.AppendFormat("where a.docentry = " + saleId + "");
+            strSql.AppendFormat(" join nsap_bone.buy_porrel b on a.Docentry = b.RelDoc_Entry ");
+            strSql.AppendFormat(" join nsap_bone.buy_opor c on b.POR_Entry = c.Docentry ");
+            strSql.AppendFormat(" join nsap_bone.buy_por1 d on c.Docentry = d.DocEntry ");
+            strSql.AppendFormat("where a.docentry = " + saleId + " and a.sbo_id = 1");
             DataTable dTable = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
             result.Data = dTable.Tolist<SaleBuyOPOR>();
             return result;
