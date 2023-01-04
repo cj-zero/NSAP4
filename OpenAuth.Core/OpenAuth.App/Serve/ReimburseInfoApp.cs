@@ -1228,8 +1228,8 @@ namespace OpenAuth.App
                     {
                         Id = r.Id,
                         FileId = r.FileId,
-                        AttachmentName = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileName,
-                        FileType = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileType,
+                        AttachmentName = file.FirstOrDefault(f => f.Id.Equals(r.FileId))?.FileName,
+                        FileType = file.FirstOrDefault(f => f.Id.Equals(r.FileId))?.FileType,
                         ReimburseId = r.ReimburseId,
                         ReimburseType = r.ReimburseType,
                         AttachmentType = r.AttachmentType
@@ -3393,7 +3393,7 @@ namespace OpenAuth.App
            .ToList();
             for (int i = 1; i <= 5; i++)
             {
-                for (var j = req.StartDate.ToDateTime(); j < req.EndDate; j =j.AddMonths(1))
+                for (var j = req.StartDate.ToDateTime(); j < req.EndDate; j = j.AddMonths(1))
                 {
                     string strDate = j.ToString("yyyy.MM");
                     if (!dateMoney.Any(a => a.Type == i && a.date == strDate))
@@ -3442,7 +3442,7 @@ namespace OpenAuth.App
             };
             return result;
         }
-        public class dateMoney 
+        public class dateMoney
         {
             public int Type { get; set; }
             public string date { get; set; }
