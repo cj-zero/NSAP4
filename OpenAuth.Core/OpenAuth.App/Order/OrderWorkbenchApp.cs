@@ -37,7 +37,7 @@ namespace OpenAuth.App.Order
         /// <summary>
         /// 提交给我的
         /// </summary>
-        public DataTable GetSubmtToMe(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string types, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom, bool ViewSales, out int rowCount)
+        public DataTable GetSubmtToMe(int pageSize, int pageIndex, OrderSubmtToMeReq model, string sortname, string sortorder, int user_id, string types, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom, bool ViewSales, out int rowCount)
         {
             string sortString = string.Empty;
             string filterString = string.Empty;
@@ -92,50 +92,27 @@ namespace OpenAuth.App.Order
             {
                 filterString += string.Format(" DATE_FORMAT(a.upd_dt,'%Y/%m/%d') BETWEEN '{0}' AND '{1}' AND ", BeginDate, EndDate);
             }
-            if (!string.IsNullOrEmpty(filterQuery))
+
+            if (!string.IsNullOrEmpty(model.job_id))
             {
-                string[] fields = filterQuery.Split('`');
-                string[] p = fields[0].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format(" a.job_id LIKE '%{0}%' AND ", p[1].FilterSQL().Trim());
-                }
-                p = fields[1].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("c.job_type_nm LIKE '%{0}%' AND ", p[1].FilterSQL().Trim());
-                }
-                p = fields[2].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("a.job_state = '{0}' AND ", p[1].FilterSQL().Trim());
-                }
-                p = fields[3].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("a.job_nm LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
-                }
-                p = fields[4].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("(a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", p[1].FilterWildCard().FilterSQL().Trim());
-                }
-                p = fields[5].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("b.user_nm LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
-                }
-                p = fields[6].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("a.remarks LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
-                }
-                p = fields[7].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format("a.base_entry LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
-                }
+                filterString += string.Format(" a.job_id LIKE '%{0}%' AND ", model.job_id.Trim());
             }
+
+            if (!string.IsNullOrEmpty(model.job_nm))
+            {
+                filterString += string.Format("a.job_nm LIKE '%{0}%' AND ", model.job_nm.Trim());
+            }
+
+            if (!string.IsNullOrEmpty(model.remarks))
+            {
+                filterString += string.Format("a.remarks LIKE '%{0}%' AND ", model.remarks.Trim());
+            }
+
+            if (!string.IsNullOrEmpty(model.base_entry))
+            {
+                filterString += string.Format("a.sbo_itf_return LIKE '%{0}%' AND ", model.base_entry.Trim());
+            }
+
             #endregion
             if (user_id > 0)
             {
