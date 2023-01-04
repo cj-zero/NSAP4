@@ -7042,8 +7042,8 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             strSql.Append(",'10011111-28a9-4767-854f-77246e36d24d1111111111111111111' as PrintNo,'00' as PrintNumIndex,'' as billStatus,'' as bonusStatus,'' as proStatus,n.Name as IndicatorName,'*********************************' as EmpAcctWarn,'' as AttachFlag,a.U_DocRCTAmount");
             strSql.Append(", '0000000000000' as TransFee,a.DocCur FROM ");
             strSql.AppendFormat("nsap_bone.sale_ordr a ");
-            strSql.AppendFormat(" LEFT JOIN nsap_bone.crm_oslp c ON a.SlpCode = c.SlpCode");
-            strSql.AppendFormat(" LEFT JOIN nsap_bone.crm_ocrd d ON a.CardCode = d.CardCode");
+            strSql.AppendFormat(" LEFT JOIN nsap_bone.crm_oslp c ON a.SlpCode = c.SlpCode and a.sbo_id = 1");
+            strSql.AppendFormat(" LEFT JOIN nsap_bone.crm_ocrd d ON a.CardCode = d.CardCode and d.sbo_id = 1");
             strSql.AppendFormat(" LEFT JOIN nsap_bone.crm_octg e ON a.GroupNum = e.GroupNum");
             strSql.AppendFormat(" LEFT JOIN nsap_bone.crm_oidc  n ON a.Indicator=n.Code");
             if (!string.IsNullOrEmpty(filterQuery))

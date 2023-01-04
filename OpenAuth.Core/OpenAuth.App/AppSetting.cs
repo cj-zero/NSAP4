@@ -108,4 +108,32 @@
         /// </summary>
         public string AnalyticsReportUrl { get; set; }
     }
+
+    public class AppSetHelp
+    {
+        /// <summary>
+        /// 返回结果
+        /// </summary>
+        public bool Result { get; set; }
+
+        /// <summary>
+        /// 版本
+        /// </summary>
+        public string Version { get; set; }
+
+        /// <summary>
+        /// 时间
+        /// </summary>
+        public string VersionTime { get; set; }
+
+        /// <summary>
+        /// 编码
+        /// </summary>
+        public int Code { get; set; }
+
+        /// <summary>
+        /// 消息
+        /// </summary>
+        public string Message { get; set; }
+    }
 }

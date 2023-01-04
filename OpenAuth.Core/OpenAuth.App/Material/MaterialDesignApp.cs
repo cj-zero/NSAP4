@@ -29,6 +29,9 @@ using MySql.Data.MySqlClient;
 using Microsoft.Extensions.Logging;
 using OpenAuth.App.Client;
 using OpenAuth.App.ClientRelation.Response;
+using NPOI.SS.Formula.Functions;
+using System.Windows.Forms;
+using OpenAuth.Repository.Domain.View;
 
 namespace OpenAuth.App.Material
 {
@@ -993,8 +996,18 @@ inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
             var modeldata = UnitWork.ExcuteSql<statisticsTable>(ContextType.ManagerDbContext, sql, CommandType.Text, null).ToList();
             var countList = UnitWork.ExcuteSql<CardCountDto>(ContextType.ManagerDbContext, sqlcount.ToString(), CommandType.Text, null);
 
+            var alterLevelData = modeldata.Where(a => a.objnbs.Contains("PRJA") || a.objnbs.Contains("PRJW")).ToList();
+            string strSql2 = string.Format("	SELECT * from ( select b._System_objNBS as objnbs , b.fld005787 as itemcode ,b.fld017268 as num , b.RecordGuid,b.fld017270 as levelm , b.deleted from (select * from OBJ170 where idRecord in (select max(idRecord) from OBJ170 group by _System_objNBS )) b union all select d._System_objNBS as objnbs ,d.fld005719 as itemcode ,d.fld005717 as num ,d.RecordGuid,d.fld017273 as levelm ,d.deleted from (select * from OBJ169 where idRecord in (select max(idRecord) from OBJ169 group by _System_objNBS)) d) as t WHERE deleted =0");
+            var LevelList = UnitWork.ExcuteSql<LevelMDetails>(ContextType.ManagerDbContext, strSql2, CommandType.Text, null);
             foreach (var item in modeldata)
             {
+                //20230101 change manage default level
+                if (LevelList.Exists(a=>a.objnbs == item.objnbs))
+                {
+                    var specificLevelDetail = LevelList.Where(a => a.objnbs == item.objnbs).FirstOrDefault();
+                    item.fld006314 = specificLevelDetail.levelm;
+                }
+ 
                 var specSta = statisticView.Where(u => u.Number == item.Number && u.IsDelete != 1).FirstOrDefault();
                 if (specSta!=null)
                 {
