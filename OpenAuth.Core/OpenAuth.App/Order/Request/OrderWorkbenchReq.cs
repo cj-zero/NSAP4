@@ -54,8 +54,6 @@ namespace OpenAuth.App.Order.Request
 
         public string base_entry { get; set; }
 
-        public string customer { get; set; }
-
         public string job_id { get; set; }
 
         public string job_nm { get; set; }
