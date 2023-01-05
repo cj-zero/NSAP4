@@ -85,6 +85,7 @@ namespace OpenAuth.Repository
 
         public virtual DbSet<DailyAttachment> Dailyattachments { get; set; }
         public virtual DbSet<IncomeSummary> IncomeSummarys { get; set; }
+        public virtual DbSet<TechnicianCompletedQuantity> TechnicianCompletedQuantitys { get; set; }
         #region 报销
         public virtual DbSet<ReimburseAccommodationSubsidy> Reimburseaccommodationsubsidies { get; set; }
         public virtual DbSet<ReimburseAttachment> Reimburseattachments { get; set; }

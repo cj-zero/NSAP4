@@ -528,15 +528,26 @@ namespace OpenAuth.App.Material
             }
             var content = $"{style}{head}{bodys.ToString()}{bottom}{tfoot}{tablend}";
             obj.Content = $"{style}{content}";
-            userInfo.ForEach(async c =>
+            //userInfo.ForEach(async c =>
+            //{
+            //    if (!string.IsNullOrWhiteSpace(c.Email))
+            //    {
+            //        var mailuser = new List<MailUser>();
+            //        mailuser.Add(new MailUser { Name = c.Account, Address = c.Email });
+            //        await SebdEmail(obj, title, mailuser);
+            //        Thread.Sleep(1000);
+            //    }
+            //});
+            foreach (var c in userInfo)
             {
                 if (!string.IsNullOrWhiteSpace(c.Email))
                 {
                     var mailuser = new List<MailUser>();
                     mailuser.Add(new MailUser { Name = c.Account, Address = c.Email });
                     await SebdEmail(obj, title, mailuser);
+                    Thread.Sleep(1000);
                 }
-            });
+            }
         }
 
         private async Task SebdEmail(InternalContact obj, string title, List<MailUser> mailUsers = null)
