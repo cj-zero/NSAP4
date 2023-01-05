@@ -1628,7 +1628,7 @@ namespace OpenAuth.App
                             }
                             else
                             {
-                                _logger.LogError("委托单物料明细为空");
+                                _logger.LogError("委托单物料明细为空，Id=" + entrustment.Id);
                             }
 
                             ControlDataList controlDataList = new ControlDataList();
