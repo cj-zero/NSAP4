@@ -65,7 +65,7 @@ namespace OpenAuth.App.DDVoice
                     access_token = ddLogin.access_token;
                 }
 
-                _cacheContext.Set<string>("DDToken", access_token, DateTime.Now.AddHours(1).Date);
+                _cacheContext.Set<string>("DDToken", access_token, DateTime.Now.AddHours(2));
             }
             else
             {
@@ -135,7 +135,6 @@ namespace OpenAuth.App.DDVoice
                         CreateUserId = userId,
                         CreateTime = DateTime.Now
                     });
-
                     await UnitWork.SaveAsync();
                 }
                 catch (Exception ex)
@@ -168,7 +167,6 @@ namespace OpenAuth.App.DDVoice
 
                         //调用钉钉官方接口获取部门列表
                         dDDepartResult = JsonConvert.DeserializeObject<DDDepartResult>(HttpHelpers.HttpPostAsync($"https://oapi.dingtalk.com/topapi/v2/department/listsub?access_token={access_token}", JsonConvert.SerializeObject(dDDepartParam)).Result);
-
                         if (dDDepartResult.result != null && dDDepartResult.result.Count > 0)
                         {
                             foreach (DDDepartResultMsg result in dDDepartResult.result)
