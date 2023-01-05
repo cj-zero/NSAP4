@@ -1376,7 +1376,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 {
                     long AuthMap = _serviceSaleOrderApp.GetCurrentPage(UserID, billPageurl).AuthMap;
                     Powers Powers = new Powers(AuthMap);
-                    ViewCustom = Powers.ViewCustom;
+                    //ViewCustom = Powers.ViewCustom;
                     ViewSales = Powers.ViewSales;
                 }
                 if (ations == "copy") { ViewCustom = true; ViewSales = true; }
@@ -1993,7 +1993,27 @@ namespace OpenAuth.WebApi.Controllers.Order
             var result = new TableData();
             var UserID = _serviceBaseApp.GetUserNaspId();
             var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
-            result.Data = _serviceSaleOrderApp.SelectCopyItemAllView(out rowCount, model, SboID, UserID);
+            DataTable dt = _serviceSaleOrderApp.SelectCopyItemAllView(out rowCount, model, SboID, UserID);
+            List<CopyItemMsg> copyItemMsgs = dt.Tolist<CopyItemMsg>();
+            foreach (CopyItemMsg item in copyItemMsgs)
+            {
+                if (item.item_cfg_id != 0)
+                {
+                    //将子物料添加为主物料的child
+                    List<SaleItemDtoChild> saleItemDtoChildren = _serviceSaleOrderApp.GetItemConfigList(item.item_cfg_id.ToString(), item.whsCode);
+                    item.childBillSalesDetails = new List<CopyItemMsg>();
+                    foreach (SaleItemDtoChild itemChild in saleItemDtoChildren)
+                    {
+                        CopyItemMsg orderItemInfo = copyItemMsgs.Where(r => r.itemCode == itemChild.ItemCode).FirstOrDefault();
+                        if (orderItemInfo != null)
+                        {
+                            item.childBillSalesDetails.Add(orderItemInfo);
+                        }
+                    }
+                }
+            }
+
+            result.Data = copyItemMsgs;
             result.Count = rowCount;
             return result;
 
@@ -2196,16 +2216,14 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 //设置请求的路径
                 var url = $"http://shopapi.neware.work:8081/api/v1/product/shopproduct?erpCode={ErpCode}";
+                //var url = $"http://192.168.8.121:8082/api/v1/product/shopproduct?erpCode={ErpCode}";
                 ////使用注入的httpclientfactory获取client
                 var client = _httpClient.CreateClient();
                 client.BaseAddress = new Uri(url);
                 //设置请求体中的内容，并以post的方式请求
                 var response = await client.GetAsync(url);
 
-                //var request = new HttpRequestMessage(HttpMethod.Get, "http://shopapi.neware.work:8081/?ErpCode={ErpCode}");
-                //HttpResponseMessage response = await client.SendAsync(request);
-                //获取请求到数据，并转化为字符串
-                //result.Result = response.Content.ReadAsStringAsync().Result;
+
                 result.Result = JsonConvert.DeserializeObject<ShopProductDto>(response.Content.ReadAsStringAsync().Result);
 
             }

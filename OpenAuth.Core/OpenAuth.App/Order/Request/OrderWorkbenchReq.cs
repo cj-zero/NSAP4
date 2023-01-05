@@ -51,5 +51,17 @@ namespace OpenAuth.App.Order.Request
         /// 
         /// </summary>
         public string EndDate { get; set; }
+
+        public string base_entry { get; set; }
+
+        public string job_id { get; set; }
+
+        public string job_nm { get; set; }
+
+        public string job_state { get; set; }
+
+        public string remarks { get; set; }
+
+        public string sbo_itf_return { get;set; }
     }
 }

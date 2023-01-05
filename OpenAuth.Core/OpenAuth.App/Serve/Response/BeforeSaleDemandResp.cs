@@ -184,7 +184,7 @@ namespace OpenAuth.App.Reponse
         /// <summary>
         /// 售前需求申请流程关联单据
         /// </summary>
-        public List<BeforeSaleDemandOrders> BeforeSaleDemandOrders  { get; set; }
+        public List<BeforeSaleDemandOrders> BeforeSaleDemandOrders { get; set; }
         /// <summary>
         /// 售前需求申请流程附件
         /// </summary>
@@ -215,5 +215,10 @@ namespace OpenAuth.App.Reponse
         /// 项目排期表
         /// </summary>
         public List<BeforeSaleProScheduling> BeforeSaleProSchedulings { get; set; }
+
+        /// <summary>
+        /// 审批流程
+        /// </summary>
+        public List<FlowPathResp> flowPathResps { get; set; }
     }
 }

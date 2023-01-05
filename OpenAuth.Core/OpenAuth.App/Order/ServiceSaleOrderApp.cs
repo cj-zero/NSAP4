@@ -6760,15 +6760,15 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             string U_SHJSDJ = "", U_SHJSJ = "", U_SHTC = "";
             if (IsExistMySql(line, "U_SHJSDJ"))
             {
-                U_SHJSDJ = ",IFNULL(b.U_SHJSDJ,0)";
+                U_SHJSDJ = ",IFNULL(b.U_SHJSDJ,0) as U_SHJSDJ";
             }
             if (IsExistMySql(line, "U_SHJSJ"))
             {
-                U_SHJSJ = ",IFNULL(b.U_SHJSJ,0)";
+                U_SHJSJ = ",IFNULL(b.U_SHJSJ,0) as U_SHJSJ";
             }
             if (IsExistMySql(line, "U_SHTC"))
             {
-                U_SHTC = ",IFNULL(b.U_SHTC,0)";
+                U_SHTC = ",IFNULL(b.U_SHTC,0) as U_SHTC";
             }
             filedName.Append("ROW_NUMBER() OVER (ORDER BY a.DocEntry) RowNum,a.DocEntry,a.CardCode,a.CardName,b.ItemCode,b.Dscription,b.Quantity,b.Price,b.LineTotal,b.WhsCode,w.OnHand,b.BaseLine,m.LastPurPrc,");
             filedName.Append("IFNULL(m.U_TDS,'0') AS U_TDS,IFNULL(m.U_DL,'0') AS U_DL,IFNULL(m.U_DY,'0') AS U_DY,m.U_JGF,");
@@ -6776,11 +6776,12 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             filedName.Append("+(IFNULL((CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END),0))");
             filedName.Append("+(IFNULL((CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END),0))) AS QryGroup,");
             filedName.Append("IFNULL(m.U_US,0) AS U_US,IFNULL(m.U_FS,0) AS U_FS,m.QryGroup3,m.SVolume,m.SWeight1,");
-            filedName.Append("b.U_PDXX,m.IsCommited,m.OnOrder,(m.OnHand-m.IsCommited+m.OnOrder) AS OnAvailable,m.U_JGF1,IFNULL(m.U_YFCB,'0'),m.OnHand AS OnHandS,m.MinLevel,m.PurPackUn,m.buyunitmsr");
+            filedName.Append("b.U_PDXX,m.IsCommited,m.OnOrder,(m.OnHand-m.IsCommited+m.OnOrder) AS OnAvailable,m.U_JGF1,IFNULL(m.U_YFCB,'0') as U_YFCB,m.OnHand AS OnHandS,m.MinLevel,m.PurPackUn,m.buyunitmsr,IFNULL(c.item_cfg_id,0) item_cfg_id");
             filedName.AppendFormat("{0}{1}{2}", U_SHJSDJ, U_SHJSJ, U_SHTC);
             tableName.AppendFormat(" {0}." + type + " a LEFT JOIN {0}." + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON b.ItemCode=w.ItemCode AND b.WhsCode=w.WhsCode AND b.sbo_id=w.sbo_id", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.store_oitm m ON b.ItemCode=m.ItemCode AND m.sbo_id=b.sbo_id", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.base_item_cfg c ON b.ItemCode = c.ItemCode AND c.type_id='0'", "nsap_bone");
             return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), model.limit, model.page, sortString, filterString, out rowCount);
         }
         public DataTable GridRelationContractList(out int rowCount, GridRelationContractListReq model, int SboID, int UserID)

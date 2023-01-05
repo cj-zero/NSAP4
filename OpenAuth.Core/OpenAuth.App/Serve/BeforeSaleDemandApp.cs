@@ -13,6 +13,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.Workbench;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Domain.Workbench;
 using OpenAuth.Repository.Interface;
 
@@ -51,11 +52,12 @@ namespace OpenAuth.App
                         .WhereIf(!string.IsNullOrWhiteSpace(req.CustomerCode), c => c.CustomerId.Contains(req.CustomerCode))
                         .WhereIf(!string.IsNullOrWhiteSpace(req.CustomerName), c => c.CustomerName.Contains(req.CustomerName))
                         .WhereIf(!string.IsNullOrWhiteSpace(req.DemandNumber), c => c.BeforeDemandCode.Contains(req.DemandNumber))
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), c => c.BeforeSaleDemandProjectName.Contains(req.KeyWord));
-                        //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateStart.ToString()), q => q.ApplyDate > req.ApplyDateStart)
-                        //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateEnd.ToString()), q => q.ApplyDate < Convert.ToDateTime(req.ApplyDateEnd).AddDays(1))
-                        //.WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateStart.ToString()), q => q.UpdateTime > req.UpdateDateStart)
-                        //.WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateEnd.ToString()), q => q.UpdateTime < Convert.ToDateTime(req.UpdateDateEnd).AddDays(1));
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), c => c.BeforeSaleDemandProjectName.Contains(req.KeyWord))
+                        .WhereIf(req.U_SAP_ID > 0, c => c.U_SAP_ID == req.U_SAP_ID);
+            //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateStart.ToString()), q => q.ApplyDate > req.ApplyDateStart)
+            //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateEnd.ToString()), q => q.ApplyDate < Convert.ToDateTime(req.ApplyDateEnd).AddDays(1))
+            //.WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateStart.ToString()), q => q.UpdateTime > req.UpdateDateStart)
+            //.WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateEnd.ToString()), q => q.UpdateTime < Convert.ToDateTime(req.UpdateDateEnd).AddDays(1));
 
             if (req.BeforeSaleDemandProjectId > 0)
             {
@@ -94,7 +96,7 @@ namespace OpenAuth.App
                 var mf = _moduleFlowSchemeApp.Get(c => c.Module.Name == "售前需求");
                 var flowinstace = await UnitWork.Find<FlowInstance>(c => c.SchemeId == mf.FlowSchemeId && c.MakerList.Contains(loginContext.User.Id)).Select(c => c.Id).ToListAsync();
                 //排除掉 已经处理过的
-              //  var instances = await UnitWork.Find<BeforeSaleDemandDeptInfo>(c =>  c.UserId == loginContext.User.Id && c.IsConfirm == 1).Select(c => c.BeforeSaleDemandId).Distinct().ToListAsync();
+                //  var instances = await UnitWork.Find<BeforeSaleDemandDeptInfo>(c =>  c.UserId == loginContext.User.Id && c.IsConfirm == 1).Select(c => c.BeforeSaleDemandId).Distinct().ToListAsync();
                 var instances = await UnitWork.Find<BeforeSaleDemandDeptInfo>(c => c.UserId == loginContext.User.Id && c.IsConfirm == 1).Select(c => c.BeforeSaleDemandId).Distinct().ToListAsync();
                 var instances2 = await UnitWork.Find<BeforeSaleDemandDeptInfo>(c => c.UserId == loginContext.User.Id && c.IsConfirm == 0).Select(c => c.BeforeSaleDemandId).Distinct().ToListAsync();
                 instances = instances.Where(a => !instances2.Contains(a)).ToList();
@@ -125,13 +127,13 @@ namespace OpenAuth.App
                 userIds.AddRange(item.Split(","));
             }
             userIds = userIds.Distinct().ToList();
-         //   var userList = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).ToListAsync();
+            //   var userList = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).ToListAsync();
 
 
             var userList = (from a in UnitWork.Find<User>(u => userIds.Contains(u.Id))
-                         join b in  UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on a.Id equals b.FirstId
-                        join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id
-                        select new { a.Id, Name = c.Name+a.Name }).ToList();
+                            join b in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on a.Id equals b.FirstId
+                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id
+                            select new { a.Id, Name = c.Name + a.Name }).ToList();
 
 
             var flowinstanceObjs = flowInstanceList.Select(s => new
@@ -155,7 +157,7 @@ namespace OpenAuth.App
                 c.BeforeDemandCode,
                 c.ApplyDate,
                 c.ApplyUserId,
-                ApplyUserName = user.Where(a => a.FirstId == c.ApplyUserId).FirstOrDefault()?.Name  +"-"+ c.ApplyUserName,
+                ApplyUserName = user.Where(a => a.FirstId == c.ApplyUserId).FirstOrDefault()?.Name + "-" + c.ApplyUserName,
                 c.CustomerId,
                 c.CustomerName,
                 c.CreateTime,
@@ -164,7 +166,9 @@ namespace OpenAuth.App
                 CurrentProcessor = c.Beforesaledemandoperationhistories.OrderByDescending(x => x.CreateTime).FirstOrDefault().CreateUser + "—" + c.Beforesaledemandoperationhistories.OrderByDescending(x => x.CreateTime).FirstOrDefault().Action,
                 NextUser = flowinstanceObjs.Where(f => f.Id.Equals(c.FlowInstanceId)).FirstOrDefault()?.ActivityName + "—" + flowinstanceObjs.Where(f => f.Id.Equals(c.FlowInstanceId)).FirstOrDefault()?.Name,
                 c.UpdateTime,
-                c.Status
+                c.Status,
+                c.ServiceOrderId,
+                c.U_SAP_ID,
             }).ToList();
 
             result.Count = await query.CountAsync();
@@ -193,6 +197,7 @@ namespace OpenAuth.App
                             .FirstOrDefaultAsync();
 
             var result = detail.MapTo<BeforeSaleDemandResp>();
+            List<FlowPathResp> FlowPathResp = new List<FlowPathResp>();
             //判断当前用户是否有查看金额信息的权限 默认否false
             result.IsShowAmount = false;
             if (result.CreateUserId == loginContext.User.Id || loginContext.User.Account == Define.SYSTEM_USERNAME || loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-销售总助")) || loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-研发总助")) || loginContext.Roles.Any(c => c.Name.Equal("总经理")))
@@ -217,16 +222,16 @@ namespace OpenAuth.App
                     if (detail.Status == 5 && loginContext.Roles.Any(c => c.Name.Equal("总经理")) && flowInstance.ActivityName == "总经理审批")
                     {
                         //开发投入预估（开发预估工期+测试预估工期）*预估开发成本
-                        result.DevCost =(  result.PredictDevCost.ToInt32() * (result.BeforeSaleDemandDeptInfos.Sum(x => x.DevEstimate) + result.TestEstimate +result.DemandEstimate)).ToString();
-                      
-                        
+                        result.DevCost = (result.PredictDevCost.ToInt32() * (result.BeforeSaleDemandDeptInfos.Sum(x => x.DevEstimate) + result.TestEstimate + result.DemandEstimate)).ToString();
+
+
                     }
                     if (detail.Status == 4)
                     {
                         var instances = await UnitWork.Find<BeforeSaleDemandDeptInfo>(c => c.UserId == loginContext.User.Id && c.IsConfirm == 1 && c.BeforeSaleDemandId == id).ToListAsync();
                         result.IsHandle = instances.Any() ? false : true;
                     }
-                    if (detail.Status >7 && detail.Status <10)
+                    if (detail.Status > 7 && detail.Status < 10)
                     {
                         var scheduingIds = await UnitWork.Find<BeforeSaleProScheduling>(c => c.UserId == loginContext.User.Id && c.IsConfirm == 1 && c.BeforeSaleDemandId == id).ToListAsync();
                         result.IsHandle = scheduingIds.Any() ? false : true;
@@ -291,6 +296,9 @@ namespace OpenAuth.App
                 //    result.IsHandle = false;
                 //}
                 #endregion
+
+                //获取审批生命周期
+                FlowPathResp = await _flowInstanceApp.FlowPathRespList(null, result.FlowInstanceId);
             }
             var beforesalefiles = detail.Beforesalefiles.Select(s => new { s.FileId, s.Type }).ToList();
             var beforesalefileIds = beforesalefiles.Select(s => s.FileId).ToList();
@@ -299,6 +307,7 @@ namespace OpenAuth.App
             result.Files.ForEach(f => f.PictureType = beforesalefiles.Where(p => f.Id.Equals(p.FileId)).Select(p => p.Type).FirstOrDefault());
             result.DevCost = String.Format("{0:N}", Convert.ToDouble(result.DevCost.ToDouble()));
             result.PredictDevCost = String.Format("{0:N}", Convert.ToDouble(result.PredictDevCost));
+            result.flowPathResps = FlowPathResp;
             return result;
         }
 
@@ -319,10 +328,10 @@ namespace OpenAuth.App
             {
                 throw new Exception("请选择客户！");
             }
-            if (req.BeforeSaleDemandOrders != null && req.BeforeSaleDemandOrders.Count == 0)
-            {
-                throw new Exception("请关联单据！");
-            }
+            //if (req.BeforeSaleDemandOrders != null && req.BeforeSaleDemandOrders.Count == 0)
+            //{
+            //    throw new Exception("请关联单据！");
+            //}
             if (req.DemandContents == null)
             {
                 throw new Exception("请填写需求简述！");
@@ -424,7 +433,7 @@ namespace OpenAuth.App
                         obj.BeforeDemandCode = "XQ" + DateTime.Now.ToString("yyyyMMdd") + createSerialNumber();//售前需求申请编号:XQ202201241453
 
                         obj.PredictDevCost = 2000;
-                        obj.TestEstimate = 5 ;
+                        obj.TestEstimate = 5;
                         obj.DemandEstimate = 3;
                         obj = await UnitWork.AddAsync<BeforeSaleDemand, int>(obj);
 
@@ -480,7 +489,7 @@ namespace OpenAuth.App
             }
             else
             {
-                number = (Convert.ToInt32(value)+1).ToString("0000");
+                number = (Convert.ToInt32(value) + 1).ToString("0000");
                 RedisHelper.Set(key, number, 24 * 60 * 60);
             }
             return number;
@@ -524,7 +533,7 @@ namespace OpenAuth.App
                 verificationReq.NodeRejectType = req.NodeRejectType;//驳回类型。null:使用节点配置的驳回类型/0:前一步/1:第一步/2：指定节点，使用NodeRejectStep
                 verificationReq.NodeRejectStep = req.NodeRejectStep;//驳回的步骤
 
-                if (!string.IsNullOrEmpty(req.NodeRejectType)&&req.NodeRejectType=="1")
+                if (!string.IsNullOrEmpty(req.NodeRejectType) && req.NodeRejectType == "1")
                 {
                     //删除掉确认部门信息，重新分配
                     await UnitWork.BatchDeleteAsync<BeforeSaleDemandDeptInfo>(beforeSaleDemand.BeforeSaleDemandDeptInfos.ToArray());
@@ -536,31 +545,31 @@ namespace OpenAuth.App
                     //("状态0-草稿 1-销售员提交 2-销售总助审批 3-需求组提交需求 4-研发总助审批 5-研发确认 6-总经理审批                     
                     // 7-立项 8-需求提交 9-研发提交10-测试提交11-实施提交12-客户验收")]
                     var nodeName = wfruntime.Nodes[req.NodeRejectStep].name;
-                    String[] nodeArray = new String[] { "销售员提交", "销售总助审批", "需求组提交需求", "研发总助审批", "研发确认", "总经理审批","立项", "需求提交", "研发提交", "测试提交", "实施提交", "客户验收" };
+                    String[] nodeArray = new String[] { "销售员提交", "销售总助审批", "需求组提交需求", "研发总助审批", "研发确认", "总经理审批", "立项", "需求提交", "研发提交", "测试提交", "实施提交", "客户验收" };
                     if (nodeArray.Contains(nodeName))
                     {
                         beforeSaleDemand.Status = nodeArray.ToList().IndexOf(nodeName);
                     }
                     //项目状态 1-立项 2-需求 3-开发 4-测试5-实施 6-验收 7-结束
-                    String[] projectNodeArray = new String[] {"占位符不管", "立项", "需求提交", "研发提交", "测试提交", "实施提交", "客户验收" };
+                    String[] projectNodeArray = new String[] { "占位符不管", "立项", "需求提交", "研发提交", "测试提交", "实施提交", "客户验收" };
                     if (projectNodeArray.Contains(nodeName))
                     {
                         beforeSaleDemand.ProjectStatus = projectNodeArray.ToList().IndexOf(nodeName);
                     }
-                    if (beforeSaleDemand.Status<=3)
+                    if (beforeSaleDemand.Status <= 3)
                     {
                         //表示驳回到研发总助审批之前的节点，删除掉确认部门信息，重新分配
                         await UnitWork.BatchDeleteAsync<BeforeSaleDemandDeptInfo>(beforeSaleDemand.BeforeSaleDemandDeptInfos.ToArray());
                     }
 
-                    if (beforeSaleDemand.Status ==4)
+                    if (beforeSaleDemand.Status == 4)
                     {
                         //表示驳回到【研发确认】节点，需要重置确认状态为【未确认】
                         beforeSaleDemand.BeforeSaleDemandDeptInfos.ForEach(c =>
                         {
                             c.IsConfirm = 0;
                         });
-                         await UnitWork.BatchUpdateAsync<BeforeSaleDemandDeptInfo>(beforeSaleDemand.BeforeSaleDemandDeptInfos.ToArray());
+                        await UnitWork.BatchUpdateAsync<BeforeSaleDemandDeptInfo>(beforeSaleDemand.BeforeSaleDemandDeptInfos.ToArray());
                     }
                     if (beforeSaleDemand.Status == 6)
                     {
@@ -577,10 +586,10 @@ namespace OpenAuth.App
                         beforeSaleDemand.BeforeSaleDemandProjectName = "";
                     }
 
-                    if (beforeSaleDemand.Status==7)
+                    if (beforeSaleDemand.Status == 7)
                     {
                         //表示驳回到【需求提交】节点，重置排期确认信息
-                        beforeSaleDemand.BeforeSaleProSchedulings.Where(x=>x.Stage==0).ForEach(c =>
+                        beforeSaleDemand.BeforeSaleProSchedulings.Where(x => x.Stage == 0).ForEach(c =>
                         {
                             c.IsConfirm = 0;
                         });
@@ -774,7 +783,7 @@ namespace OpenAuth.App
                 else if (loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-需求工程师")) && flowinstace.ActivityName == "需求提交")
                 {
                     //更新实际需求完成时间
-                    await UnitWork.UpdateAsync<BeforeSaleProScheduling>(x => x.BeforeSaleDemandId==req.Id && x.UserId == loginContext.User.Id && x.Stage == 0, x => new BeforeSaleProScheduling
+                    await UnitWork.UpdateAsync<BeforeSaleProScheduling>(x => x.BeforeSaleDemandId == req.Id && x.UserId == loginContext.User.Id && x.Stage == 0, x => new BeforeSaleProScheduling
                     {
                         ActualStartDate = req.ActualStartDate,//需求实际开始时间
                         ActualEndDate = req.SubmitDate,//需求实际完成时间
@@ -1041,11 +1050,33 @@ namespace OpenAuth.App
                 CreateUserName = obj.CreateUserName,
                 CreateUserId = obj.CreateUserId,
                 CreateTime = obj.CreateTime,
-                UpdateTime = DateTime.Now
+                UpdateTime = DateTime.Now,
+                ServiceOrderId = obj.ServiceOrderId,
+                U_SAP_ID = obj.U_SAP_ID,
                 //todo:补充或调整自己需要的字段
             });
 
         }
+        public async Task<TableData> GetSaleListByUSAPID(int id)
+        {
+            TableData result = new TableData();
+            var list = UnitWork.Find<ServiceWorkOrder>(a => a.ServiceOrderId == id).Select(a => a.ManufacturerSerialNumber).ToList();
+            var deliveryNoList = UnitWork.Find<OINS>(a => list.Contains(a.manufSN)).Select(a => a.deliveryNo).Distinct().ToList();
 
+            var BaseEntryList = UnitWork.Find<DLN1>(a => a.BaseType == 17 && deliveryNoList.Contains(a.DocEntry))
+                .GroupBy(a => a.DocEntry)
+                .Select(g => g.Min(a => a.BaseEntry))
+                .ToList();
+            var data = UnitWork.Find<ORDR>(a => BaseEntryList.Contains(a.DocEntry)).ToList();
+            result.Data = data.Select(a => new {
+
+                a.DocEntry,
+                a.CardCode,
+                a.CardName,
+                a.DocTotal,
+                a.Comments
+            });
+            return result;
+        }
     }
 }

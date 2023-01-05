@@ -1122,4 +1122,83 @@ namespace OpenAuth.App.Order.ModelDto
     //	public string pdn_no { get; set; }
     //	public string pdn_quantity { get; set; }
     //}
+
+    public class CopyItemMsg
+    {
+        public string baseLine { get; set; }
+
+        public string buyunitmsr { get; set; }
+
+        public string cardCode { get; set; }
+
+        public string cardName { get; set; }
+
+        public int docEntry { get; set; }
+
+        public string dscription { get; set; }
+
+        public decimal? U_SHJSDJ { get; set; }
+
+        public decimal? U_SHJSJ { get; set; }
+
+        public decimal? U_SHTC { get; set; }
+
+        public string U_YFCB { get; set; }
+
+        public int isCommited { get; set; }
+
+        public string itemCode { get; set; }
+
+        public decimal? lastPurPrc { get; set; }
+
+        public decimal? lineTotal { get; set; }
+
+        public decimal? minLevel { get; set; }
+
+        public decimal? onAvailable { get; set; }
+
+        public decimal? onHand { get; set; }
+
+        public decimal? onHandS { get; set; }
+
+        public decimal? onOrder { get; set; }
+
+        public decimal? price { get; set; }
+
+        public int purPackUn { get; set; }
+
+        public int qryGroup { get; set; }
+
+        public string qryGroup3 { get; set; }
+
+        public decimal? quantity { get; set; }
+
+        public int rowNum { get; set; }
+
+        public int sVolume { get; set; }
+
+        public int sWeight1 { get; set; }
+
+        public string u_DL { get; set; }
+
+        public string u_DY { get; set; }
+
+        public decimal u_FS { get; set; }
+
+        public decimal? u_JGF { get; set; }
+
+        public decimal? u_JGF1 { get; set; }
+
+        public string u_PDXX { get; set; }
+
+        public string u_TDS { get; set; }
+
+        public decimal u_US { get; set; }
+
+        public string whsCode { get; set; }
+
+        public int item_cfg_id { get; set; }
+
+        public List<CopyItemMsg> childBillSalesDetails { get; set; }
+    }
 }

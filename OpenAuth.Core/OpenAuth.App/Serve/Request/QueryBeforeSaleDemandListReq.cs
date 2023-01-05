@@ -1,7 +1,7 @@
 ﻿namespace OpenAuth.App.Request
 {
     public class QueryBeforeSaleDemandListReq : PageReq
-    {        
+    {
         /// <summary>
         /// 项目名称/申请人
         /// </summary>
@@ -64,6 +64,10 @@
         /// 需求编号
         /// </summary>
         public string DemandNumber { get; set; }
-        
+        public int U_SAP_ID { get; set; }
+
+
+
+
     }
 }

@@ -25,30 +25,30 @@ namespace OpenAuth.Repository.Domain
     {
         public BeforeSaleDemand()
         {
-          this.BeforeSaleDemandProjectId = 0;
-          this.BeforeSaleDemandProjectName = string.Empty;
-          this.BeforeDemandCode= string.Empty;
-          this.ApplyUserId= string.Empty;
-          this.ApplyUserName= string.Empty;
-          this.ApplyDate= DateTime.Now;
-          this.ExpectUserId= string.Empty;
-          this.ExpectDate= DateTime.Now;
-          this.ExpectUserName= string.Empty;
-          this.FactDemandUserId= string.Empty;
-          this.FactDemandUser= string.Empty;
-          this.CustomerId= string.Empty;
-          this.CustomerName= string.Empty;
-          this.CustomerLinkMan= string.Empty;
-          this.LinkManPhone= string.Empty;
-          this.FlowInstanceId= string.Empty;
-          this.Status= 0;
-          this.DemandContents= string.Empty;
-          this.FirstConnects= string.Empty;
-          this.Remark= string.Empty;
-          this.CreateUserName= string.Empty;
-          this.CreateUserId= string.Empty;
-          this.CreateTime= DateTime.Now;
-          this.UpdateTime= DateTime.Now;
+            this.BeforeSaleDemandProjectId = 0;
+            this.BeforeSaleDemandProjectName = string.Empty;
+            this.BeforeDemandCode = string.Empty;
+            this.ApplyUserId = string.Empty;
+            this.ApplyUserName = string.Empty;
+            this.ApplyDate = DateTime.Now;
+            this.ExpectUserId = string.Empty;
+            this.ExpectDate = DateTime.Now;
+            this.ExpectUserName = string.Empty;
+            this.FactDemandUserId = string.Empty;
+            this.FactDemandUser = string.Empty;
+            this.CustomerId = string.Empty;
+            this.CustomerName = string.Empty;
+            this.CustomerLinkMan = string.Empty;
+            this.LinkManPhone = string.Empty;
+            this.FlowInstanceId = string.Empty;
+            this.Status = 0;
+            this.DemandContents = string.Empty;
+            this.FirstConnects = string.Empty;
+            this.Remark = string.Empty;
+            this.CreateUserName = string.Empty;
+            this.CreateUserId = string.Empty;
+            this.CreateTime = DateTime.Now;
+            this.UpdateTime = DateTime.Now;
         }
         /// <summary>
         /// 关联售前项目Id
@@ -175,7 +175,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("需求预估工期")]
         public int? DemandEstimate { get; set; }
-        
+
         /// <summary>
         /// 备注说明
         /// </summary>
@@ -280,6 +280,17 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("实际测试结束日期")]
         public System.DateTime? ActualTestEndDate { get; set; }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int? ServiceOrderId { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int? U_SAP_ID { get; set; }
         /// <summary>
         /// 售前申请附件
         /// </summary>
@@ -287,7 +298,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 关联单据
         /// </summary>
-        public virtual List<BeforeSaleDemandOrders> BeforeSaleDemandOrders{ get; set; }
+        public virtual List<BeforeSaleDemandOrders> BeforeSaleDemandOrders { get; set; }
         /// <summary>
         /// 售前申请流程关联项目
         /// </summary>
@@ -295,7 +306,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 项目排期表
         /// </summary>
-        public virtual List<BeforeSaleProScheduling>  BeforeSaleProSchedulings { get; set; }
+        public virtual List<BeforeSaleProScheduling> BeforeSaleProSchedulings { get; set; }
         /// <summary>
         /// 售前申请项目操作记录
         /// </summary>

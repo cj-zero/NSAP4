@@ -3302,9 +3302,9 @@ namespace OpenAuth.App
                         Name = baseInfo.Etalons[i].Name,
                         Characterisics = baseInfo.Etalons[i].Characteristics,
                         AssetNo = baseInfo.Etalons[i].AssetNo,
-                        CertificateNo = baseInfo.Etalons[i].CertificateNo,
                         DueDate = DateStringConverter(baseInfo.Etalons[i].DueDate),
-                        CalibrationEntity = baseInfo.Etalons[i].CalibrationEntity
+                        CalibrationEntity = baseInfo.Etalons[i].CalibrationEntity,                       
+                        CertificateNo = (baseInfo.Etalons[i].CalibrationEntity).Contains(baseInfo.Etalons[i].CertificateNo) ? "" : baseInfo.Etalons[i].CertificateNo
                     });
                 }
                 #endregion
