@@ -1589,7 +1589,8 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task RePulish_New()
         {
-            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => string.IsNullOrWhiteSpace(c.U_SAP_ID.ToString())).Select(c => c.Id).ToListAsync();
+            var dt = Convert.ToDateTime("2023-01-01");
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.CreateTime> dt && string.IsNullOrWhiteSpace(c.U_SAP_ID.ToString())).Select(c => c.Id).ToListAsync();
             foreach (var item in serviceOrder)
             {
                 _capBus.Publish("Serve.ServcieOrder.Create", item);
