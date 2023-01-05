@@ -37,7 +37,15 @@ namespace OpenAuth.App.Order.ModelDto
         /// 分享链接
         /// </summary>
         public string ShareUrl { get; set; }
-        
+        /// <summary>
+        /// 商品规格文件名称
+        /// </summary>
+        public string SpecsFileName { get; set; }
+        /// <summary>
+        /// 商品规格文件地址
+        /// </summary>
+        public string SpecsFileUrl { get; set; }
+
     }
     /// <summary>
     /// 商品图片

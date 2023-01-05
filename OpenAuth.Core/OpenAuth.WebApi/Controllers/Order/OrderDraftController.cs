@@ -2216,13 +2216,13 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 //设置请求的路径
                 var url = $"http://shopapi.neware.work:8081/api/v1/product/shopproduct?erpCode={ErpCode}";
-                //var url = $"http://192.168.8.121:8082/api/v1/product/shopproduct?erpCode={ErpCode}";
+
                 ////使用注入的httpclientfactory获取client
                 var client = _httpClient.CreateClient();
                 client.BaseAddress = new Uri(url);
+
                 //设置请求体中的内容，并以post的方式请求
                 var response = await client.GetAsync(url);
-
 
                 result.Result = JsonConvert.DeserializeObject<ShopProductDto>(response.Content.ReadAsStringAsync().Result);
 
@@ -2231,8 +2231,8 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 result.Message = e.Message;
             }
-            return result;
 
+            return result;
         }
 
 

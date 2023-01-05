@@ -1639,7 +1639,7 @@ namespace OpenAuth.App
                                 ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
                                 if (returnResult.status != 200)
                                 {
-                                    _logger.LogError("委托单调用2接口失败：" + returnResult.message);
+                                    _logger.LogError("委托单调用2接口失败：" + returnResult.message + "参数：" + JsonConvert.SerializeObject(controlDataList));
                                     await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
                                     {
                                         Status = -2,
