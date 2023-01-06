@@ -67,7 +67,7 @@ namespace OpenAuth.App.Material
             }
 
             string sql = string.Format(@" select  *   from   (select TO_DAYS(NOW())-TO_DAYS(n.SubmitTime) as SubmitDay,IFNULL(TO_DAYS(NOW())-TO_DAYS(n.UrlUpdate),0)  as UrlDay, n.Id,n.DocEntry,n.U_ZS,n.CardCode,n.CardName,n.ItemCode,n.ItemDesc,n.SlpName,n.ContractReviewCode,n.custom_req,n.ItemTypeName,n.ItemName,n.SubmitTime, n.VersionNo,n.FileUrl,
-                                         n.DemoUpdate, n.UrlUpdate, n.Quantity, n.IsDemo, m.Id SubmitNo, s.DocEntry ProductNo,row_number() OVER(PARTITION BY n.itemCode,n.CardCode,n.SlpName, n.itemTypeName, n.Quantity) AS rn
+                                         n.DemoUpdate, n.UrlUpdate, n.Quantity, n.IsDemo, m.Id SubmitNo, s.DocEntry ProductNo,row_number() OVER(PARTITION BY n.itemCode,n.CardCode,n.SlpName, n.itemTypeName, n.Quantity ,n.DocEntry) AS rn
                                          from erp4_serve.manage_screening n
                                          left
                                          join erp4_serve.manage_screening_history m on n.DocEntry = m.DocEntry and n.U_ZS = m.U_ZS and n.ItemCode = m.ItemCode and n.Quantity = m.Quantity
