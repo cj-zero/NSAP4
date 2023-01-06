@@ -1898,7 +1898,6 @@ namespace OpenAuth.App.ContractManager
             if (string.IsNullOrEmpty(req.contractApply.CompanyType) || string.IsNullOrEmpty(req.contractApply.ContractType))
             {
                 result.Message = "合同申请单所属公司或合同类型不能为空。";
-                Log.Logger.Error($"参数{req}");
                 result.Code = 500;
                 return result;
             }
@@ -1907,7 +1906,6 @@ namespace OpenAuth.App.ContractManager
             {
                 result.Message = "合同申请单合同文件类型不能为空。";
                 result.Code = 500;
-                Log.Logger.Error($"参数{req}");
                 return result;
             }
 
@@ -1918,7 +1916,6 @@ namespace OpenAuth.App.ContractManager
                 {
                     result.Message = "合同申请单未提交，不可操作。";
                     result.Code = 500;
-                    Log.Logger.Error($"参数{req}");
                     return result;
                 }
 
@@ -1926,7 +1923,6 @@ namespace OpenAuth.App.ContractManager
                 {
                     result.Message = "合同申请单已经被撤回，停止审批。";
                     result.Code = 500;
-                    Log.Logger.Error($"参数{req}");
                     return result;
                 }
             }
@@ -1934,7 +1930,6 @@ namespace OpenAuth.App.ContractManager
             {
                 result.Message = "合同申请单不存在，不可操作。";
                 result.Code = 500;
-                Log.Logger.Error($"参数{req}");
                 return result;
             }
 

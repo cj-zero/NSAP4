@@ -1628,7 +1628,7 @@ namespace OpenAuth.App
                             }
                             else
                             {
-                                _logger.LogError("委托单物料明细为空，Id=" + entrustment.Id);
+                                _logger.LogInformation("委托单物料明细为空，Id=" + entrustment.Id);
                             }
 
                             ControlDataList controlDataList = new ControlDataList();
@@ -1639,7 +1639,7 @@ namespace OpenAuth.App
                                 ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
                                 if (returnResult.status != 200)
                                 {
-                                    _logger.LogError("委托单调用2接口失败：" + returnResult.message + "参数：" + JsonConvert.SerializeObject(controlDataList));
+                                    _logger.LogInformation("委托单调用2接口失败：" + returnResult.message + "参数：" + JsonConvert.SerializeObject(controlDataList));
                                     await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
                                     {
                                         Status = -2,
@@ -1650,6 +1650,7 @@ namespace OpenAuth.App
                                 }
                                 else
                                 {
+                                    _logger.LogInformation("委托单调用2接口成功"); 
                                     await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
                                     {
                                         Status = -1,
@@ -1665,7 +1666,7 @@ namespace OpenAuth.App
             }
             else
             {
-                _logger.LogError("委托单调用1接口失败：" + calibrations.message);
+                _logger.LogInformation("委托单调用1接口失败：" + calibrations.message);
             }
 
             #endregion

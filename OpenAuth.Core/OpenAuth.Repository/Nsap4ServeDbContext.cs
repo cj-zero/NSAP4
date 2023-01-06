@@ -208,5 +208,11 @@ namespace OpenAuth.Repository
         #region 消息推送记录
         public virtual DbSet<DDSendMsgHitory> ddsendmsghistory { get; set; }
         #endregion
+
+        #region 意见反馈
+        public virtual DbSet<ProblemFeedback> problemFeddback { get; set; }
+        public virtual DbSet<ProblemFeedFile> problemFeedFile { get; set; }
+        public virtual DbSet<ProblemFile> problemFile { get; set; }
+         #endregion
     }
 }
