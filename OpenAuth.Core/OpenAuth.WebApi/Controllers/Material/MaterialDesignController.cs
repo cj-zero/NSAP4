@@ -71,7 +71,7 @@ namespace OpenAuth.WebApi.Controllers.Material
                          "IF(" + ViewSales + ", StockPrice, 0) StockPrice,");
             strSql += string.Format("d.WhsCode,w.OnHand,");
             strSql += string.Format("d.U_ZS");
-            strSql += ",(CASE WHEN d.ItemCode REGEXP 'A605|A608|A313|A302|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|A405|CT-4XXX-5V12A|CA|MB|MJR|MJF|MTP|MJY|MCJ|MZJ|MDCJ' THEN '--' ELSE d.ContractReviewCode END) U_RelDoc";
+            strSql += ",(CASE WHEN d.ItemCode REGEXP 'A605|A608|A313|A302|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|A405|CT-4XXX-5V12A|CA|MB|MJR|MJF|MTP|MJY|MCJ|MZJ|MDCJ' THEN '--'  WHEN (LOCATE('mA', d.ItemCode)  !=0  || REGEXP_LIKE(d.ItemCode, '5V([0-9]|1[0-2])A') =  1)&&  LOCATE('CT-4', d.ItemCode)  !=0  &&  LOCATE('5V', d.ItemCode)  !=0 THEN '--'    ELSE d.ContractReviewCode END) U_RelDoc";
             strSql += string.Format(" FROM {0}." + tablename + " d", "nsap_bone");
             strSql += string.Format(" LEFT JOIN {0}.store_oitw w ON d.ItemCode=w.ItemCode AND d.WhsCode=w.WhsCode AND d.sbo_id=w.sbo_id", "nsap_bone");
             strSql += string.Format(" left join manage_screening m on d.DocEntry = m.DocEntry and d.ItemCode = m.ItemCode and d.U_ZS = m.U_ZS and d.Quantity = m.Quantity", "erp4_serve");
