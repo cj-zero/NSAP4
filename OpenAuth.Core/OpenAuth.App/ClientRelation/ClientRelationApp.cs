@@ -1379,7 +1379,7 @@ namespace OpenAuth.App.ClientRelation
                 if (relatedRelation == null)
                 {
                     //add to log file to explain why 
-                    _logger.LogError("获取终端关系，未找到对应的Job,请求参数为:" + JsonConvert.SerializeObject(clientNo));
+                    _logger.LogInformation("获取终端关系，未找到对应的Job,请求参数为:" + JsonConvert.SerializeObject(clientNo));
                     return result;
                 }
                 queryId = relatedRelation.JobId;
@@ -1391,6 +1391,23 @@ namespace OpenAuth.App.ClientRelation
             //result = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == queryId && a.IsDelete == 0);
             var finalRes = UnitWork.Find<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == queryId && a.IsDelete == 0).ToList().OrderByDescending(a=>a.CreateDate).FirstOrDefault();
             return finalRes;
+        }
+
+
+        public async Task<ClientLegitRelation> GetLegitTerminals(string clientNo)
+        {
+            ClientLegitRelation result = new ClientLegitRelation();
+                var relatedRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == clientNo && a.IsDelete == 0 && a.IsActive == 1);
+                if (relatedRelation == null)
+                {
+                    //add to log file to explain why 
+                    _logger.LogInformation("获取终端关系，未找到对应的Job,请求参数为:" + JsonConvert.SerializeObject(clientNo));
+                    return result;
+                }
+            result.Flag = relatedRelation.Flag;
+            result.Terminals = relatedRelation.SubNo;
+
+            return result;
         }
 
 

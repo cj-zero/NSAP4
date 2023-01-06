@@ -1593,6 +1593,10 @@ namespace OpenAuth.App
                                                                 submitDataChild.key = itemChild.field_id;
                                                                 submitDataChild.value.Add(entrustmentDetail.SerialNumber);
                                                                 break;
+                                                            case "OtherNo":
+                                                                submitDataChild.key = itemChild.field_id;
+                                                                submitDataChild.value.Add("");
+                                                                break; 
                                                             case "Attachment":
                                                                 submitDataChild.key = itemChild.field_id;
                                                                 submitDataChild.value.Add("");
@@ -1650,6 +1654,7 @@ namespace OpenAuth.App
                                 }
                                 else
                                 {
+                                    _logger.LogError("委托单调用2接口成功");
                                     await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
                                     {
                                         Status = -1,
