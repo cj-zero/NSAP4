@@ -67,6 +67,10 @@ namespace OpenAuth.App.Material
             string e1chenyinguserId = "16515413562544875";
             string huchengqiuserId = "263116285332401528";
             string remarks = "有新的BOM单导入任务：产品编号【" + proNo + "】，请及时处理";
+            if (proNo.StartsWith("B01"))
+            {
+                return true;
+            }
             await _dDVoice.DDSendMsg("text", remarks, liuxilinuserId);
             await _dDVoice.DDSendMsg("text", remarks, e1chenyinguserId);
             await _dDVoice.DDSendMsg("text", remarks, huchengqiuserId);
