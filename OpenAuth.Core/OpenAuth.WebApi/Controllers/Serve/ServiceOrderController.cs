@@ -2510,8 +2510,8 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> GetPracticalTasks([FromQuery] QueryPracticalTaskReq req)
+        [HttpPost]
+        public async Task<TableData> GetPracticalTasks([FromBody] QueryPracticalTaskReq req)
         {
             var result = new TableData();
             try

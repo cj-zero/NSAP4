@@ -173,6 +173,7 @@ namespace OpenAuth.App.Serve.Response
         /// 是否领料
         /// </summary>
         public bool? IsPicking { get; set; } =false;
+        public string Address { get; set; }
 
     }
 }

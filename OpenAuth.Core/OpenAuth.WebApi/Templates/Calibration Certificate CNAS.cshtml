@@ -1302,7 +1302,18 @@
                             </td>
                             <td>
                                 <div class="text-en-12pt" style="width: 300px">
-                                   @item.CalibrationEntity \@item.CertificateNo
+
+                                    @if (@item.CalibrationEntity.Contains(@item.CertificateNo))
+                                    {
+                                        @item.CalibrationEntity
+                                    }
+                                    else
+                                    {
+                                        @*@string.Format("{0}\\{1}",@item.CalibrationEntity,@item.CertificateNo)*@
+                                        @(@item.CalibrationEntity+"\\"+@item.CertificateNo)
+                                    }
+
+                                   @*@item.CalibrationEntity \@item.CertificateNo*@
                                 </div>
                             </td>
                             <td>

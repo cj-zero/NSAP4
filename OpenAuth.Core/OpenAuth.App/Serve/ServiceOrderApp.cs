@@ -2105,6 +2105,7 @@ namespace OpenAuth.App
                 FromId = q.FromId,
                 Longitude = q.Longitude,
                 Latitude = q.Latitude,
+                Address = q.Address,
                 ServiceWorkOrders = q.ServiceWorkOrders.Where(a => (string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId) || a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
                 && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
                 && (status.Count == 0 || status.Contains(a.Status.Value))

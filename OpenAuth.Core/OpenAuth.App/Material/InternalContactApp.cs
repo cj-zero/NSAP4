@@ -1828,7 +1828,8 @@ namespace OpenAuth.App.Material
         public async Task<TableData> GetItemType()
         {
             TableData result = new TableData();
-            result.Data = await UnitWork.Find<store_item_type>(c => c.valid == true && c.parent_id == 13).Select(c => new { Id = c.type_alias, Name = c.type_alias }).ToListAsync();
+            List<string> items = new List<string>() { "BTE", "BT", "BE", };
+            result.Data = await UnitWork.Find<store_item_type>(c => (c.valid == true && c.parent_id == 13) || items.Contains(c.type_alias)).Select(c => new { Id = c.type_alias, Name = c.type_alias }).ToListAsync();
             return result;
         }
 
