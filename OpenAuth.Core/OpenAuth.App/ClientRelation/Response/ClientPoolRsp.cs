@@ -21,6 +21,14 @@ namespace OpenAuth.App.ClientRelation.Response
 
     }
 
+
+    public class ClientLegitRelation
+    {
+        public int Flag { get; set; }
+        public string Terminals { get; set; }
+    }
+
+
     /// <summary>
     /// 客户源
     /// </summary>

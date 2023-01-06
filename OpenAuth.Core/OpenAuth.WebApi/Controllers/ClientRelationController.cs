@@ -232,6 +232,28 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 获取客户关联关系
+        /// </summary>
+        /// <param name="clientNo"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<ClientLegitRelation>> GetLegitTerminals(string clientNo)
+        {
+            var result = new Response<ClientLegitRelation>();
+            try
+            {
+                result.Result = await _app.GetLegitTerminals(clientNo);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 手动同步关系
         /// </summary>
         /// <returns></returns>
