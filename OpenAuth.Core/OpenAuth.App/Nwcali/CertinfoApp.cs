@@ -3260,7 +3260,23 @@ namespace OpenAuth.App
 
         #endregion
 
-
+        /// <summary>
+        /// 判定当前是否存在
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <returns></returns>
+        public bool GetUserSign(string userName)
+        {
+            List<UserSign> userSigns = UnitWork.Find<UserSign>(r => r.UserName == userName).ToList();
+            if (userSigns != null && userSigns.Count() > 0)
+            {
+                return true;
+            }
+            else 
+            {
+                return false;
+            }
+        }
 
         /// <summary>
         /// 构建证书模板参数
@@ -3956,16 +3972,34 @@ namespace OpenAuth.App
                 var calibrationTechnician = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.Issuer));
                 if (calibrationTechnician != null)
                 {
+                    bool isBool = GetUserSign(baseInfo.Issuer);
+                    if (!isBool)
+                    {
+                        throw new Exception($"当前用户没有签名权限,请联系管理人员");
+                    }
+
                     model.CalibrationTechnician = await GetSignBase64(calibrationTechnician.PictureId);
                 }
                 var technicalManager = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.TechnicalManager));
                 if (technicalManager != null)
                 {
+                    bool tecBool = GetUserSign(baseInfo.TechnicalManager);
+                    if (!tecBool)
+                    {
+                        throw new Exception($"当前用户没有签名权限,请联系管理人员");
+                    }
+
                     model.TechnicalManager = await GetSignBase64(technicalManager.PictureId);
                 }
                 var approvalDirector = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.ApprovalDirector));
                 if (approvalDirector != null)
                 {
+                    bool appBool = GetUserSign(baseInfo.ApprovalDirector);
+                    if (!appBool)
+                    {
+                        throw new Exception($"当前用户没有签名权限,请联系管理人员");
+                    }
+
                     model.ApprovalDirector = await GetSignBase64(approvalDirector.PictureId);
                 }
                 #endregion
