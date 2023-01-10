@@ -1324,7 +1324,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     item.childBillSalesDetails = new List<OrderItemInfo>();
                     foreach (SaleItemDtoChild itemChild in saleItemDtoChildren)
                     {
-                        OrderItemInfo orderItemInfo = orderItemInfos.Where(r => r.ItemCode == itemChild.ItemCode).FirstOrDefault();
+                        OrderItemInfo orderItemInfo = orderItemInfos.Where(r => r.ItemCode == itemChild.ItemCode && r.item_cfg_id == itemChild.item_cfg_id).FirstOrDefault();
                         if (orderItemInfo != null)
                         {
                             item.childBillSalesDetails.Add(orderItemInfo);
