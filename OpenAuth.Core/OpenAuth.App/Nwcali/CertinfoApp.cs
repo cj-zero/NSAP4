@@ -748,9 +748,9 @@ namespace OpenAuth.App
                     await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { PdfPath = fileResp.FilePath, CNASPdfPath = fileRespCn.FilePath });
 
                     //生成证书文件后删除校准数据
-                    await UnitWork.DeleteAsync<Etalon>(x => x.NwcaliBaseInfoId == baseInfo.Id);
-                    await UnitWork.DeleteAsync<NwcaliPlcData>(x => x.NwcaliBaseInfoId == baseInfo.Id);
-                    await UnitWork.DeleteAsync<Repository.Domain.NwcaliTur>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+                    //await UnitWork.DeleteAsync<Etalon>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+                    //await UnitWork.DeleteAsync<NwcaliPlcData>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+                    //await UnitWork.DeleteAsync<Repository.Domain.NwcaliTur>(x => x.NwcaliBaseInfoId == baseInfo.Id);
 
                     await UnitWork.SaveAsync();
                     semaphoreSlim.Release();
@@ -1372,8 +1372,9 @@ namespace OpenAuth.App
                                           join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry into ab
                                           from b in ab.DefaultIfEmpty()
                                           join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
-                                          from c in bc.DefaultIfEmpty()
-                                          where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return
+                                          from c in bc.DefaultIfEmpty()       
+                                          join d in UnitWork.Find<OITW>(null) on a.ItemCode equals d.ItemCode
+                                          where a.DocType == 15 && a.DefinedQty > 0 && a.DocNum.Value.ToString() == job.sbo_itf_return && d.WhsCode == "43"
                                           select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
 
                 //var aa = serialNumber.GroupBy(c => c.ItemCode).ToList();
