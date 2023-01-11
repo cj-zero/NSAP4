@@ -2637,6 +2637,10 @@ namespace OpenAuth.App
             {
                 var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator)).Select(c => c.Id).ToListAsync();
                 userIds.AddRange(query);
+                if (userIds.Count<=0)
+                {
+                    userIds.Add("0");
+                }
             }
             if (req.SalesOrder > 0)
             {
