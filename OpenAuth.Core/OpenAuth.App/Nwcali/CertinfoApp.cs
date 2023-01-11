@@ -2649,15 +2649,15 @@ namespace OpenAuth.App
             {
                 var query = await UnitWork.Find<Relevance>(null).Where(c => c.Key == Define.USERORG && c.SecondId == req.OrgId).Select(c => c.FirstId).ToListAsync();
                 userIds.AddRange(query);
+                if (userIds.Count <= 0)
+                    userIds.Add("0");
             }
             if (!string.IsNullOrWhiteSpace(req.Operator))
             {
                 var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator)).Select(c => c.Id).ToListAsync();
                 userIds.AddRange(query);
                 if (userIds.Count<=0)
-                {
                     userIds.Add("0");
-                }
             }
             if (req.SalesOrder > 0)
             {
@@ -2667,6 +2667,8 @@ namespace OpenAuth.App
                     inner join OSLP t4 on t3.SlpCode =t4.SlpCode where t3.DocEntry=" + req.SalesOrder;
                 var shipmentCalibration = await UnitWork.Query<ShipmentCalibration_sql>(strSql).ToListAsync();
                 sns = shipmentCalibration.Select(c => c.TesterSn).ToList();
+                if (sns.Count <= 0)
+                    sns.Add("0");
             }
             var ids = userIds.Distinct();
             string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-report-page";
@@ -2782,11 +2784,15 @@ namespace OpenAuth.App
             {
                 var query = await UnitWork.Find<Relevance>(null).Where(c => c.Key == Define.USERORG && c.SecondId == req.OrgId).Select(c => c.FirstId).ToListAsync();
                 userIds.AddRange(query);
+                if (userIds.Count <= 0)
+                    userIds.Add("0");
             }
             if (!string.IsNullOrWhiteSpace(req.Operator))
             {
                 var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator)).Select(c => c.Id).ToListAsync();
                 userIds.AddRange(query);
+                if (userIds.Count <= 0)
+                    userIds.Add("0");
             }
             if (req.SalesOrder > 0)
             {
@@ -2796,6 +2802,8 @@ namespace OpenAuth.App
                     inner join OSLP t4 on t3.SlpCode =t4.SlpCode where t3.DocEntry=" + req.SalesOrder;
                 var shipmentCalibration = await UnitWork.Query<ShipmentCalibration_sql>(strSql).ToListAsync();
                 sns = shipmentCalibration.Select(c => c.TesterSn).ToList();
+                if (sns.Count <= 0)
+                    sns.Add("0");
             }
             var ids = userIds.Distinct();
             string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-report";
