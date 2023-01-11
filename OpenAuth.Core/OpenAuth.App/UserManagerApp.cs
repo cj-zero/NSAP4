@@ -380,7 +380,7 @@ namespace OpenAuth.App
         {
             var users = from userRole in UnitWork.Find<Relevance>(u =>
                     u.SecondId == request.roleId && u.Key == Define.USERROLE)
-                        join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
+                        join user in UnitWork.Find<User>(r => r.Status == 0) on userRole.FirstId equals user.Id into temp
                         from c in temp.Where(u => u.Id != null)
                         select c;
 
