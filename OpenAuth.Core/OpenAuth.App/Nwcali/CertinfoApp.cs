@@ -1463,7 +1463,7 @@ namespace OpenAuth.App
             #region 调用接口
             string tokens = System.Web.HttpUtility.UrlEncode(_ddSettingHelp.GetCalibrationKey("Token"));
 
-            //获取状态2,5的委托单据
+            //获取状态2的委托单据
             List<Entrustment> entrustments = await UnitWork.Find<Entrustment>(r => r.Status == 2 && r.UpdateDate >= Convert.ToDateTime("2022-12-06")).Include(r => r.EntrustmentDetails).ToListAsync();
 
             //获取状态-1的委托单
@@ -1630,6 +1630,13 @@ namespace OpenAuth.App
                             else
                             {
                                 _logger.LogInformation("委托单物料明细为空，Id=" + entrustment.Id);
+                                await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
+                                {
+                                    Status = -3,
+                                    UpdateDate = DateTime.Now
+                                });
+
+                                await UnitWork.SaveAsync();
                             }
 
                             ControlDataList controlDataList = new ControlDataList();
@@ -1640,7 +1647,7 @@ namespace OpenAuth.App
                                 ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
                                 if (returnResult.status != 200)
                                 {
-                                    _logger.LogInformation("委托单调用2接口失败：" + returnResult.message + "参数：" + JsonConvert.SerializeObject(controlDataList));
+                                    _logger.LogInformation("委托单调用2接口失败：" + returnResult.message);
                                     await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
                                     {
                                         Status = -2,
@@ -1651,7 +1658,7 @@ namespace OpenAuth.App
                                 }
                                 else
                                 {
-                                    _logger.LogInformation("委托单调用2接口成功"); 
+                                    _logger.LogInformation("委托单调用2接口成功");
                                     await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
                                     {
                                         Status = -1,
@@ -1660,6 +1667,16 @@ namespace OpenAuth.App
 
                                     await UnitWork.SaveAsync();
                                 }
+                            }
+                            else
+                            {
+                                await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
+                                {
+                                    Status = -3,
+                                    UpdateDate = DateTime.Now
+                                });
+
+                                await UnitWork.SaveAsync();
                             }
                         }
                     }
