@@ -1100,5 +1100,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string U_RelDoc { get; set; }
+
+        /// <summary>
+        /// 等级
+        /// </summary>
+        [Description("等级")]
+        public string Level { get; set; }
     }
 }

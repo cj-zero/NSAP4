@@ -1262,7 +1262,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 U_YFTCBL = ",IF(" + ViewSales + ",d.U_YFTCBL,0)";
             }
             StringBuilder stringBuilder = new StringBuilder();
-            string strSql = string.Format(" SELECT  d.ItemCode,Dscription,Quantity ," +
+            string strSql = string.Format(" SELECT  d.ItemCode,d.Level,Dscription,Quantity ," +
                 "IF(" + ViewSales + ",d.PriceBefDi,0)PriceBefDi," +
 
                 "IF(" + ViewSales + ",DiscPrcnt,0)DiscPrcnt,d.U_PDXX," +
@@ -1299,7 +1299,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             strSql += string.Format(" LEFT JOIN {0}.base_item_cfg c ON d.ItemCode = c.ItemCode AND type_id='0'", "nsap_bone");
             strSql += string.Format(" LEFT JOIN (select d1.sbo_id,d1.BaseEntry ,d1.BaseLine,SUM(d1.Quantity) as SumQuantity from {0}.sale_DLN1 d1 inner join {0}.sale_odln d0 on d0.docentry=d1.docentry and d0.sbo_id=d1.sbo_id where d0.Canceled='N' AND d1.BaseType=17 and d1.BaseEntry=" + DocNum + " GROUP BY d1.sbo_id,d1.BaseEntry,d1.BaseLine) as T on d.sbo_id=T.sbo_id and d.DocEntry=T.BaseEntry and  d.LineNum=T.BaseLine  ", "nsap_bone");
             strSql += string.Format(" WHERE d.DocEntry=" + DocNum + " AND d.sbo_id={0}", SboId);
-            DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+            DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
             //int itemindex = 0;
             if (tablename.ToLower() == "sale_rdr1")
             {
@@ -1324,7 +1324,8 @@ namespace OpenAuth.WebApi.Controllers.Order
                     item.childBillSalesDetails = new List<OrderItemInfo>();
                     foreach (SaleItemDtoChild itemChild in saleItemDtoChildren)
                     {
-                        OrderItemInfo orderItemInfo = orderItemInfos.Where(r => r.ItemCode == itemChild.ItemCode && item.item_cfg_id == itemChild.item_cfg_id).FirstOrDefault();
+                        itemChild.Level = item.ItemCode + "&&" + itemChild.item_cfg_id + "&&2";
+                        OrderItemInfo orderItemInfo = orderItemInfos.Where(r => r.ItemCode == itemChild.ItemCode && item.item_cfg_id == itemChild.item_cfg_id && r.Level == itemChild.Level).FirstOrDefault();
                         if (orderItemInfo != null)
                         {
                             item.childBillSalesDetails.Add(orderItemInfo);

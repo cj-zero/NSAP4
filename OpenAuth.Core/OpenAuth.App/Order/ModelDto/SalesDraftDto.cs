@@ -762,6 +762,10 @@ namespace OpenAuth.App.Order
     public class SaleItemDtoChild
     {
         /// <summary>
+        /// 等级
+        /// </summary>
+        public string Level { get; set; }
+        /// <summary>
         /// 物料编码
         /// </summary>
         public string ItemCode { get; set; }
