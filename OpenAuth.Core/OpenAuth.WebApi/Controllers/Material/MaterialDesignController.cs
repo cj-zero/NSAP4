@@ -71,13 +71,13 @@ namespace OpenAuth.WebApi.Controllers.Material
                          "IF(" + ViewSales + ", StockPrice, 0) StockPrice,");
             strSql += string.Format("d.WhsCode,w.OnHand,");
             strSql += string.Format("d.U_ZS");
-            strSql += ",(CASE WHEN d.ItemCode REGEXP 'A605|A608|A313|A302|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|A405|CT-4XXX-5V12A|CA|MB|MJR|MJF|MTP|MJY|MCJ|MZJ|MDCJ|CT-5|CTH-8' THEN '--'  WHEN (LOCATE('mA', d.ItemCode)  !=0  || REGEXP_LIKE(d.ItemCode, 'V([0-9]|[0-9].[0-9]|1[0-2])A') =  1) &&  LOCATE('CT-4', d.ItemCode)  !=0  && ( LOCATE('5V', d.ItemCode)  !=0 || LOCATE('10V', d.ItemCode)  !=0 )  THEN '--'    ELSE d.ContractReviewCode END) U_RelDoc";
+            strSql += ",(CASE WHEN d.ItemCode REGEXP 'A605|A608|A313|A302|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|A405|CT-4XXX-5V12A|CA|MB|MJR|MJF|MTP|MJY|MCJ|MZJ|MDCJ|CT-5|CTH-8' THEN '--'  WHEN (LOCATE('mA', d.ItemCode)  !=0  || REGEXP_LIKE(d.ItemCode, 'V([0-9]|[0-9].[0-9]|1[0-2])A') =  1) &&  LOCATE('CT-4', d.ItemCode)  !=0  && ( LOCATE('5V', d.ItemCode)  !=0 || LOCATE('10V', d.ItemCode)  !=0  || LOCATE('6V', d.ItemCode)  !=0 )  THEN '--'    ELSE d.ContractReviewCode END) U_RelDoc";
             strSql += string.Format(" FROM {0}." + tablename + " d", "nsap_bone");
             strSql += string.Format(" LEFT JOIN {0}.store_oitw w ON d.ItemCode=w.ItemCode AND d.WhsCode=w.WhsCode AND d.sbo_id=w.sbo_id", "nsap_bone");
             strSql += string.Format(" left join manage_screening m on d.DocEntry = m.DocEntry and d.ItemCode = m.ItemCode and d.U_ZS = m.U_ZS and d.Quantity = m.Quantity", "erp4_serve");
             strSql += string.Format(" WHERE m.DocEntry is null and d.DocEntry=" + model.DocEntry + " AND d.sbo_id={0}", SboId);
-            strSql += string.Format(" and d.ItemCode REGEXP 'A605|A608|A313|A302|CT-4|CT-8|CE-4|CE-8|CE-7|CTE-4|CTE-8|CE-6|CA|CJE|CJ|CGE|CGE|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MOCV|MRGV|MJ|MRP|MXC|MS|MB|MZJ' ");
-            tableData.Count = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strSql.ToString(), CommandType.Text, null).Rows.Count;
+            strSql += string.Format(" and d.ItemCode REGEXP 'A605|A608|A313|A302|CT-4|CT-8|CE-4|CE-8|CE-7|CTE-4|CTE-8|CE-6|CA|CJE|CJ|CGE|CGE|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MOCV|MRGV|MJ|MRP|MXC|MS|MB|MZJ|BT' ");
+            tableData.Count = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strSql.ToString(), CommandType.Text, null).Rows.Count;   
 
             strSql += string.Format(" order by d.ItemCode limit {0} ,{1} ", (model.page - 1) * model.limit, model.limit);
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strSql.ToString(), CommandType.Text, null);
