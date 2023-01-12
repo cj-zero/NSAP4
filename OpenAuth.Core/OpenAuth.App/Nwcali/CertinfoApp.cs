@@ -1484,7 +1484,12 @@ namespace OpenAuth.App
                             List<SubmitData> submitDatas = new List<SubmitData>();
                             if (entrustment.EntrustmentDetails != null && entrustment.EntrustmentDetails.Count() > 0)
                             {
-                                DateTime? dt = await UnitWork.Find<sale_ordr>(r => r.DocEntry == entrustment.SaleId).Select(r => r.DocDate).FirstOrDefaultAsync();
+                                DateTime? dt = null;
+                                if (entrustment.SaleId != null)
+                                {
+                                     dt = await UnitWork.Find<sale_ordr>(r => r.DocEntry == entrustment.SaleId).Select(r => r.DocDate).FirstOrDefaultAsync();
+                                }
+                               
                                 foreach (CalibrationGroups item in calibrations.data)
                                 {
                                     SubmitData submitData = new SubmitData();
