@@ -3539,13 +3539,13 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task GenerateCommissionSettlement()
         {
-            var commissionOrder = await UnitWork.Find<CommissionOrder>(c => c.Status == 3).ToListAsync();
-            var saleOrderId = commissionOrder.Select(c => c.SalesOrderId).ToList();
             //已出库 物料类型为销售 未生成售后提成
-            var query = await (from a in UnitWork.Find<Quotation>(c => !string.IsNullOrWhiteSpace(c.SalesOrderId.ToString()) && c.IsMaterialType == 2 && c.QuotationStatus == 11 && c.CreateTime >= DateTime.Parse("2022-07-11 00:00:00")).Include(c => c.QuotationMergeMaterials).Where(c => c.QuotationMergeMaterials.Any(q => q.MaterialType == 2))
+            var query = await (from a in UnitWork.Find<Quotation>(c => !string.IsNullOrWhiteSpace(c.SalesOrderId.ToString()) && c.IsMaterialType == 2
+                               && c.QuotationStatus == 11 && c.CreateTime >= DateTime.Parse("2022-07-11 00:00:00"))
+                               .Include(c => c.QuotationMergeMaterials).Where(c => c.QuotationMergeMaterials.Any(q => q.MaterialType == 2))
                                join b in UnitWork.Find<CommissionOrder>(null) on a.SalesOrderId equals b.SalesOrderId into ab
-                               from b in ab.DefaultIfEmpty()
-                               where b == null
+                               from bb in ab.DefaultIfEmpty()
+                               where bb == null
                                select new { a.SalesOrderId, a.ServiceOrderId, a.ServiceOrderSapId, a.CreateUser, a.CreateUserId, a.TotalCommission, a.TotalMoney }).ToListAsync();
             List<CommissionOrder> orders = new List<CommissionOrder>();
             query.ForEach(c =>
@@ -3553,7 +3553,11 @@ namespace OpenAuth.App.Material
                 orders.Add(new CommissionOrder { SalesOrderId = c.SalesOrderId, Amount = c.TotalCommission, SaleAmout = c.TotalMoney, ServiceOrderId = c.ServiceOrderId, ServiceOrderSapId = c.ServiceOrderSapId, CreateUserId = c.CreateUserId, CreateUser = c.CreateUser, CreateTime = DateTime.Now, UpdateTime = DateTime.Now, Status = 3 });
             });
             await UnitWork.BatchAddAsync<CommissionOrder, int>(orders.ToArray());
+            await UnitWork.SaveAsync();
 
+
+            var commissionOrder = await UnitWork.Find<CommissionOrder>(c => c.Status == 3).ToListAsync();
+            var saleOrderId = commissionOrder.Select(c => c.SalesOrderId).ToList();
             if (saleOrderId.Count > 0)
             {
                 //增值税发票

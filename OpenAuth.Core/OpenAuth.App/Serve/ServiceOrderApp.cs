@@ -2028,7 +2028,7 @@ namespace OpenAuth.App
                 }
 
             }
-            else if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("工程主管")) && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.User.Account.Equals("chenwangxiong")
+            else if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("工程主管")) && !loginContext.Roles.Any(r => r.Name.Equals("CS1主管"))  
                 && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看服务ID")))
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后文员")))
