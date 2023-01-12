@@ -694,7 +694,7 @@ namespace OpenAuth.App
                     model.CalibrationCertificate.EntrustedUnitAdress = entrustment?.CertCountry + entrustment?.CertProvince + entrustment?.CertCity + entrustment?.CertAddress;
                     //委托日期需小于校准日期
                     if (entrustment != null && !string.IsNullOrWhiteSpace(entrustment.EntrustedDate.ToString()) && entrustment?.EntrustedDate > DateTime.Parse(model.CalibrationCertificate.CalibrationDate))
-                        entrustment.EntrustedDate = entrustment.EntrustedDate.Value.AddDays(-2);
+                        entrustment.EntrustedDate = (DateTime.Parse(model.CalibrationCertificate.CalibrationDate)).AddDays(-2);
 
                     model.CalibrationCertificate.EntrustedDate = !string.IsNullOrWhiteSpace(entrustment?.EntrustedDate.ToString()) ? entrustment?.EntrustedDate.Value.ToString("yyyy年MM月dd日") : "";
                     model.CalibrationCertificate.CalibrationDate = DateTime.Parse(model.CalibrationCertificate.CalibrationDate).ToString("yyyy年MM月dd日");
@@ -1463,7 +1463,7 @@ namespace OpenAuth.App
             #region 调用接口
             string tokens = System.Web.HttpUtility.UrlEncode(_ddSettingHelp.GetCalibrationKey("Token"));
 
-            //获取状态2,5的委托单据
+            //获取状态2的委托单据
             List<Entrustment> entrustments = await UnitWork.Find<Entrustment>(r => r.Status == 2 && r.UpdateDate >= Convert.ToDateTime("2022-12-06")).Include(r => r.EntrustmentDetails).ToListAsync();
 
             //获取状态-1的委托单
@@ -1484,6 +1484,12 @@ namespace OpenAuth.App
                             List<SubmitData> submitDatas = new List<SubmitData>();
                             if (entrustment.EntrustmentDetails != null && entrustment.EntrustmentDetails.Count() > 0)
                             {
+                                DateTime? dt = null;
+                                if (entrustment.SaleId != null)
+                                {
+                                     dt = await UnitWork.Find<sale_ordr>(r => r.DocEntry == entrustment.SaleId).Select(r => r.DocDate).FirstOrDefaultAsync();
+                                }
+                               
                                 foreach (CalibrationGroups item in calibrations.data)
                                 {
                                     SubmitData submitData = new SubmitData();
@@ -1497,9 +1503,13 @@ namespace OpenAuth.App
                                             submitData.key = item.field_id;
                                             submitData.value = entrustment.EntrustedDate == null ? DateTime.Now : entrustment.EntrustedDate;
                                             break;
-                                        case "SaleOrderDate":
+                                        case "SaleOrder":
                                             submitData.key = item.field_id;
                                             submitData.value = entrustment.SaleId == null ? 0 : entrustment.SaleId;
+                                            break;
+                                        case "SaleOrderDate":
+                                            submitData.key = item.field_id;
+                                            submitData.value = dt == null ? "" : (Convert.ToDateTime(dt)).ToString("yyyy.MM.dd");
                                             break;
                                         case "Submitter":
                                             submitData.key = item.field_id;
@@ -1630,6 +1640,13 @@ namespace OpenAuth.App
                             else
                             {
                                 _logger.LogInformation("委托单物料明细为空，Id=" + entrustment.Id);
+                                await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
+                                {
+                                    Status = -3,
+                                    UpdateDate = DateTime.Now
+                                });
+
+                                await UnitWork.SaveAsync();
                             }
 
                             ControlDataList controlDataList = new ControlDataList();
@@ -1640,7 +1657,7 @@ namespace OpenAuth.App
                                 ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
                                 if (returnResult.status != 200)
                                 {
-                                    _logger.LogInformation("委托单调用2接口失败：" + returnResult.message + "参数：" + JsonConvert.SerializeObject(controlDataList));
+                                    _logger.LogInformation("委托单调用2接口失败：" + returnResult.message + " 参数：" + entrustment.Id);
                                     await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
                                     {
                                         Status = -2,
@@ -1651,7 +1668,7 @@ namespace OpenAuth.App
                                 }
                                 else
                                 {
-                                    _logger.LogInformation("委托单调用2接口成功"); 
+                                    _logger.LogInformation("委托单调用2接口成功");
                                     await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
                                     {
                                         Status = -1,
@@ -1660,6 +1677,16 @@ namespace OpenAuth.App
 
                                     await UnitWork.SaveAsync();
                                 }
+                            }
+                            else
+                            {
+                                await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
+                                {
+                                    Status = -3,
+                                    UpdateDate = DateTime.Now
+                                });
+
+                                await UnitWork.SaveAsync();
                             }
                         }
                     }
@@ -2632,11 +2659,15 @@ namespace OpenAuth.App
             {
                 var query = await UnitWork.Find<Relevance>(null).Where(c => c.Key == Define.USERORG && c.SecondId == req.OrgId).Select(c => c.FirstId).ToListAsync();
                 userIds.AddRange(query);
+                if (userIds.Count <= 0)
+                    userIds.Add("0");
             }
             if (!string.IsNullOrWhiteSpace(req.Operator))
             {
                 var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator)).Select(c => c.Id).ToListAsync();
                 userIds.AddRange(query);
+                if (userIds.Count<=0)
+                    userIds.Add("0");
             }
             if (req.SalesOrder > 0)
             {
@@ -2646,6 +2677,8 @@ namespace OpenAuth.App
                     inner join OSLP t4 on t3.SlpCode =t4.SlpCode where t3.DocEntry=" + req.SalesOrder;
                 var shipmentCalibration = await UnitWork.Query<ShipmentCalibration_sql>(strSql).ToListAsync();
                 sns = shipmentCalibration.Select(c => c.TesterSn).ToList();
+                if (sns.Count <= 0)
+                    sns.Add("0");
             }
             var ids = userIds.Distinct();
             string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-report-page";
@@ -2761,11 +2794,15 @@ namespace OpenAuth.App
             {
                 var query = await UnitWork.Find<Relevance>(null).Where(c => c.Key == Define.USERORG && c.SecondId == req.OrgId).Select(c => c.FirstId).ToListAsync();
                 userIds.AddRange(query);
+                if (userIds.Count <= 0)
+                    userIds.Add("0");
             }
             if (!string.IsNullOrWhiteSpace(req.Operator))
             {
                 var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator)).Select(c => c.Id).ToListAsync();
                 userIds.AddRange(query);
+                if (userIds.Count <= 0)
+                    userIds.Add("0");
             }
             if (req.SalesOrder > 0)
             {
@@ -2775,6 +2812,8 @@ namespace OpenAuth.App
                     inner join OSLP t4 on t3.SlpCode =t4.SlpCode where t3.DocEntry=" + req.SalesOrder;
                 var shipmentCalibration = await UnitWork.Query<ShipmentCalibration_sql>(strSql).ToListAsync();
                 sns = shipmentCalibration.Select(c => c.TesterSn).ToList();
+                if (sns.Count <= 0)
+                    sns.Add("0");
             }
             var ids = userIds.Distinct();
             string url = $"{_appConfiguration.Value.AnalyticsReportUrl}api/Calibration/c-report";

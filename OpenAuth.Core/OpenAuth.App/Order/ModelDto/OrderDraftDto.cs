@@ -246,6 +246,11 @@ namespace OpenAuth.App.Order.ModelDto
         public List<OrderItemInfo> childBillSalesDetails { get; set; }
 
         /// <summary>
+        /// 物料等级
+        /// </summary>
+        public string Level { get; set; }
+
+        /// <summary>
         /// 物料配置Id
         /// </summary>
         public int item_cfg_id { get; set; }
@@ -1125,6 +1130,7 @@ namespace OpenAuth.App.Order.ModelDto
 
     public class CopyItemMsg
     {
+        public string Level { get; set; }
         public string baseLine { get; set; }
 
         public string buyunitmsr { get; set; }

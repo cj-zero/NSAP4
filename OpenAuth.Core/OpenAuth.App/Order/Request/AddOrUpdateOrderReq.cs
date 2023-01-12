@@ -346,6 +346,11 @@ namespace OpenAuth.App.Order.Request
     }
     public class OrderItem
     {
+
+        /// <summary>
+        /// 物料等级
+        /// </summary>
+        public string Level { get; set; }
         /// <summary>
         /// 是否是配置主编码
         /// </summary>

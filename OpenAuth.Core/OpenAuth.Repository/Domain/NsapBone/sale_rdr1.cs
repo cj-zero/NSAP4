@@ -177,5 +177,10 @@ namespace OpenAuth.Repository.Domain
         /// 配置类型
         /// </summary>
         public string U_ZS { get; set; }
+
+        /// <summary>
+        /// 物料等级
+        /// </summary>
+        public string Level { get; set; }
     }
 }
