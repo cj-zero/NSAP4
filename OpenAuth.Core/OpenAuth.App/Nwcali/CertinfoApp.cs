@@ -1484,6 +1484,7 @@ namespace OpenAuth.App
                             List<SubmitData> submitDatas = new List<SubmitData>();
                             if (entrustment.EntrustmentDetails != null && entrustment.EntrustmentDetails.Count() > 0)
                             {
+                                DateTime? dt = await UnitWork.Find<sale_ordr>(r => r.DocEntry == entrustment.SaleId).Select(r => r.DocDate).FirstOrDefaultAsync();
                                 foreach (CalibrationGroups item in calibrations.data)
                                 {
                                     SubmitData submitData = new SubmitData();
@@ -1497,9 +1498,13 @@ namespace OpenAuth.App
                                             submitData.key = item.field_id;
                                             submitData.value = entrustment.EntrustedDate == null ? DateTime.Now : entrustment.EntrustedDate;
                                             break;
-                                        case "SaleOrderDate":
+                                        case "SaleOrder":
                                             submitData.key = item.field_id;
                                             submitData.value = entrustment.SaleId == null ? 0 : entrustment.SaleId;
+                                            break;
+                                        case "SaleOrderDate":
+                                            submitData.key = item.field_id;
+                                            submitData.value = dt == null ? "" : dt.ToString("yyyy.MM.dd");
                                             break;
                                         case "Submitter":
                                             submitData.key = item.field_id;
