@@ -325,7 +325,7 @@ namespace OpenAuth.App.Material
 
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
             ServiceOrderids = QuotationDate.Select(q => q.ServiceOrderId).ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.CustomerId, s.SalesMan }).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.CustomerId, s.SalesMan,s.SalesManId }).ToListAsync();
             //提成状态
             var saleOrderId = QuotationDate.Select(c => c.SalesOrderId).ToList();
             var commsion = await UnitWork.Find<CommissionOrder>(c => saleOrderId.Contains(c.SalesOrderId)).Select(c => new { c.SalesOrderId, c.Status }).ToListAsync();
@@ -336,12 +336,15 @@ namespace OpenAuth.App.Material
             var terminalCustomerIds = query.Select(q => q.b.TerminalCustomerId).ToList();
             var ocrds = await UnitWork.Find<OCRD>(o => terminalCustomerIds.Contains(o.CardCode)).Select(c => new { c.CardCode, c.Balance }).ToListAsync();
             var userIds = query.Select(q => q.a.CreateUserId).ToList();
+            userIds.AddRange(query.Select(q => q.b.SalesManId).ToList());
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
             result.Data = query.Select(q =>
             {
                 var isfinish = flowinstanceObjs.Where(f => f.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.IsFinish;
                 var orgName = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
+
+                var orgName2 = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.b.SalesManId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
                 //提成状态
                 var status = commsion.Where(c => c.SalesOrderId == q.a.SalesOrderId).FirstOrDefault()?.Status;
                 return new
@@ -369,7 +372,8 @@ namespace OpenAuth.App.Material
                     q.a.IsProtected,
                     q.a.PrintWarehouse,
                     q.a.CancelRequest,
-                    q.b.SalesMan,
+                    SalesMan = orgName2 == null ? q.b.SalesMan : orgName2 + "-" + q.b.SalesMan,
+
                     Balance = ocrds.Where(o => o.CardCode.Equals(q.b.TerminalCustomerId)).FirstOrDefault()?.Balance,
                     files = q.a.QuotationPictures.Select(p => new
                     {
