@@ -649,6 +649,10 @@ namespace OpenAuth.App.Material
             //await UnitWork.SaveAsync();
         }
 
+        /// <summary>
+        /// 自动提交工程设计
+        /// </summary>
+        /// <returns></returns>
         public async Task<bool> MByJob()
         {
             _logger.LogInformation("运行自动提交工程设计定时任务");
@@ -679,11 +683,12 @@ namespace OpenAuth.App.Material
                                 ItemCode = mitem.ItemCode,
                                 Quantity = mitem.Quantity
                             });
+                            _logger.LogInformation("自动提交工程设计,无需合约评审,参数为 DocEntry: " + mitem.DocEntry + " 提交参数： "+JsonConvert.SerializeObject(ItemCodeList));
                             await SubmitItemCodeList(1, mitem.DocEntry, ItemCodeList);
                         }
                         else
                         {
-                            return false;
+                            continue;
                         }
 
                     }
@@ -708,11 +713,12 @@ namespace OpenAuth.App.Material
                                         ItemCode = mitem.ItemCode,
                                         Quantity = mitem.Quantity
                                     });
+                                    _logger.LogInformation("自动提交工程设计,需合约评审,合约评审绑定号为："+ citem.Contract_Id.ToString() + " ,参数为 DocEntry: " + mitem.DocEntry + " 提交参数： " + JsonConvert.SerializeObject(ItemCodeList));
                                     await SubmitItemCodeList(1, mitem.DocEntry, ItemCodeList);
                                 }
                                 else
                                 {
-                                    return false;
+                                    continue;
                                 }
                             }
                         }
@@ -773,13 +779,13 @@ namespace OpenAuth.App.Material
             //int SboId = _serviceBaseApp.GetUserNaspSboID(userId);
 
             StringBuilder stringBuilder = new StringBuilder();
-            string strSql = string.Format(" SELECT  d.ItemCode,Dscription,d.Quantity ," +
+            string strSql = string.Format(" SELECT  d.ItemCode,d.DocEntry,Dscription,d.Quantity ," +
                          "IF(" + ViewSales + ",Price,0)Price," +
                          "IF(" + ViewSales + ",LineTotal,0) LineTotal," +
                          "IF(" + ViewSales + ", StockPrice, 0) StockPrice,");
             strSql += string.Format("d.WhsCode,w.OnHand,");
             strSql += string.Format("d.U_ZS");
-            strSql += ",(CASE WHEN d.ItemCode REGEXP 'A605|A608|A313|A302|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|A405|CT-4XXX-5V12A|CA|MB|MJR|MJF|MTP|MJY|MCJ|MZJ|MDCJ|CT-5|CTH-8' THEN '--'  WHEN (LOCATE('mA', d.ItemCode)  !=0  || REGEXP_LIKE(d.ItemCode, 'V([0-9]|[0-9].[0-9]|1[0-2])A') =  1) &&  LOCATE('CT-4', d.ItemCode)  !=0  && ( LOCATE('5V', d.ItemCode)  !=0 || LOCATE('10V', d.ItemCode)  !=0  || LOCATE('6V', d.ItemCode)  !=0 )  THEN '--'    ELSE d.ContractReviewCode END) U_RelDoc";
+            strSql += ",(CASE WHEN d.ItemCode REGEXP 'A605|A608|A313|A302|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|A405|CT-4XXX-5V12A|CA|MB|MJR|MJF|MTP|MJY|MCJ|MZJ|MDCJ|CT-5|CTH-8|A604|A316' THEN '--'  WHEN (LOCATE('mA', d.ItemCode)  !=0  || REGEXP_LIKE(d.ItemCode, 'V([0-9]|[0-9].[0-9]|1[0-2])A') =  1) &&  LOCATE('CT-4', d.ItemCode)  !=0   THEN '--'    ELSE d.ContractReviewCode END) U_RelDoc";
             strSql += string.Format(" FROM {0}." + tablename + " d", "nsap_bone");
             strSql += string.Format(" LEFT JOIN {0}.store_oitw w ON d.ItemCode=w.ItemCode AND d.WhsCode=w.WhsCode AND d.sbo_id=w.sbo_id", "nsap_bone");
             strSql += string.Format(" left join manage_screening m on d.DocEntry = m.DocEntry and d.ItemCode = m.ItemCode and d.U_ZS = m.U_ZS and d.Quantity = m.Quantity", "erp4_serve");

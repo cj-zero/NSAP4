@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
@@ -531,6 +532,28 @@ namespace OpenAuth.WebApi.Controllers.Material
         {
             return _app.AddBOMExcel(data.dt, data.filename);
         }
+
+        /// <summary>
+        /// 自动提交工程设计
+        /// </summary>
+        /// <returns></returns>
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<bool> MAutoSubmit()
+        {
+            var result = true;
+            try
+            {
+                result = await _app.MByJob();
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            return result;
+        }
+
 
 
     }
