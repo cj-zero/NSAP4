@@ -1130,6 +1130,7 @@ namespace OpenAuth.App.Order.ModelDto
 
     public class CopyItemMsg
     {
+        public string Level { get; set; }
         public string baseLine { get; set; }
 
         public string buyunitmsr { get; set; }

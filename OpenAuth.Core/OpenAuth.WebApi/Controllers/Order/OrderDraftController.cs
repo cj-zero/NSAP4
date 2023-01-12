@@ -2005,7 +2005,8 @@ namespace OpenAuth.WebApi.Controllers.Order
                     item.childBillSalesDetails = new List<CopyItemMsg>();
                     foreach (SaleItemDtoChild itemChild in saleItemDtoChildren)
                     {
-                        CopyItemMsg orderItemInfo = copyItemMsgs.Where(r => r.itemCode == itemChild.ItemCode).FirstOrDefault();
+                        itemChild.Level = item.itemCode + "&&" + itemChild.item_cfg_id + "&&2";
+                        CopyItemMsg orderItemInfo = copyItemMsgs.Where(r => r.itemCode == itemChild.ItemCode && item.item_cfg_id == itemChild.item_cfg_id && r.Level == itemChild.Level).FirstOrDefault();
                         if (orderItemInfo != null)
                         {
                             item.childBillSalesDetails.Add(orderItemInfo);
@@ -2014,7 +2015,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 }
             }
 
-            result.Data = copyItemMsgs;
+            result.Data = copyItemMsgs.Where(r => r.Level == "1").ToList(); ;
             result.Count = rowCount;
             return result;
 

@@ -6771,7 +6771,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             {
                 U_SHTC = ",IFNULL(b.U_SHTC,0) as U_SHTC";
             }
-            filedName.Append("ROW_NUMBER() OVER (ORDER BY a.DocEntry) RowNum,a.DocEntry,a.CardCode,a.CardName,b.ItemCode,b.Dscription,b.Quantity,b.Price,b.LineTotal,b.WhsCode,w.OnHand,b.BaseLine,m.LastPurPrc,b.LineNum,");
+            filedName.Append("ROW_NUMBER() OVER (ORDER BY a.DocEntry) RowNum,a.DocEntry,a.CardCode,a.CardName,b.ItemCode,b.Dscription,b.Level,b.Quantity,b.Price,b.LineTotal,b.WhsCode,w.OnHand,b.BaseLine,m.LastPurPrc,b.LineNum,");
             filedName.Append("IFNULL(m.U_TDS,'0') AS U_TDS,IFNULL(m.U_DL,'0') AS U_DL,IFNULL(m.U_DY,'0') AS U_DY,m.U_JGF,");
             filedName.Append("((IFNULL((CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END),0))");
             filedName.Append("+(IFNULL((CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END),0))");
