@@ -32,6 +32,11 @@ using OpenAuth.App.ClientRelation.Response;
 using NPOI.SS.Formula.Functions;
 using System.Windows.Forms;
 using OpenAuth.Repository.Domain.View;
+using OpenAuth.App.Order.ModelDto;
+using OpenAuth.App.Order.Request;
+using OpenAuth.Repository.Extensions;
+using Z.BulkOperations;
+using OpenAuth.App.Material.Response;
 
 namespace OpenAuth.App.Material
 {
@@ -644,6 +649,150 @@ namespace OpenAuth.App.Material
             //await UnitWork.SaveAsync();
         }
 
+        public async Task<bool> MByJob()
+        {
+            _logger.LogInformation("运行自动提交工程设计定时任务");
+            var result = true;
+            var saleOrders =  UnitWork.Find<sale_ordr>(c => c.CreateDate >= DateTime.Now.AddMinutes(-2)).ToList();
+            if (saleOrders.Count == 0)
+            {
+                return false;
+            }
+            else
+            {
+                var saleOrdersIds = saleOrders.Select(a => a.DocEntry).ToList();
+                var querySaleOrder = String.Join(",", saleOrdersIds);
+                var MItemList = GetMItemList(querySaleOrder);
+                foreach (var mitem in MItemList)
+                {
+                    var specificSaleOrder = saleOrders.Where(c => c.DocEntry == mitem.DocEntry).FirstOrDefault();
+                    var specificSaleOrderItems = UnitWork.Find<sale_rdr1>(c => c.DocEntry == mitem.DocEntry).ToList();
+                    List<SubmitItemCode> ItemCodeList = new List<SubmitItemCode>();
+                    if (mitem.U_RelDoc == "--")
+                    {
+                        // no need 
+                        
+                        if (haveContact(specificSaleOrder.DocEntry.ToString()))
+                        {
+                            ItemCodeList.Add(new SubmitItemCode { 
+                                U_ZS =mitem.U_ZS,
+                                ItemCode = mitem.ItemCode,
+                                Quantity = mitem.Quantity
+                            });
+                            await SubmitItemCodeList(1, mitem.DocEntry, ItemCodeList);
+                        }
+                        else
+                        {
+                            return false;
+                        }
+
+                    }
+                    else
+                    {
+                        //need
+                        var BindContractList = GetContractReviewList(mitem.DocEntry.ToString(), specificSaleOrder.CardCode);
+                        foreach (var citem in BindContractList)
+                        {
+                            if (mitem.ItemCode == citem.ItemCode && specificSaleOrder.SlpCode.ToString() == citem.SlpCode && specificSaleOrder.CardCode == citem.CardCode )
+                            {
+                                if (haveContact(specificSaleOrder.DocEntry.ToString()))
+                                {
+                                    //bind contract review code
+                                    var item = await UnitWork.Find<sale_rdr1>(s => s.sbo_id == 1 && s.DocEntry == mitem.DocEntry && s.ItemCode.Equals(mitem.ItemCode)).FirstOrDefaultAsync();
+                                    item.ContractReviewCode = citem.Contract_Id.ToString();
+                                    await UnitWork.UpdateAsync<sale_rdr1>(item);
+                                    await UnitWork.SaveAsync();
+                                    ItemCodeList.Add(new SubmitItemCode
+                                    {
+                                        U_ZS = mitem.U_ZS,
+                                        ItemCode = mitem.ItemCode,
+                                        Quantity = mitem.Quantity
+                                    });
+                                    await SubmitItemCodeList(1, mitem.DocEntry, ItemCodeList);
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
+            return result;
+        }
+
+
+        public List<AutoContractReview> GetContractReviewList(string DocNum, string CardCode)/*, string ations = "", string billPageurl = ""*/
+        {
+            TableData tableData = new TableData();
+
+            StringBuilder stringBuilder = new StringBuilder();
+            string strSql = string.Format("select a.contract_id contract_Id,a.CardCode, a.SlpCode, a.ItemCode, a.CardName, a.apply_dt Apply_dt,a.upd_dt ");
+            strSql += string.Format(" FROM nsap_bone.sale_contract_review a");
+            strSql += string.Format(" WHERE a.sbo_id = {0} AND a.ItemCode='" + DocNum.Replace("'", "\\'") + "' AND a.CardCode = '" + CardCode + "' AND a.apply_dt > DATE_SUB(CURDATE(), INTERVAL 6 MONTH)", 1);
+            DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+            tableData.Data = dts.Tolist<AutoContractReview>();
+            return tableData.Data;
+        }
+
+
+
+
+
+
+
+
+        public bool haveContact(string DocNum)/*, string ations = "", string billPageurl = ""*/
+        {
+            var result = new TableData();
+            bool flag = false;
+            //合同类型为”商务合同“且点击【上传合同】按钮弹出的弹窗中选择”销售文件（我司为供货商）“，且合同状态为”结束“
+            var info = from n in UnitWork.Find<ContractApply>(q => q.ContractType == "1" && q.ContractStatus == "-1")
+                       join m in UnitWork.Find<ContractFileType>(q => q.FileType == "6")
+                       on n.Id equals m.ContractApplyId into temp
+                       from t in temp
+                       where n.SaleNo == DocNum
+                       select n;
+            //合同类型为”工程设计申请“且合同状态为”结束“
+            var info1 = from n in UnitWork.Find<ContractApply>(q => q.ContractType == "3" && q.ContractStatus == "-1")
+                        where n.SaleNo == DocNum
+                        select n;
+            if ((info != null && info.Count() > 0) || (info1 != null && info1.Count() > 0)) flag = true;
+            return flag;
+        }
+
+        public List<OrderItemInfo> GetMItemList(string DocEntry)/*, string ations = "", string billPageurl = ""*/
+        {
+            string tablename = "sale_rdr1";
+            TableData tableData = new TableData();
+            bool ViewSales = true;
+            //int SboId = _serviceBaseApp.GetUserNaspSboID(userId);
+
+            StringBuilder stringBuilder = new StringBuilder();
+            string strSql = string.Format(" SELECT  d.ItemCode,Dscription,d.Quantity ," +
+                         "IF(" + ViewSales + ",Price,0)Price," +
+                         "IF(" + ViewSales + ",LineTotal,0) LineTotal," +
+                         "IF(" + ViewSales + ", StockPrice, 0) StockPrice,");
+            strSql += string.Format("d.WhsCode,w.OnHand,");
+            strSql += string.Format("d.U_ZS");
+            strSql += ",(CASE WHEN d.ItemCode REGEXP 'A605|A608|A313|A302|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|A405|CT-4XXX-5V12A|CA|MB|MJR|MJF|MTP|MJY|MCJ|MZJ|MDCJ|CT-5|CTH-8' THEN '--'  WHEN (LOCATE('mA', d.ItemCode)  !=0  || REGEXP_LIKE(d.ItemCode, 'V([0-9]|[0-9].[0-9]|1[0-2])A') =  1) &&  LOCATE('CT-4', d.ItemCode)  !=0  && ( LOCATE('5V', d.ItemCode)  !=0 || LOCATE('10V', d.ItemCode)  !=0  || LOCATE('6V', d.ItemCode)  !=0 )  THEN '--'    ELSE d.ContractReviewCode END) U_RelDoc";
+            strSql += string.Format(" FROM {0}." + tablename + " d", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.store_oitw w ON d.ItemCode=w.ItemCode AND d.WhsCode=w.WhsCode AND d.sbo_id=w.sbo_id", "nsap_bone");
+            strSql += string.Format(" left join manage_screening m on d.DocEntry = m.DocEntry and d.ItemCode = m.ItemCode and d.U_ZS = m.U_ZS and d.Quantity = m.Quantity", "erp4_serve");
+            strSql += string.Format(" WHERE m.DocEntry is null and d.DocEntry in ( " + DocEntry + "  ) AND d.sbo_id={0}", 1);
+            strSql += string.Format(" and d.ItemCode REGEXP 'A605|A608|A313|A302|CT-4|CT-8|CE-4|CE-8|CE-7|CTE-4|CTE-8|CE-6|CA|CJE|CJ|CGE|CGE|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MOCV|MRGV|MJ|MRP|MXC|MS|MB|MZJ|BT' ");
+            tableData.Count = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strSql.ToString(), CommandType.Text, null).Rows.Count;
+
+            strSql += string.Format(" order by d.ItemCode ");
+            DataTable dts = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strSql.ToString(), CommandType.Text, null);
+
+            tableData.Data = dts.Tolist<OrderItemInfo>();
+            return tableData.Data;
+        }
 
 
 
