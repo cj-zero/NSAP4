@@ -694,7 +694,7 @@ namespace OpenAuth.App
                     model.CalibrationCertificate.EntrustedUnitAdress = entrustment?.CertCountry + entrustment?.CertProvince + entrustment?.CertCity + entrustment?.CertAddress;
                     //委托日期需小于校准日期
                     if (entrustment != null && !string.IsNullOrWhiteSpace(entrustment.EntrustedDate.ToString()) && entrustment?.EntrustedDate > DateTime.Parse(model.CalibrationCertificate.CalibrationDate))
-                        entrustment.EntrustedDate = entrustment.EntrustedDate.Value.AddDays(-2);
+                        entrustment.EntrustedDate = (DateTime.Parse(model.CalibrationCertificate.CalibrationDate)).AddDays(-2);
 
                     model.CalibrationCertificate.EntrustedDate = !string.IsNullOrWhiteSpace(entrustment?.EntrustedDate.ToString()) ? entrustment?.EntrustedDate.Value.ToString("yyyy年MM月dd日") : "";
                     model.CalibrationCertificate.CalibrationDate = DateTime.Parse(model.CalibrationCertificate.CalibrationDate).ToString("yyyy年MM月dd日");
@@ -1509,7 +1509,7 @@ namespace OpenAuth.App
                                             break;
                                         case "SaleOrderDate":
                                             submitData.key = item.field_id;
-                                            submitData.value = dt == null ? "" : dt.ToString("yyyy.MM.dd");
+                                            submitData.value = dt == null ? "" : (Convert.ToDateTime(dt)).ToString("yyyy.MM.dd");
                                             break;
                                         case "Submitter":
                                             submitData.key = item.field_id;
