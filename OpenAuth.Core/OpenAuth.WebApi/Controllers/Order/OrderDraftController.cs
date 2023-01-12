@@ -1994,32 +1994,43 @@ namespace OpenAuth.WebApi.Controllers.Order
             var result = new TableData();
             var UserID = _serviceBaseApp.GetUserNaspId();
             var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            int page = model.page;
+            int limit = model.limit;
+            model.page = 1;
+            model.limit = 9999;
             DataTable dt = _serviceSaleOrderApp.SelectCopyItemAllView(out rowCount, model, SboID, UserID);
             List<CopyItemMsg> copyItemMsgs = dt.Tolist<CopyItemMsg>();
-            foreach (CopyItemMsg item in copyItemMsgs)
+            foreach (CopyItemMsg item in copyItemMsgs.ToArray())
             {
-                if (item.item_cfg_id != 0)
+                if (item.Level != null && item.Level.Contains("**"))
                 {
-                    //将子物料添加为主物料的child
-                    List<SaleItemDtoChild> saleItemDtoChildren = _serviceSaleOrderApp.GetItemConfigList(item.item_cfg_id.ToString(), item.whsCode);
-                    item.childBillSalesDetails = new List<CopyItemMsg>();
-                    foreach (SaleItemDtoChild itemChild in saleItemDtoChildren)
+                    string[] leves = item.Level.Split("**");
+                    if (!string.IsNullOrEmpty(leves[0]))
                     {
-                        itemChild.Level = item.itemCode + "&&" + itemChild.item_cfg_id + "&&2";
-                        CopyItemMsg orderItemInfo = copyItemMsgs.Where(r => r.itemCode == itemChild.ItemCode && item.item_cfg_id == itemChild.item_cfg_id && r.Level == itemChild.Level).FirstOrDefault();
-                        if (orderItemInfo != null)
+                        int cfgId = Convert.ToInt32(leves[0]);
+                        if (cfgId != 0)
                         {
-                            item.childBillSalesDetails.Add(orderItemInfo);
+                            //将子物料添加为主物料的child
+                            List<SaleItemDtoChild> saleItemDtoChildren = _serviceSaleOrderApp.GetItemConfigList(leves[0], item.whsCode);
+                            item.childBillSalesDetails = new List<CopyItemMsg>();
+                            foreach (SaleItemDtoChild itemChild in saleItemDtoChildren)
+                            {
+                                itemChild.Level = item.itemCode + "&&" + itemChild.item_cfg_id + "&&2";
+                                CopyItemMsg orderItemInfo = copyItemMsgs.Where(r => r.docEntry == item.docEntry && r.itemCode == itemChild.ItemCode && r.Level == itemChild.Level).FirstOrDefault();
+                                if (orderItemInfo != null)
+                                {
+                                    item.childBillSalesDetails.Add(orderItemInfo);
+                                    copyItemMsgs.Remove(orderItemInfo);
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            result.Data = copyItemMsgs.Where(r => r.Level == "1").ToList(); ;
+            result.Data = (copyItemMsgs.Skip((page - 1) * limit).Take(limit)).ToList();
             result.Count = rowCount;
             return result;
-
-
         }
 
         /// <summary>

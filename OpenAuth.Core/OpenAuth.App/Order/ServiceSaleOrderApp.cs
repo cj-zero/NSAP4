@@ -2138,7 +2138,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     U_ZS = !string.IsNullOrEmpty(item.U_ZS) ? item.U_ZS : "",//配置类型，
                     U_RelDoc = !string.IsNullOrEmpty(item.U_RelDoc) ? item.U_RelDoc : "",//关联订单号
                     ChildBillSalesDetails = item.ChildBillSalesDetails,
-                    Level = string.IsNullOrEmpty(item.Level) ? "1" : item.Level
+                    Level = string.IsNullOrEmpty(item.Level) ? "0**1" : item.Level
 
                 };
                 billDelivery.billSalesDetails.Add(billSalesDetail);
@@ -6753,6 +6753,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     filterString += string.Format(" a.SlpCode = '{0}' AND a.sbo_id={1} AND m.ItemCode IS NOT NULL AND ", slpCode, SboID);
                 }
             }
+
             if (!string.IsNullOrEmpty(filterString))
                 filterString = filterString.Substring(0, filterString.Length - 5);
             //filterQuery += string.Format(" GROUP BY T2.Name,T0.BaseRef,(CASE T0.TransType WHEN T3.ObjType THEN T3.ItemCode ELSE T4.ItemCode END)");
@@ -6777,12 +6778,11 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             filedName.Append("+(IFNULL((CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END),0))");
             filedName.Append("+(IFNULL((CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END),0))) AS QryGroup,");
             filedName.Append("IFNULL(m.U_US,0) AS U_US,IFNULL(m.U_FS,0) AS U_FS,m.QryGroup3,m.SVolume,m.SWeight1,");
-            filedName.Append("b.U_PDXX,m.IsCommited,m.OnOrder,(m.OnHand-m.IsCommited+m.OnOrder) AS OnAvailable,m.U_JGF1,IFNULL(m.U_YFCB,'0') as U_YFCB,m.OnHand AS OnHandS,m.MinLevel,m.PurPackUn,m.buyunitmsr,IFNULL(c.item_cfg_id,0) item_cfg_id");
+            filedName.Append("b.U_PDXX,m.IsCommited,m.OnOrder,(m.OnHand-m.IsCommited+m.OnOrder) AS OnAvailable,m.U_JGF1,IFNULL(m.U_YFCB,'0') as U_YFCB,m.OnHand AS OnHandS,m.MinLevel,m.PurPackUn,m.buyunitmsr");
             filedName.AppendFormat("{0}{1}{2}", U_SHJSDJ, U_SHJSJ, U_SHTC);
             tableName.AppendFormat(" {0}." + type + " a LEFT JOIN {0}." + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON b.ItemCode=w.ItemCode AND b.WhsCode=w.WhsCode AND b.sbo_id=w.sbo_id", "nsap_bone");
-            tableName.AppendFormat(" LEFT JOIN {0}.store_oitm m ON b.ItemCode=m.ItemCode AND m.sbo_id=b.sbo_id", "nsap_bone");
-            tableName.AppendFormat(" LEFT JOIN {0}.base_item_cfg c ON b.ItemCode = c.ItemCode AND c.type_id='0'", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.store_oitm m ON b.ItemCode=m.ItemCode AND m.sbo_id=b.sbo_id", "nsap_bone");      
             return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), model.limit, model.page, sortString, filterString, out rowCount);
         }
         public DataTable GridRelationContractList(out int rowCount, GridRelationContractListReq model, int SboID, int UserID)
