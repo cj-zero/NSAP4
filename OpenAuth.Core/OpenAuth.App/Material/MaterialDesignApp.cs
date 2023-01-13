@@ -481,6 +481,122 @@ namespace OpenAuth.App.Material
         }
 
 
+
+        public async Task<Infrastructure.Response> AutoSubmitList(int SboId, int DocEntry, List<AutoSubmitItemCode> ItemCodeList)
+        {
+            var result = new Infrastructure.Response();
+            DateTime date = DateTime.Now;
+            foreach (var item in ItemCodeList)
+            {
+                var dataitem = await (from n in UnitWork.Find<sale_rdr1>(s => s.sbo_id == SboId && s.DocEntry == DocEntry && s.ItemCode == item.ItemCode && s.U_ZS == item.U_ZS && s.Quantity == item.Quantity && s.LineNum == item.LineNum)
+                                      join m in UnitWork.Find<sale_ordr>(null)
+                                      on n.DocEntry equals m.DocEntry
+                                      join s in UnitWork.Find<crm_oslp>(null)
+                                      on m.SlpCode equals s.SlpCode
+                                      select new
+                                      {
+                                          DocEntry = n.DocEntry,
+                                          CardCode = m.CardCode,
+                                          CardName = m.CardName,
+                                          ItemCode = n.ItemCode,
+                                          ItemDesc = n.Dscription,
+                                          SlpCode = m.SlpCode,
+                                          ContractReviewCode = n.ContractReviewCode,
+                                          U_ZS = n.U_ZS,
+                                          Quantity = n.Quantity,
+                                          SlpName = s.SlpName
+                                      }).FirstOrDefaultAsync();
+
+                ManageScreeningHistory history = new ManageScreeningHistory();
+                history.DocEntry = DocEntry.ToString();
+                history.U_ZS = dataitem.U_ZS;
+                history.ItemCode = dataitem.ItemCode;
+                history.ItemDesc = dataitem.ItemDesc;
+                history.Quantity = dataitem.Quantity.ToDecimal();
+                history.ContractReviewCode = dataitem.ContractReviewCode;
+                history.SlpCode = dataitem.SlpCode.ToInt();
+                history.SubmitTime = date;
+                history.CreateUser = "定时任务";
+                await UnitWork.AddAsync<ManageScreeningHistory, int>(history);
+
+                if (!string.IsNullOrEmpty(dataitem.ContractReviewCode))
+                {
+                    int ContractReviewCode = Convert.ToInt32(dataitem.ContractReviewCode);
+                    List<string> typeList = new List<string> { "套线", "铝条&#92;铜条", "钣金", "机加" };
+                    var data = (from n in UnitWork.Find<sale_contract_review>(q => q.sbo_id == 1)
+                                join m in UnitWork.Find<sale_contract_review_detail>(q => q.sbo_id == 1)
+                                on n.contract_id equals m.contract_id into temp
+                                from t in temp
+                                join s in UnitWork.Find<store_itemtype>(q => q.is_default == true && typeList.Contains(q.ItemTypeName))
+                                 on t.ItemTypeID equals s.ItemTypeId into temp1
+                                from t1 in temp1
+                                where n.contract_id == ContractReviewCode
+                                select new
+                                {
+                                    custom_req = n.custom_req,
+                                    ItemTypeName = t1 == null ? "" : t1.ItemTypeName,
+                                    ItemName = t == null ? "" : t.ItemCode
+                                }).ToList();
+                    if (data == null || data.Count == 0)
+                    {
+                        string custom_req = UnitWork.Find<sale_contract_review>(q => q.sbo_id == 1 && q.contract_id == ContractReviewCode).Select(q => q.custom_req).FirstOrDefault();
+                        data = (from s in UnitWork.Find<store_itemtype>(q => q.is_default == true && typeList.Contains(q.ItemTypeName))
+                                select new
+                                {
+                                    custom_req = custom_req,
+                                    ItemTypeName = s.ItemTypeName,
+                                    ItemName = ""
+                                }).ToList();
+                    }
+                    foreach (var item1 in data)
+                    {
+                        ManageScreening manageScreening = new ManageScreening();
+                        manageScreening.DocEntry = dataitem.DocEntry.ToString();
+                        manageScreening.CardCode = dataitem.CardCode;
+                        manageScreening.CardName = dataitem.CardName;
+                        manageScreening.ItemCode = dataitem.ItemCode;
+                        manageScreening.ItemDesc = dataitem.ItemDesc;
+                        manageScreening.SlpCode = dataitem.SlpCode.ToInt();
+                        manageScreening.U_ZS = dataitem.U_ZS;
+                        manageScreening.Quantity = dataitem.Quantity.ToDecimal();
+                        manageScreening.SlpName = dataitem.SlpName;
+                        manageScreening.SubmitTime = date;
+                        manageScreening.ContractReviewCode = dataitem.ContractReviewCode.ToInt();
+                        manageScreening.custom_req = item1.custom_req;
+                        manageScreening.ItemTypeName = item1.ItemTypeName;
+                        manageScreening.ItemName = item1.ItemName;
+                        manageScreening.CreateUser = "定时任务";
+                        manageScreening.CreateDate = DateTime.Now;
+                        await UnitWork.AddAsync<ManageScreening, int>(manageScreening);
+                    }
+                }
+                else
+                {
+                    ManageScreening manageScreening = new ManageScreening();
+                    manageScreening.DocEntry = dataitem.DocEntry.ToString();
+                    manageScreening.CardCode = dataitem.CardCode;
+                    manageScreening.CardName = dataitem.CardName;
+                    manageScreening.ItemCode = dataitem.ItemCode;
+                    manageScreening.ItemDesc = dataitem.ItemDesc;
+                    manageScreening.SlpCode = dataitem.SlpCode.ToInt();
+                    manageScreening.SlpName = dataitem.SlpName;
+                    manageScreening.SubmitTime = date;
+                    manageScreening.ContractReviewCode = dataitem.ContractReviewCode.ToInt();
+                    manageScreening.custom_req = "";
+                    manageScreening.ItemTypeName = "";
+                    manageScreening.ItemName = "";
+                    manageScreening.U_ZS = dataitem.U_ZS;
+                    manageScreening.Quantity = dataitem.Quantity.ToDecimal();
+                    manageScreening.CreateUser = "定时任务";
+                    manageScreening.CreateDate = DateTime.Now;
+                    await UnitWork.AddAsync<ManageScreening, int>(manageScreening);
+                }
+            }
+            await UnitWork.SaveAsync();
+            return result;
+        }
+
+
         //public Infrastructure.Response PostDataToManager(int SboID, List<MaterialDes> list)// int SboId, int? SalesOrderId, string ItemCode, string CardCode, int Type)
         //{
         //    var result = new Infrastructure.Response();
@@ -658,6 +774,7 @@ namespace OpenAuth.App.Material
             _logger.LogInformation("运行自动提交工程设计定时任务");
             var result = true;
             var saleOrders =  UnitWork.Find<sale_ordr>(c => c.CreateDate >= DateTime.Now.AddMinutes(-2)).ToList();
+            //var saleOrders = UnitWork.Find<sale_ordr>(c => c.CreateDate >= DateTime.Now.AddHours(-120)).ToList();
             if (saleOrders.Count == 0)
             {
                 return false;
@@ -671,20 +788,22 @@ namespace OpenAuth.App.Material
                 {
                     var specificSaleOrder = saleOrders.Where(c => c.DocEntry == mitem.DocEntry).FirstOrDefault();
                     var specificSaleOrderItems = UnitWork.Find<sale_rdr1>(c => c.DocEntry == mitem.DocEntry).ToList();
-                    List<SubmitItemCode> ItemCodeList = new List<SubmitItemCode>();
+                    List<AutoSubmitItemCode> ItemCodeList = new List<AutoSubmitItemCode>();
                     if (mitem.U_RelDoc == "--")
                     {
                         // no need 
                         
                         if (haveContact(specificSaleOrder.DocEntry.ToString()))
                         {
-                            ItemCodeList.Add(new SubmitItemCode { 
+                            ItemCodeList.Add(new AutoSubmitItemCode
+                            { 
                                 U_ZS =mitem.U_ZS,
                                 ItemCode = mitem.ItemCode,
-                                Quantity = mitem.Quantity
+                                Quantity = mitem.Quantity,
+                                LineNum = mitem.LineNum
                             });
                             _logger.LogInformation("自动提交工程设计,无需合约评审,参数为 DocEntry: " + mitem.DocEntry + " 提交参数： "+JsonConvert.SerializeObject(ItemCodeList));
-                            await SubmitItemCodeList(1, mitem.DocEntry, ItemCodeList);
+                            await AutoSubmitList(1, mitem.DocEntry, ItemCodeList);
                         }
                         else
                         {
@@ -695,10 +814,10 @@ namespace OpenAuth.App.Material
                     else
                     {
                         //need
-                        var BindContractList = GetContractReviewList(mitem.DocEntry.ToString(), specificSaleOrder.CardCode);
+                        var BindContractList = GetContractReviewList(mitem.ItemCode, specificSaleOrder.CardCode);
                         foreach (var citem in BindContractList)
                         {
-                            if (mitem.ItemCode == citem.ItemCode && specificSaleOrder.SlpCode.ToString() == citem.SlpCode && specificSaleOrder.CardCode == citem.CardCode )
+                            if (mitem.ItemCode == citem.ItemCode && specificSaleOrder.SlpCode == citem.SlpCode && specificSaleOrder.CardCode == citem.CardCode )
                             {
                                 if (haveContact(specificSaleOrder.DocEntry.ToString()))
                                 {
@@ -707,14 +826,15 @@ namespace OpenAuth.App.Material
                                     item.ContractReviewCode = citem.Contract_Id.ToString();
                                     await UnitWork.UpdateAsync<sale_rdr1>(item);
                                     await UnitWork.SaveAsync();
-                                    ItemCodeList.Add(new SubmitItemCode
+                                    ItemCodeList.Add(new AutoSubmitItemCode
                                     {
                                         U_ZS = mitem.U_ZS,
                                         ItemCode = mitem.ItemCode,
-                                        Quantity = mitem.Quantity
+                                        Quantity = mitem.Quantity,
+                                        LineNum = mitem.LineNum
                                     });
                                     _logger.LogInformation("自动提交工程设计,需合约评审,合约评审绑定号为："+ citem.Contract_Id.ToString() + " ,参数为 DocEntry: " + mitem.DocEntry + " 提交参数： " + JsonConvert.SerializeObject(ItemCodeList));
-                                    await SubmitItemCodeList(1, mitem.DocEntry, ItemCodeList);
+                                    await AutoSubmitList(1, mitem.DocEntry, ItemCodeList);
                                 }
                                 else
                                 {
@@ -779,7 +899,7 @@ namespace OpenAuth.App.Material
             //int SboId = _serviceBaseApp.GetUserNaspSboID(userId);
 
             StringBuilder stringBuilder = new StringBuilder();
-            string strSql = string.Format(" SELECT  d.ItemCode,d.DocEntry,Dscription,d.Quantity ," +
+            string strSql = string.Format(" SELECT  d.ItemCode,d.DocEntry,Dscription,d.Quantity,d.LineNum ," +
                          "IF(" + ViewSales + ",Price,0)Price," +
                          "IF(" + ViewSales + ",LineTotal,0) LineTotal," +
                          "IF(" + ViewSales + ", StockPrice, 0) StockPrice,");

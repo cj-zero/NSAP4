@@ -69,7 +69,7 @@ namespace OpenAuth.App.Material.Response
         /// </summary>
         public int? Contract_Id { get; set; }
         public string CardCode { get; set; }
-        public string SlpCode { get; set; }
+        public int SlpCode { get; set; }
         /// <summary>
         /// 物料编码
         /// </summary>

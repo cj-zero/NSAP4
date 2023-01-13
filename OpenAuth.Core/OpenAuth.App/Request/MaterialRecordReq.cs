@@ -60,6 +60,25 @@ namespace OpenAuth.App.Request
         public int Quantity { get; set; }
     }
 
+
+    public class AutoSubmitItemCode
+    {
+        /// <summary>
+        /// 配置类型
+        /// </summary>
+        public string U_ZS { get; set; }
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public int Quantity { get; set; }
+
+        public int LineNum { get; set; }
+    }
+
     public class UpdateManageScreen
     {
         public int id { get; set; }
