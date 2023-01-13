@@ -3878,6 +3878,11 @@ namespace OpenAuth.App.Material
                 {
                     Message += $"单号{c.Id}已提交过报表，请勿重复提交。";
                 }
+
+                if (c.SalesOrderId != null && !GetJobSHTC((int)c.SalesOrderId))
+                {
+                    Message += $"单号{c.Id}已经生成售后提成单，不允许提交。";
+                }
             });
             if (!string.IsNullOrWhiteSpace(Message))
             {
@@ -3959,6 +3964,29 @@ namespace OpenAuth.App.Material
                 }
             }
             return response;
+        }
+
+        /// <summary>
+        /// 获取job售后提成单
+        /// </summary>
+        /// <param name="saleId">销售订单号</param>
+        /// <returns>如果售后提成单个数大于0返回false，否则返回true</returns>
+        public bool GetJobSHTC(int saleId)
+        {
+            bool isSuccess = true;
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("SELECT a.job_id,a.job_data,a.base_entry,job_state,");
+            strSql.AppendFormat("(SELECT GROUP_CONCAT(j.user_id) FROM nsap_base.wfa_jump j ");
+            strSql.AppendFormat("WHERE j.job_id = a.job_id AND j.state = 0 AND j.audit_level = c.audit_level) AS AuditUser,u.user_nm ");
+            strSql.AppendFormat("FROM nsap_base.wfa_job a LEFT OUTER JOIN nsap_base.wfa_step c ON a.step_id = c.step_id LEFT OUTER JOIN nsap_base.base_user u ON a.user_id = u.user_id ");
+            strSql.AppendFormat("WHERE a.job_id IN (select job_id from nsap_bone.finance_aftersalesbonus_batch_jobdetail ) and a.job_state in (1, 3, 4) and a.base_entry = {0}", saleId);
+            DataTable dTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+            if (dTable != null && dTable.Rows.Count > 0)
+            {
+                isSuccess = false;
+            }
+
+            return isSuccess;
         }
 
         /// <summary>
