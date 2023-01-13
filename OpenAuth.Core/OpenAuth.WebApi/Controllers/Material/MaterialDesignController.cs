@@ -554,7 +554,30 @@ namespace OpenAuth.WebApi.Controllers.Material
             return result;
         }
 
-
+        /// <summary>
+        /// 自动提交工程设计实测
+        /// </summary>
+        /// <param name="DocEntry"></param>
+        /// <param name="ItemCodeList"></param>
+        /// <param name="SboId"></param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        [HttpPost]
+        public async Task<Infrastructure.Response> AutoSubmitItemCodeList(int DocEntry, List<AutoSubmitItemCode> ItemCodeList, int SboId = 1)
+        {
+            var response = new Infrastructure.Response();
+            try
+            {
+                //response = await _app.AutoSubmitList(SboId, DocEntry, ItemCodeList);
+                response = await _app.AutoSubmitList(SboId, DocEntry, ItemCodeList);
+            }
+            catch (Exception ex)
+            {
+                response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+                response.Code = 500;
+            }
+            return response;
+        }
 
     }
 }

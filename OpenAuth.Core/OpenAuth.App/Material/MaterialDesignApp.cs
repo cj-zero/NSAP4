@@ -356,6 +356,20 @@ namespace OpenAuth.App.Material
             await UnitWork.SaveAsync();
             return result;
         }
+
+        public async Task<bool> AutoReviewCode(int SboId, int DocEntry, string ItemCode, string ReviewCode)
+        {
+            var result = true;
+
+            var item = await UnitWork.Find<sale_rdr1>(s => s.sbo_id == SboId && s.DocEntry == DocEntry && s.ItemCode.Equals(ItemCode)).FirstOrDefaultAsync();
+            item.ContractReviewCode = ReviewCode;
+            await UnitWork.UpdateAsync<sale_rdr1>(item);
+            await UnitWork.SaveAsync();
+            return result;
+        }
+
+
+
         /// <summary>
         /// 提交物料设计到筛选列表
         /// </summary>
@@ -822,19 +836,19 @@ namespace OpenAuth.App.Material
                                 if (haveContact(specificSaleOrder.DocEntry.ToString()))
                                 {
                                     //bind contract review code
-                                    var item = await UnitWork.Find<sale_rdr1>(s => s.sbo_id == 1 && s.DocEntry == mitem.DocEntry && s.ItemCode.Equals(mitem.ItemCode)).FirstOrDefaultAsync();
-                                    item.ContractReviewCode = citem.Contract_Id.ToString();
-                                    await UnitWork.UpdateAsync<sale_rdr1>(item);
-                                    await UnitWork.SaveAsync();
-                                    ItemCodeList.Add(new AutoSubmitItemCode
+                                    var bindFlag = await AutoReviewCode(1, mitem.DocEntry, mitem.ItemCode, citem.Contract_Id.ToString());
+                                    if (bindFlag)
                                     {
-                                        U_ZS = mitem.U_ZS,
-                                        ItemCode = mitem.ItemCode,
-                                        Quantity = mitem.Quantity,
-                                        LineNum = mitem.LineNum
-                                    });
-                                    _logger.LogInformation("自动提交工程设计,需合约评审,合约评审绑定号为："+ citem.Contract_Id.ToString() + " ,参数为 DocEntry: " + mitem.DocEntry + " 提交参数： " + JsonConvert.SerializeObject(ItemCodeList));
-                                    await AutoSubmitList(1, mitem.DocEntry, ItemCodeList);
+                                        ItemCodeList.Add(new AutoSubmitItemCode
+                                        {
+                                            U_ZS = mitem.U_ZS,
+                                            ItemCode = mitem.ItemCode,
+                                            Quantity = mitem.Quantity,
+                                            LineNum = mitem.LineNum
+                                        });
+                                        _logger.LogInformation("自动提交工程设计,需合约评审,合约评审绑定号为：" + citem.Contract_Id.ToString() + " ,参数为 DocEntry: " + mitem.DocEntry + " 提交参数： " + JsonConvert.SerializeObject(ItemCodeList));
+                                        await AutoSubmitList(1, mitem.DocEntry, ItemCodeList);
+                                    }
                                 }
                                 else
                                 {
