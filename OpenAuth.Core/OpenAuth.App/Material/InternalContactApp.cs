@@ -728,6 +728,7 @@ namespace OpenAuth.App.Material
                 operationHistories,
                 detail.InternalContactTasks,
                 detail.InternalContactServiceOrders,
+                detail.Remark,
                 InternalContactProductions = internalContactProductions,
                 MaterialInfo = detail.InternalContactMaterials.Select(c => new QueryProductionOrderReq
                 {

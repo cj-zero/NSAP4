@@ -125,6 +125,7 @@ namespace OpenAuth.App.Material.Request
         /// 创建人名称
         /// </summary>
         public string CreateUser { get; set; }
+        public string Remark { get; set; }
         /// <summary>
         /// 附件
         /// </summary>

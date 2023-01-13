@@ -182,6 +182,7 @@ namespace OpenAuth.Repository.Domain
         /// 物料生成订单
         /// </summary>
         public string MaterialOrder { get; set; }
+        public string Remark { get; set; }
 
         public List<InternalContactAttchment> InternalContactAttchments { get; set; }
         public List<InternalContactBatchNumber> InternalContactBatchNumbers { get; set; }
