@@ -236,7 +236,7 @@ namespace OpenAuth.App
                 var productItem = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains(code)).Select(c => new { c.BaseQty, c.ItemCode }).FirstOrDefaultAsync();
                 if (productItem != null)
                 {
-                    var bomsql = $@"SELECT Qauntity as CmpltQty FROM nsap_bone.store_oitt WHERE Code ='{productItem.ItemCode}' LIMIT 1";
+                    var bomsql = $@"SELECT Qauntity as CmpltQty FROM nsap_bone.store_oitt WHERE Code =""{productItem.ItemCode}"" LIMIT 1";
                     var bomItem = UnitWork.Query<product_owor_wor1>(bomsql).Select(c => new { c.CmpltQty }).FirstOrDefault()?.CmpltQty;
                     xwjCount = Convert.ToInt32(productItem.BaseQty.Value) * (bomItem == null ? 0 : Convert.ToInt32(bomItem.Value));
                 }
