@@ -841,13 +841,20 @@ namespace OpenAuth.WebApi.Controllers.Order
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
             result.Result = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $@"SELECT  U_CardTypeStr value FROM nsap_bone.crm_ocrd WHERE sbo_id = '{sboid}' and  CardCode = '{cardCode}'", CommandType.Text, null).FirstOrDefault()?.Value;
 
-            if ((result.Result.ToString()).Contains("114"))
+            if (result.Result == null)
             {
-                result.Result = "国外客户";
+                result.Result = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $@"select b.GroupName value from nsap_bone.crm_ocrd a left join nsap_bone.crm_OCRG b on a.GroupCode = b.GroupCode and a.sbo_id = b.sbo_id where a.sbo_id ='{sboid}' and a.CardCode = '{cardCode}'", CommandType.Text, null).FirstOrDefault()?.Value;
             }
             else
             {
-                result.Result = "国内客户";
+                if ((result.Result.ToString()).Contains("114"))
+                {
+                    result.Result = "国外客户";
+                }
+                else
+                {
+                    result.Result = "国内客户";
+                }
             }
 
             return result;
