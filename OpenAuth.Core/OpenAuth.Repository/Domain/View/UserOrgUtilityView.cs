@@ -97,7 +97,7 @@ namespace OpenAuth.Repository.Domain.View
 
         public string projectNo { get; set; }
 
-        public string process { get; set; }
+        public int process { get; set; }
 
         public string fileUrl { get; set; }
 
@@ -107,7 +107,7 @@ namespace OpenAuth.Repository.Domain.View
 
         public string demoUpdate { get; set; }
 
-        public string produceNo { get; set; }
+        public int produceNo { get; set; }
 
         public int rn { get; set; }
     }
