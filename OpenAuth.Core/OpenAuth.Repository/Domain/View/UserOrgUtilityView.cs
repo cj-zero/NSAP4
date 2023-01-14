@@ -62,6 +62,56 @@ namespace OpenAuth.Repository.Domain.View
 
     }
 
+    public class EchoView
+    {
+
+        public string submitNo { get; set; }
+
+        public string docEntry { get; set; }
+
+        public string CardCode { get; set; }
+
+        public string U_ZS { get; set; }
+
+        public string CardName { get; set; }
+
+        public string itemCode { get; set; }
+
+        public string itemDesc { get; set; }
+
+        public int quantity { get; set; }
+
+        public string slpName { get; set; }
+
+        public DateTime submitTime { get; set; }
+
+        public string contractReviewCode { get; set; }
+
+        public string custom_req { get; set; }
+
+        public string itemTypeName { get; set; }
+
+        public string itemName { get; set; }
+
+        public string versionNo { get; set; }
+
+        public string projectNo { get; set; }
+
+        public string process { get; set; }
+
+        public string fileUrl { get; set; }
+
+        public string urlUpdate { get; set; }
+
+        public string isDemo { get; set; }
+
+        public string demoUpdate { get; set; }
+
+        public string produceNo { get; set; }
+
+        public int rn { get; set; }
+    }
+
     public class BetaView
     {
 

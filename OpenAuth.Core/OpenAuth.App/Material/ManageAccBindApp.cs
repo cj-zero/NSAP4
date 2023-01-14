@@ -4,6 +4,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using Infrastructure;
 using Infrastructure.Export;
 using Magicodes.ExporterAndImporter.Core;
+using Magicodes.ExporterAndImporter.Core.Extension;
 using Magicodes.ExporterAndImporter.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -801,29 +802,16 @@ left join nsap_bone.sale_rdr1 as  s on s.DocEntry = p.OriginNum
             {
                 sql += " ORDER BY submitTime DESC ";
             }
-            var modeldata = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null).AsEnumerable();
-
-            //先把数据加载到内存
-            //if (!string.IsNullOrWhiteSpace(req.ProjectNo))
-            //{
-            //    modeldata = modeldata.Where(t => t.ProjectNo == req.ProjectNo);
-            //}
- 
-            //if (!string.IsNullOrWhiteSpace(req.ItemTypeName))
-            //{
-            //    modeldata = modeldata.Where(t => t.ItemTypeName == req.ItemTypeName);
-            //}
-            //if (!string.IsNullOrWhiteSpace(req.TimeRemind))
-            //{
-            //    querydata = querydata.Where(t => t.type == req.TimeRemind);
-            //}
-   
-            var data = modeldata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            var countsql = sql;
+            sql += " limit " + (req.page - 1) * req.limit + ", " + req.limit;
+            result.Data =   UnitWork.ExcuteSql<EchoView>(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null).ToList();
 
 
-            result.Data = data;
-            result.Count = modeldata.Count();
-
+            //result.Count = modeldata.Count();
+            //result.Data = modeldata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            var countquery = "select count(1) count  from ( " + countsql + " ) s";
+            var countCardList = UnitWork.ExcuteSql<CardCountDto>(ContextType.NsapBoneDbContextType, countquery.ToString(), CommandType.Text, null);
+            result.Count = countCardList.FirstOrDefault().count;
             return result;
             #endregion
 
