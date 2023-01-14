@@ -741,6 +741,95 @@ Left Outer Join ObjectFieldsGroups as ofg on ofg.GroupObjId=cs.ChildGroupObjId  
             return result;
         }
 
+        public TableData GetDataE(SalesOrderMaterialReq req)//, int? SalesOrderId, string ItemCode, string CardCode)
+        {
+            #region 注释
+            DateTime nowTime = DateTime.Now;
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            string sql = string.Format(@" select  *   from   (
+select '' as submitNo , p.OriginNum as docEntry, p.CardCode ,p.U_ZS,c.CardName,p.itemCode,p.txtitemName as itemDesc ,p.PlannedQty as quantity,p.U_XT_CZ as slpName , p.CreateDate as submitTime,'' as contractReviewCode ,'' as  custom_req, '' as itemTypeName,s.ItemCode as itemName,'' as versionNo,'' as  projectNo, '' as process, '' as fileUrl, '' as urlUpdate, '' as isDemo, '' as demoUpdate, p.DocEntry as produceNo ,row_number() OVER(PARTITION BY p.DocEntry,s.ItemCode) AS rn   from nsap_bone.product_owor AS p
+left join nsap_bone.crm_ocrd as c on c.CardCode = p.CardCode
+left join nsap_bone.sale_rdr1 as  s on s.DocEntry = p.OriginNum
+ where p.CmpltQty = 0   AND  p.ItemCode REGEXP 'CT-4|CT-5|CT-8|CE-4|CTH-8|CT-9|CE-4|CE-5|CE-6|CE-8|CE-7|CTE-4|CTE-8|CE-6|CE-5|CJE|CJ|CGE|CGE|CA|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|MB|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MOCV|MRGV|MRP|MXC|MS|MB' and s.ItemCode REGEXP 'A302|A303|A310|A312|A313|A314|A315|A316|A317|A318|A319|A320|A321|A322|A604|A606|A608|A609|A612|A613|M203|M202|A414|A416|A417|A418|A406|A405|A407|A408|A420' ) as n where rn = 1 ");
+            if (!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()))
+            {
+                sql += " and n.DocEntry =" + req.SalesOrderId;
+            }
+            if (!string.IsNullOrWhiteSpace(req.MaterialCode))
+            {
+                sql += " and n.ItemCode like '%" + req.MaterialCode + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.CustomerCode))
+            {
+                sql += " and n.CardCode like '%" + req.CustomerCode + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.custom_req))
+            {
+                sql += " and n.custom_req like '%" + req.custom_req + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.ItemName))
+            {
+                sql += " and n.ItemName like '%" + req.ItemName + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.VersionNo))
+            {
+                sql += " and n.VersionNo like '%" + req.VersionNo + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.SalesMan))
+            {
+                sql += " and n.SlpName like '%" + req.SalesMan + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.SubmitNo))
+            {
+                sql += " and n.SubmitNo = " + req.SubmitNo;
+            }
+            if (!string.IsNullOrWhiteSpace(req.ProduceNo))
+            {
+                sql += " and n.produceNo = " + req.ProduceNo;
+            }
+            if (req.sortorder == "ASC")
+            {
+                sql += " ORDER BY submitTime ASC ";
+            }
+            else
+            {
+                sql += " ORDER BY submitTime DESC ";
+            }
+            var modeldata = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null).AsEnumerable();
+
+            //先把数据加载到内存
+            //if (!string.IsNullOrWhiteSpace(req.ProjectNo))
+            //{
+            //    modeldata = modeldata.Where(t => t.ProjectNo == req.ProjectNo);
+            //}
+ 
+            //if (!string.IsNullOrWhiteSpace(req.ItemTypeName))
+            //{
+            //    modeldata = modeldata.Where(t => t.ItemTypeName == req.ItemTypeName);
+            //}
+            //if (!string.IsNullOrWhiteSpace(req.TimeRemind))
+            //{
+            //    querydata = querydata.Where(t => t.type == req.TimeRemind);
+            //}
+   
+            var data = modeldata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+
+
+            result.Data = data;
+            result.Count = modeldata.Count();
+
+            return result;
+            #endregion
+
+        }
+
+
     }
 
 }

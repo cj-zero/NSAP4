@@ -14,6 +14,7 @@ using Newtonsoft.Json.Linq;
 using Magicodes.ExporterAndImporter.Core.Models;
 using OpenAuth.App.Response;
 using Microsoft.AspNetCore.Authorization;
+using OpenAuth.App.Material.Request;
 
 namespace OpenAuth.WebApi.Controllers.Material
 {
@@ -388,6 +389,29 @@ namespace OpenAuth.WebApi.Controllers.Material
             try
             {
                 result = _app.GetDataD(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 生产订单来源
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public TableData GetDataE([FromBody] SalesOrderMaterialReq req)
+        {
+            //overtime code 
+            var result = new TableData();
+            try
+            {
+                result = _app.GetDataE(req);
             }
             catch (Exception ex)
             {
