@@ -1029,6 +1029,9 @@ namespace OpenAuth.App.Material
         {
             var Quotations = await UnitWork.Find<Quotation>(q => q.Id == QuotationId).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).ThenInclude(q => q.QuotationMaterialPictures).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             var quotationsMap = Quotations.MapTo<AddOrUpdateQuotationReq>();
+            quotationsMap.FileId = UnitWork.Find<QuotationPicture>(a => a.QuotationId == QuotationId).FirstOrDefault()?.PictureId;
+
+
             List<string> materialCodes = new List<string>();
             List<string> WhsCode = new List<string>();
             Quotations.QuotationProducts.ForEach(q =>
@@ -4678,6 +4681,67 @@ namespace OpenAuth.App.Material
 
 
         }
-           
+        public async Task<TableData> UptCommissionFee()
+        {
+            var result = new TableData();
+
+            var query = UnitWork.Find<Quotation>(a =>  a.CreateTime >= DateTime.Parse("2022-11-01 00:00:00")).Include(a => a.QuotationProducts)
+           .ThenInclude(a => a.QuotationMaterials).ToList();
+
+            //   List<int> listId = new List<int>() { 20867 };
+            //   var query = UnitWork.Find<Quotation>(a => listId.Contains( a.Id)).Include(a => a.QuotationProducts)
+            //.ThenInclude(a => a.QuotationMaterials).ToList();
+
+
+            List<string> orgList = new List<string>() { "0477c669-7feb-4e0c-9c32-bd41b3759183", "0e03627e-4993-42d8-b5c1-cd3724b87d45", "3bdcdd27-c2a9-43d7-8528-7b34c5c4898b" };
+            var user = UnitWork.Find<Relevance>(a => a.Key == Define.USERORG && orgList.Contains(a.SecondId)).Select(a => a.FirstId).ToList();
+
+            decimal de = 1;
+
+            var category = UnitWork.Find<Category>(a => a.TypeId == "SYS_MaterialTaxRate").ToList();
+            List<QuotationMaterial> list = new List<QuotationMaterial>();
+            foreach (var item in query)
+            {
+                decimal? totalCommission = 0;
+                if (user.Contains( item.CreateUserId))
+                {
+                    de = (decimal)0.1;
+                }
+                var tax = Convert.ToDecimal( category.FirstOrDefault(a => a.DtValue == item.TaxRate)?.Name)/100;
+
+                foreach (var item2 in item.QuotationProducts)
+                {
+
+                    foreach (var item3 in item2.QuotationMaterials)
+                    {
+                        if (item3.MaterialType!=2)
+                        {
+                            continue;
+                        }
+                        item3.Commission = (item3.TotalPrice * (1 - tax) - item3.UnitPrice * item3.Count) * de;
+                        list.Add(item3);
+                    }
+                    totalCommission += item2.QuotationMaterials.Sum(a => a.Commission);
+                }
+                //（销售价* 工时-销售价 * 工时 * 税率）根据部门 * 0.1
+                var ServiceChargeSMTC = item.ServiceChargeSM * item.ServiceChargeManHourSM * (1 - tax) * de;
+                var ServiceChargeJHTC = item.ServiceChargeJH * item.ServiceChargeManHourJH * (1 - tax) * de;
+                var TravelExpenseTC = item.TravelExpense * item.TravelExpenseManHour * (1 - tax) * de;
+
+                totalCommission =( totalCommission??0 )+ (ServiceChargeSMTC??0 )+ (ServiceChargeJHTC??0) + (TravelExpenseTC??0);
+                await UnitWork.UpdateAsync<Quotation>(u => u.Id == item.Id, u => new Quotation
+                {
+                    TotalCommission = totalCommission,
+                    ServiceChargeSMTC = ServiceChargeSMTC,
+                    ServiceChargeJHTC = ServiceChargeJHTC,
+                    TravelExpenseTC = TravelExpenseTC,
+                });
+            }
+            await UnitWork.BatchUpdateAsync<QuotationMaterial>(list.ToArray());
+            await UnitWork.SaveAsync();
+            return result;
+        }
+
+
     }
 }

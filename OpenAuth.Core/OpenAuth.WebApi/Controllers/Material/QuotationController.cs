@@ -1209,5 +1209,23 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+        [HttpGet]
+        public async Task<TableData> UptCommissionFee()
+        {
+
+            var result = new TableData();
+            try
+            {
+                return await _app.UptCommissionFee();
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
     }
 }

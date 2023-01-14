@@ -330,5 +330,6 @@ namespace OpenAuth.App.Material.Request
         /// 生命周期
         /// </summary>
         public virtual List<FlowPathResp> FlowPathResp { get; set; }
+        public string FileId { get; set; }
     }
 }
