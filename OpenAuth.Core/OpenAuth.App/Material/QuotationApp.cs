@@ -3913,7 +3913,7 @@ namespace OpenAuth.App.Material
                     }
                     else
                     {
-                        temp = Convert.ToInt32(report.BatchNo?.Split(year)[1]);
+                        temp = Convert.ToInt32(string.IsNullOrEmpty(report.BatchNo) ? "0" : (report.BatchNo.Contains("SHTC") ? report.BatchNo.Split(report.BatchNo.Substring(0, 8))[1] : report.BatchNo));
                         temp++;
                     }
 
