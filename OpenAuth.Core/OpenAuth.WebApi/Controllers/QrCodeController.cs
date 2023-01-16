@@ -90,12 +90,14 @@ namespace OpenAuth.WebApi.Controllers
             {
                 response.Code = 205;
                 response.Message = "passport请求失败";
+                Log.Logger.Error($"地址：{Request.Path}，二维码参数：{resultJson.ToJson()}， 错误：{response.Message}");
                 return response;
             }
             var result = JsonConvert.DeserializeObject<dynamic>(resultJson);
             if (result.code != "200")
             {
                 response.Code = 205;
+                Log.Logger.Error($"地址：{Request.Path}，二维码参数：{resultJson.ToJson()}， 错误：{response.Message}");
                 response.Message = "passport请求失败";
                 return response;
             }
