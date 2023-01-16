@@ -112,8 +112,13 @@ namespace OpenAuth.App.Nwcali
                         if (testerModel.FirstOrDefault().Contains(baseInfo.TesterModel))
                             baseInfo.TesterModel = testerModel.FirstOrDefault();
                     }
-                    await UnitWork.AddAsync(baseInfo);
-                    await UnitWork.SaveAsync();
+
+                    var baseInfos = await UnitWork.Find<NwcaliBaseInfo>(r => r.CertificateNumber == baseInfo.CertificateNumber).ToListAsync();
+                    if (!(baseInfos != null && baseInfos.Count() > 0))
+                    {
+                        await UnitWork.AddAsync(baseInfo);
+                        await UnitWork.SaveAsync();
+                    }                 
                 }
             }
             finally
@@ -1551,8 +1556,12 @@ namespace OpenAuth.App.Nwcali
                         baseInfo.TesterModel = testerModel.FirstOrDefault();
                 }
 
-                await UnitWork.AddAsync(baseInfo);
-                await UnitWork.SaveAsync();
+                var baseInfos = await UnitWork.Find<NwcaliBaseInfo>(r => r.CertificateNumber == baseInfo.CertificateNumber).ToListAsync();
+                if (!(baseInfos != null && baseInfos.Count() > 0))
+                {
+                    await UnitWork.AddAsync(baseInfo);
+                    await UnitWork.SaveAsync();
+                }
             }
             finally
             {
