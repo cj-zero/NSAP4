@@ -22,6 +22,7 @@ using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Response;
+using OpenAuth.App.DDVoice;
 using OpenAuth.Repository.Domain.Sap;
 using Quartz.Impl.Calendar;
 using Serilog;
@@ -37,14 +38,15 @@ namespace OpenAuth.WebApi.Controllers
     {
         private readonly UserManagerApp _app;
         private readonly HttpClienService _httpClienService;
-
+        private readonly LimsApp _limsApp;
         public IConfiguration Configuration { get; }
-        public QrCodeController(UserManagerApp app, IConfiguration configuration,
+        public QrCodeController(LimsApp limsApp, UserManagerApp app, IConfiguration configuration,
             HttpClienService httpClienService)
         {
             _app = app;
             Configuration = configuration;
             this._httpClienService = httpClienService;
+            _limsApp = limsApp;
         }
 
         /// <summary>
@@ -90,14 +92,12 @@ namespace OpenAuth.WebApi.Controllers
             {
                 response.Code = 205;
                 response.Message = "passport请求失败";
-                Log.Logger.Error($"地址：{Request.Path}，二维码参数：{resultJson.ToJson()}， 错误：{response.Message}");
                 return response;
             }
             var result = JsonConvert.DeserializeObject<dynamic>(resultJson);
             if (result.code != "200")
             {
                 response.Code = 205;
-                Log.Logger.Error($"地址：{Request.Path}，二维码参数：{resultJson.ToJson()}， 错误：{response.Message}");
                 response.Message = "passport请求失败";
                 return response;
             }
@@ -186,6 +186,7 @@ namespace OpenAuth.WebApi.Controllers
 
             return response;
         }
+
         /// <summary>
         /// 验证登录状态
         /// </summary>
@@ -251,6 +252,7 @@ namespace OpenAuth.WebApi.Controllers
 
             return response;
         }
+
         /// <summary>
         /// 发送Get请求
         /// </summary>
@@ -277,6 +279,7 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
         /// <summary>
         /// 判断是否是json
         /// </summary>
@@ -301,6 +304,27 @@ namespace OpenAuth.WebApi.Controllers
             {
             }
             return isJson;
+        }
+
+        /// <summary>
+        /// 设置lims服务
+        /// </summary>
+        /// <returns>返回设置结果</returns>
+        [HttpGet]
+        public async Task<TableData> SetLimsSer()
+        {
+            var result = new TableData();
+            try
+            {
+                return await _limsApp.SetLimsSer();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+
+            return result;
         }
     }
 }
