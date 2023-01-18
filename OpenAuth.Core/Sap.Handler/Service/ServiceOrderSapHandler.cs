@@ -275,8 +275,13 @@ namespace Sap.Handler.Service
                 var ServiceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(ServiceOrderId)).AsNoTracking().FirstOrDefaultAsync();
                 var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(ServiceOrderId)).AsNoTracking().ToListAsync();
                 int num = 0;
-                ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = ServiceOrder.U_SAP_ID + "-" + ++num);
+                //2023.01.18 Liew 解决：cannot be tracked because another instance with the same key value for { 'Id'} is already being tracked
+                ServiceWorkOrders.ForEach(u => { 
+                    u.WorkOrderNumber = ServiceOrder.U_SAP_ID + "-" + ++num;
+                    UnitWork.GetDbContext<ServiceWorkOrder>().Entry(u).State = EntityState.Detached;
+                });
                 UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
+                
                 await UnitWork.SaveAsync();
             }
             catch (Exception e)
