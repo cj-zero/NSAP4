@@ -756,7 +756,7 @@ Left Outer Join ObjectFieldsGroups as ofg on ofg.GroupObjId=cs.ChildGroupObjId  
             string sql = string.Format(@" select  *   from   (
 select '' as submitNo , p.OriginNum as docEntry, p.CardCode ,p.U_ZS,c.CardName,p.itemCode,p.txtitemName as itemDesc ,p.PlannedQty as quantity,p.U_XT_CZ as slpName , p.CreateDate as submitTime,'' as contractReviewCode ,'' as  custom_req, '' as itemTypeName,s.ItemCode as itemName,'' as versionNo,'' as  projectNo, 0 as process, '' as fileUrl, '' as urlUpdate, '' as isDemo, '' as demoUpdate, p.DocEntry as produceNo ,row_number() OVER(PARTITION BY p.DocEntry,s.ItemCode) AS rn   from nsap_bone.product_owor AS p
 left join nsap_bone.crm_ocrd as c on c.CardCode = p.CardCode
-left join nsap_bone.sale_rdr1 as  s on s.DocEntry = p.OriginNum
+left join  nsap_bone.product_wor1 as  s on s.DocEntry = p.DocEntry
  where p.CmpltQty = 0   AND  p.ItemCode REGEXP 'CT-4|CT-5|CT-8|CE-4|CTH-8|CT-9|CE-4|CE-5|CE-6|CE-8|CE-7|CTE-4|CTE-8|CE-6|CE-5|CJE|CJ|CGE|CGE|CA|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|MB|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MOCV|MRGV|MRP|MXC|MS|MB' and s.ItemCode REGEXP 'A302|A303|A310|A312|A313|A314|A315|A316|A317|A318|A319|A320|A321|A322|A604|A606|A608|A609|A612|A613|M203|M202|A414|A416|A417|A418|A406|A405|A407|A408|A420' ) as n where rn = 1 ");
             if (!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()))
             {
