@@ -1406,7 +1406,7 @@ namespace OpenAuth.App.ClientRelation
                 }
             result.Flag = relatedRelation.Flag;
             //ClientsLegitSource
-            var subClients = UnitWork.Find < OpenAuth.Repository.Domain.ClientRelation >(a => relatedRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1);
+            var subClients = UnitWork.Find < OpenAuth.Repository.Domain.ClientRelation >(a => relatedRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.ClientNo.Length >  1 && a.IsActive == 1);
             List<ClientsLegitSource>  subList = new List<ClientsLegitSource>();
             foreach (var subClient in subClients)
             {
