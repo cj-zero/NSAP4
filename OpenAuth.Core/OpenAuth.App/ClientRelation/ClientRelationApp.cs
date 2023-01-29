@@ -1405,7 +1405,17 @@ namespace OpenAuth.App.ClientRelation
                     return result;
                 }
             result.Flag = relatedRelation.Flag;
-            result.Terminals = relatedRelation.SubNo;
+            //ClientsLegitSource
+            var subClients = UnitWork.Find < OpenAuth.Repository.Domain.ClientRelation >(a => relatedRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1);
+            List<ClientsLegitSource>  subList = new List<ClientsLegitSource>();
+            foreach (var subClient in subClients)
+            {
+                subList.Add(new ClientsLegitSource { 
+                    customerName = subClient.ClientName,
+                    customerNo = subClient.ClientNo
+                });
+            }
+            result.Terminals = JsonConvert.SerializeObject(subList);
 
             return result;
         }

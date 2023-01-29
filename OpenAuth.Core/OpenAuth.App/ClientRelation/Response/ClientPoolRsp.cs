@@ -29,6 +29,19 @@ namespace OpenAuth.App.ClientRelation.Response
     }
 
 
+    public class ClientsLegitSource
+    {
+        /// <summary>
+        /// 客户编号
+        /// </summary>
+        public string customerNo { get; set; }
+        /// <summary>
+        /// 客户名称
+        /// </summary>
+        public string customerName { get; set; }
+
+    }
+
     /// <summary>
     /// 客户源
     /// </summary>
