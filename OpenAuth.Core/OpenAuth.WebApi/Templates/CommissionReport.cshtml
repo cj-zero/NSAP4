@@ -21,16 +21,26 @@
         }
 
         table {
-            border: 2px solid #0f0000;
+            border: 1px solid #0f0000;
         }
 
-        td {
-            border-bottom: 1px solid #0f0000;
-            text-align: center;
-            height:30px;
+   
+        td{
+           border-bottom: 1px dashed #b3b1b1;
+           text-align: center;
+           height:30px;
+         }
+         .no-border{
+            border: none
         }
-/*        table {
-            border-collapse: collapse;
+
+        .footer {
+              border-top: 1px solid #ddd;
+              padding-top: 20px;
+              float:right
+        }
+        /*        table {
+                    border-collapse: collapse;
         }
 
         #tablebor {
@@ -62,6 +72,7 @@
             margin: 0 auto;
             border: 1px solid #808A87;
         }*/
+
     </style>
 </head>
 
@@ -70,40 +81,47 @@
     <table style="width:1000px" cellspacing="0">
         <thead>
         <td>#</td>
-        <td>审批序号</td>
+        <td  style="text-align: right;width:80px">审批序号</td>
         <td>申请人</td>
         <td>客户代码</td>
         <td>订单号</td>
         <td style="text-align: right">合同金额</td>
         <td style="text-align: right">结算成本</td>
         <td style="text-align: right">售后提成</td>
-        <td style="text-align: right">提成占比</td>
+        <td style="text-align: right;margin-right:3px">提成占比&ensp;&ensp;&ensp;&ensp;</td>
         </thead>
         @{int number = 0;}
         @foreach (var item in Model.Data)
         {
             <tr>
                 <td>@{++number;} @number </td>
-                <td>@item.Id</td>
+                <td  style="text-align: right;width:80px">@item.Id</td>
                 <td>@item.CreateUser</td>
                 <td>@item.TerminalCustomerId</td>
                 <td>@item.SalesOrderId</td>
                 <td style="text-align: right">@item.SaleAmout.ToString("0.00")@{TotalSaleAmout += item.SaleAmout;}</td>
                 <td style="text-align: right">@item.CostPrice.ToString("0.00")@{TotalCostPrice += item.CostPrice;}</td>
                 <td style="text-align: right">@item.Amount.ToString("0.00")@{TotalAmount += item.Amount;}</td>
-                <td style="text-align: right">@item.Rate.ToString("0.00")@{TotalRate += item.Rate;}</td>
+                <td style="text-align: right;margin-right:3px">@item.Rate.ToString("0.00")@{TotalRate += item.Rate;}&ensp;&ensp;&ensp;&ensp;</td>
                 @*<td style="width: 50px; " align="left">&nbsp;@item.WhsCode</td>*@
             </tr> 
                     }
 
-        <tfoot>
-            <td colspan="5" style="text-align: right">合计</td>
-            <td style="text-align: right">@TotalSaleAmout.ToString("N")</td>
-            <td style="text-align: right">@TotalCostPrice.ToString("N")</td>
-            <td style="text-align: right">@TotalAmount.ToString("N")</td>
-            <td style="text-align: right">@{avg = TotalRate / number;}@avg.ToString("N") </td>
+        <tfoot class="no-border" style="font-weight:bold">
+            <td class="no-border" colspan="5" style="text-align: right">合计</td>
+            <td class="no-border" style="text-align: right">@TotalSaleAmout.ToString("N")</td>
+            <td class="no-border" style="text-align: right">@TotalCostPrice.ToString("N")</td>
+            <td class="no-border" style="text-align: right">@TotalAmount.ToString("N")</td>
+            <td class="no-border" style="text-align: right">@{avg = TotalRate / number;}@avg.ToString("N")&ensp;&ensp;&ensp;&ensp; </td>
         </tfoot>
     </table>
+    <footer class="footer">
+        <div class="container">
+            <p class="pull-right">
+              源自ERP4.0
+            </p>
+        </div>
+    </footer>
     @*<div style="border: 1px solid #7F7F7F; width:1000px;height:200px; margin-top:20px;">
             <span style="font-weight:900;font-size:18px;">&nbsp;产品编号/箱号：</span>
         </div>*@

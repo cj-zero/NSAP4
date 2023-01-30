@@ -106,12 +106,16 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<ServiceOrderDetailsResp> GetDetails(int id)
+        public async Task<ServiceOrderDetailsResp> GetDetails(int id , int type = 0)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            if (type ==1)
+            {
+                id =  UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID.Equals(id)).FirstOrDefault().Id;
             }
             //.Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.CompletionReportPictures)
             //.Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.Solution)

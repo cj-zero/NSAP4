@@ -899,16 +899,17 @@ namespace NSAP.App.WebApi.Controllers
         /// 获取服务单详情
         /// </summary>
         /// <param name="id"></param>
+        /// <param name="type"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<ServiceOrderDetailsResp>> GetDetails(int id)
+        public async Task<Response<ServiceOrderDetailsResp>> GetDetails(int id,int type =0)
         {
 
             var result = new Response<ServiceOrderDetailsResp>();
 
             try
             {
-                result.Result = await _serviceOrderApp.GetDetails(id);
+                result.Result = await _serviceOrderApp.GetDetails(id, type);
             }
             catch (Exception ex)
             {

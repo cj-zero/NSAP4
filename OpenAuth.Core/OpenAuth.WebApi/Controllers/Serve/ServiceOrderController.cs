@@ -452,14 +452,14 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<ServiceOrderDetailsResp>> GetDetails(int id)
+        public async Task<Response<ServiceOrderDetailsResp>> GetDetails(int id, int type = 0)
         {
 
             var result = new Response<ServiceOrderDetailsResp>();
 
             try
             {
-                result.Result = await _serviceOrderApp.GetDetails(id);
+                result.Result = await _serviceOrderApp.GetDetails(id, type);
             }
             catch (Exception ex)
             {

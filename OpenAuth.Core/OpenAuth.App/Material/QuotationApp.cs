@@ -4191,14 +4191,16 @@ namespace OpenAuth.App.Material
                                      where finance_billapplication_master.Contains(a.docEntry) && a.file_type_id == 35 && a.sbo_id == 0
                                      select new { a.file_id, b.type_nm, a.file_nm, a.file_path }).ToListAsync();
             //var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InvoiceCompany" && c.DtValue == quaotion.InvoiceCompany).FirstOrDefaultAsync();
-            var contractFile = await PrintSalesOrder(quaotion.SalesOrderId.Value);//合同附件
+            //var contractFile = await PrintSalesOrder(quaotion.SalesOrderId.Value);//合同附件
+            var FileId = UnitWork.Find<QuotationPicture>(a => a.QuotationId == quaotion.Id).FirstOrDefault()?.PictureId;
+
 
             List<FileResp> files = new List<FileResp>();
             invoiceFile.ForEach(c =>
             {
                 files.Add(new FileResp { FileName = c.file_nm, FileType = c.type_nm, FilePath = $"{_appConfiguration.Value.ERP3Url}{c.file_path}".Replace("192.168.0.208", "218.17.149.195") });
             });
-            files.Add(new FileResp { FileName = "销售合同.pdf", FileType = "销售合同", FilePath = contractFile });
+            files.Add(new FileResp { FileId = FileId, FileName = "销售合同.pdf", FileType = "销售合同"});
             files.Add(new FileResp { FileName = "装箱发货清单.pdf", FileType = "装箱发货清单", FilePath = quaotion.Id.ToString() });
 
             var items = margeMatrials.Select(a => a.MaterialCode).ToList();
