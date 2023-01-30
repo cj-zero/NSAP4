@@ -79,7 +79,7 @@ namespace OpenAuth.Repository.Domain.View
 
         public string itemDesc { get; set; }
 
-        public int quantity { get; set; }
+        public decimal? quantity { get; set; }
 
         public string slpName { get; set; }
 
@@ -97,7 +97,7 @@ namespace OpenAuth.Repository.Domain.View
 
         public string projectNo { get; set; }
 
-        public int process { get; set; }
+        public double process { get; set; }
 
         public string fileUrl { get; set; }
 
@@ -109,7 +109,17 @@ namespace OpenAuth.Repository.Domain.View
 
         public int produceNo { get; set; }
 
+        public string type { get; set; }
+
+        public int origin { get; set; }
+
         public int rn { get; set; }
+    }
+
+    public class CoupleEcho
+    {
+        public List<EchoView> echoes = new List<EchoView>();
+        public int count { get; set; }
     }
 
     public class BetaView
