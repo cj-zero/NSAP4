@@ -1479,215 +1479,213 @@ namespace OpenAuth.App
                 {
                     if (entrustment.SaleId != 0 && entrustment.SaleId != null)
                     {
-                        if (!entrustmentList.Contains((int)entrustment.SaleId))
+                        List<SubmitData> submitDatas = new List<SubmitData>();
+                        if (entrustment.EntrustmentDetails != null && entrustment.EntrustmentDetails.Count() > 0)
                         {
-                            List<SubmitData> submitDatas = new List<SubmitData>();
-                            if (entrustment.EntrustmentDetails != null && entrustment.EntrustmentDetails.Count() > 0)
+                            DateTime? dt = null;
+                            if (entrustment.SaleId != null)
                             {
-                                DateTime? dt = null;
-                                if (entrustment.SaleId != null)
-                                {
-                                     dt = await UnitWork.Find<sale_ordr>(r => r.DocEntry == entrustment.SaleId).Select(r => r.DocDate).FirstOrDefaultAsync();
-                                }
-                               
-                                foreach (CalibrationGroups item in calibrations.data)
-                                {
-                                    SubmitData submitData = new SubmitData();
-                                    switch (item.field_tag)
-                                    {
-                                        case "EntOrderNo":
-                                            submitData.key = item.field_id;
-                                            submitData.value = "";
-                                            break;
-                                        case "EntOrderDate":
-                                            submitData.key = item.field_id;
-                                            submitData.value = entrustment.EntrustedDate == null ? DateTime.Now : entrustment.EntrustedDate;
-                                            break;
-                                        case "SaleOrder":
-                                            submitData.key = item.field_id;
-                                            submitData.value = entrustment.SaleId == null ? 0 : entrustment.SaleId;
-                                            break;
-                                        case "SaleOrderDate":
-                                            submitData.key = item.field_id;
-                                            submitData.value = dt == null ? "" : (Convert.ToDateTime(dt)).ToString("yyyy.MM.dd");
-                                            break;
-                                        case "Submitter":
-                                            submitData.key = item.field_id;
-                                            submitData.value = entrustment.Contacts;
-                                            break;
-                                        case "SubmittingUnit":
-                                            submitData.key = item.field_id;
-                                            submitData.value = entrustment.EntrustedUnit;
-                                            break;
-                                        case "SubmittingUnitTel":
-                                            submitData.key = item.field_id;
-                                            submitData.value = entrustment.Phone;
-                                            break;
-                                        case "SubmittingUnitAdd":
-                                            submitData.key = item.field_id;
-                                            submitData.value = entrustment.ECountry + entrustment.EAddress;
-                                            break;
-                                        case "CertificationUnit":
-                                            submitData.key = item.field_id;
-                                            submitData.value = entrustment.CertUnit;
-                                            break;
-                                        case "CertificationUnitTel":
-                                            submitData.key = item.field_id;
-                                            submitData.value = entrustment.Phone;
-                                            break;
-                                        case "CertificationUnitAdd":
-                                            submitData.key = item.field_id;
-                                            submitData.value = entrustment.CertCountry + entrustment.CertProvince + entrustment.CertCity + entrustment.CertAddress;
-                                            break;
-                                        case "Remarks":
-                                            submitData.key = item.field_id;
-                                            submitData.value = entrustment.Remark;
-                                            break;
-                                        case "TimeReq":
-                                            submitData.key = item.field_id;
-                                            submitData.value = "普通服务（五个工作日）";
-                                            break;
-                                        case "LabelNo":
-                                            submitData.key = item.field_id;
-                                            submitData.value = "出厂编号";
-                                            break;
-                                        case "CertificateNo":
-                                            submitData.key = item.field_id;
-                                            submitData.value = "出场编号";
-                                            break;
-                                        case "NextCalibrationDate":
-                                            submitData.key = item.field_id;
-                                            submitData.value = "需要下次校准时间";
-                                            break;
-                                        case "ConclusionJud":
-                                            submitData.key = item.field_id;
-                                            submitData.value = "无结论判定";
-                                            break;
-                                        case "HandlingMethod":
-                                            submitData.key = item.field_id;
-                                            submitData.value = "不同意代送";
-                                            break;
-                                        case "CollectionMethod":
-                                            submitData.key = item.field_id;
-                                            submitData.value = "自取";
-                                            break;
-                                        case "MeasurementUnit":
-                                            submitData.key = item.field_id;
-                                            submitData.value = "国家法定计量单位";
-                                            break;
-                                        case "CalibrationStaff":
-                                            submitData.key = item.field_id;
-                                            submitData.value = "";
-                                            break;
-                                        default:
-                                            if (item.child_list != null && item.child_list.Count() > 0)
-                                            {
-                                                SubmitDataContainChild submirDataContainChild = new SubmitDataContainChild();
-                                                submirDataContainChild.key = item.field_id;
-                                                List<SubmitDataChild> submitDataChildren = new List<SubmitDataChild>();
-                                                foreach (CalibrationGroups itemChild in item.child_list)
-                                                {
-                                                    SubmitDataChild submitDataChild = new SubmitDataChild();
-                                                    foreach (EntrustmentDetail entrustmentDetail in entrustment.EntrustmentDetails)
-                                                    {
-                                                        switch (itemChild.field_tag)
-                                                        {
-                                                            case "InstrumentName":
-                                                                submitDataChild.key = itemChild.field_id;
-                                                                submitDataChild.value.Add(entrustmentDetail.ItemName);
-                                                                break;
-                                                            case "SpecificatModel":
-                                                                submitDataChild.key = itemChild.field_id;
-                                                                submitDataChild.value.Add(entrustmentDetail.ItemCode);
-                                                                break;
-                                                            case "SN":
-                                                                submitDataChild.key = itemChild.field_id;
-                                                                submitDataChild.value.Add(entrustmentDetail.SerialNumber);
-                                                                break;
-                                                            case "Attachment":
-                                                                submitDataChild.key = itemChild.field_id;
-                                                                submitDataChild.value.Add("");
-                                                                break;
-                                                            case "AppearanceDes":
-                                                                submitDataChild.key = itemChild.field_id;
-                                                                submitDataChild.value.Add("正常");
-                                                                break;
-                                                            case "CalibrationReq":
-                                                                submitDataChild.key = itemChild.field_id;
-                                                                submitDataChild.value.Add("");
-                                                                break;
-                                                            case "CertificateSta":
-                                                                submitDataChild.key = itemChild.field_id;
-                                                                submitDataChild.value.Add(entrustmentDetail.Status.ToString());
-                                                                break;
-                                                        }
-                                                    }
+                                dt = await UnitWork.Find<sale_ordr>(r => r.DocEntry == entrustment.SaleId).Select(r => r.DocDate).FirstOrDefaultAsync();
+                            }
 
-                                                    submitDataChildren.Add(submitDataChild);
+                            foreach (CalibrationGroups item in calibrations.data)
+                            {
+                                SubmitData submitData = new SubmitData();
+                                switch (item.field_tag)
+                                {
+                                    case "EntOrderNo":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "";
+                                        break;
+                                    case "EntOrderDate":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.EntrustedDate == null ? DateTime.Now : entrustment.EntrustedDate;
+                                        break;
+                                    case "SaleOrder":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.SaleId == null ? 0 : entrustment.SaleId;
+                                        break;
+                                    case "SaleOrderDate":
+                                        submitData.key = item.field_id;
+                                        submitData.value = dt == null ? "" : (Convert.ToDateTime(dt)).ToString("yyyy.MM.dd");
+                                        break;
+                                    case "Submitter":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.Contacts;
+                                        break;
+                                    case "SubmittingUnit":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.EntrustedUnit;
+                                        break;
+                                    case "SubmittingUnitTel":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.Phone;
+                                        break;
+                                    case "SubmittingUnitAdd":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.ECountry + entrustment.EAddress;
+                                        break;
+                                    case "CertificationUnit":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.CertUnit;
+                                        break;
+                                    case "CertificationUnitTel":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.Phone;
+                                        break;
+                                    case "CertificationUnitAdd":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.CertCountry + entrustment.CertProvince + entrustment.CertCity + entrustment.CertAddress;
+                                        break;
+                                    case "Remarks":
+                                        submitData.key = item.field_id;
+                                        submitData.value = entrustment.Remark;
+                                        break;
+                                    case "TimeReq":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "普通服务（五个工作日）";
+                                        break;
+                                    case "LabelNo":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "出厂编号";
+                                        break;
+                                    case "CertificateNo":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "出场编号";
+                                        break;
+                                    case "NextCalibrationDate":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "需要下次校准时间";
+                                        break;
+                                    case "ConclusionJud":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "无结论判定";
+                                        break;
+                                    case "HandlingMethod":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "不同意代送";
+                                        break;
+                                    case "CollectionMethod":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "自取";
+                                        break;
+                                    case "MeasurementUnit":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "国家法定计量单位";
+                                        break;
+                                    case "CalibrationStaff":
+                                        submitData.key = item.field_id;
+                                        submitData.value = "";
+                                        break;
+                                    default:
+                                        if (item.child_list != null && item.child_list.Count() > 0)
+                                        {
+                                            SubmitDataContainChild submirDataContainChild = new SubmitDataContainChild();
+                                            submirDataContainChild.key = item.field_id;
+                                            List<SubmitDataChild> submitDataChildren = new List<SubmitDataChild>();
+                                            entrustment.EntrustmentDetails = entrustment.EntrustmentDetails.OrderBy(r => r.SerialNumber).ToList();
+                                            foreach (CalibrationGroups itemChild in item.child_list)
+                                            {
+                                                SubmitDataChild submitDataChild = new SubmitDataChild();
+                                                foreach (EntrustmentDetail entrustmentDetail in entrustment.EntrustmentDetails)
+                                                {
+                                                    switch (itemChild.field_tag)
+                                                    {
+                                                        case "InstrumentName":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add(entrustmentDetail.ItemName);
+                                                            break;
+                                                        case "SpecificatModel":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add(entrustmentDetail.ItemCode);
+                                                            break;
+                                                        case "SN":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add(entrustmentDetail.SerialNumber);
+                                                            break;
+                                                        case "Attachment":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add("");
+                                                            break;
+                                                        case "AppearanceDes":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add("正常");
+                                                            break;
+                                                        case "CalibrationReq":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add("");
+                                                            break;
+                                                        case "CertificateSta":
+                                                            submitDataChild.key = itemChild.field_id;
+                                                            submitDataChild.value.Add(entrustmentDetail.Status.ToString());
+                                                            break;
+                                                    }
                                                 }
 
-                                                submirDataContainChild.value = submitDataChildren;
-                                                submitData.key = submirDataContainChild.key;
-                                                submitData.value = submirDataContainChild.value;
+                                                submitDataChildren.Add(submitDataChild);
                                             }
 
-                                            break;
-                                    }
+                                            submirDataContainChild.value = submitDataChildren;
+                                            submitData.key = submirDataContainChild.key;
+                                            submitData.value = submirDataContainChild.value;
+                                        }
 
-                                    submitDatas.Add(submitData);
+                                        break;
                                 }
+
+                                submitDatas.Add(submitData);
                             }
-                            else
+                        }
+                        else
+                        {
+                            _logger.LogInformation("委托单物料明细为空，Id=" + entrustment.Id);
+                            await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
                             {
-                                _logger.LogInformation("委托单物料明细为空，Id=" + entrustment.Id);
+                                Status = -3,
+                                UpdateDate = DateTime.Now
+                            });
+
+                            await UnitWork.SaveAsync();
+                        }
+
+                        ControlDataList controlDataList = new ControlDataList();
+                        controlDataList.controls_data_list = submitDatas;
+                        if (controlDataList.controls_data_list.Count() > 0)
+                        {
+                            //调用校准委托单数据提交接口
+                            ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
+                            if (returnResult.status != 200)
+                            {
+                                _logger.LogInformation("委托单调用2接口失败：" + returnResult.message + " 参数：" + entrustment.Id);
                                 await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
                                 {
-                                    Status = -3,
+                                    Status = -2,
                                     UpdateDate = DateTime.Now
                                 });
 
                                 await UnitWork.SaveAsync();
                             }
-
-                            ControlDataList controlDataList = new ControlDataList();
-                            controlDataList.controls_data_list = submitDatas;
-                            if (controlDataList.controls_data_list.Count() > 0)
-                            {
-                                //调用校准委托单数据提交接口
-                                ReturnResult returnResult = JsonConvert.DeserializeObject<ReturnResult>(HttpHelpers.HttpPostAsync($"http://121.37.222.129:1666/api/Calibration/SubmitCalibrationFormData?Token={tokens}", JsonConvert.SerializeObject(controlDataList)).Result);
-                                if (returnResult.status != 200)
-                                {
-                                    _logger.LogInformation("委托单调用2接口失败：" + returnResult.message + " 参数：" + entrustment.Id);
-                                    await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
-                                    {
-                                        Status = -2,
-                                        UpdateDate = DateTime.Now
-                                    });
-
-                                    await UnitWork.SaveAsync();
-                                }
-                                else
-                                {
-                                    _logger.LogInformation("委托单调用2接口成功");
-                                    await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
-                                    {
-                                        Status = -1,
-                                        UpdateDate = DateTime.Now
-                                    });
-
-                                    await UnitWork.SaveAsync();
-                                }
-                            }
                             else
                             {
+                                _logger.LogInformation("委托单调用2接口成功");
                                 await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
                                 {
-                                    Status = -3,
+                                    Status = -1,
                                     UpdateDate = DateTime.Now
                                 });
 
                                 await UnitWork.SaveAsync();
                             }
+                        }
+                        else
+                        {
+                            await UnitWork.UpdateAsync<Entrustment>(c => c.Id == entrustment.Id, c => new Entrustment
+                            {
+                                Status = -3,
+                                UpdateDate = DateTime.Now
+                            });
+
+                            await UnitWork.SaveAsync();
                         }
                     }
                 }
