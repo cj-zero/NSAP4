@@ -163,7 +163,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             var result = new TableData();
             try
             {
-                TableData dts = _app.ScreeningCoupleView(request, SboID);
+                TableData dts = _app.ForScreeningViewInfo(request, SboID);
                 result.Data = dts;
                 result.Count = dts.Count;// rowCount;
             }
