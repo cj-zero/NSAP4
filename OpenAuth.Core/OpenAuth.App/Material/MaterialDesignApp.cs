@@ -273,6 +273,314 @@ namespace OpenAuth.App.Material
         }
 
 
+        public TableData ScreeningCoupleView(SalesOrderMaterialReq req, int SboId)//, int? SalesOrderId, string ItemCode, string CardCode)
+        {
+            #region 注释
+            DateTime nowTime = DateTime.Now;
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+
+            var productionDetail = GetDataF(req);
+
+            string sql = string.Format(@" select  *   from   (select TO_DAYS(NOW())-TO_DAYS(n.SubmitTime) as SubmitDay,IFNULL(TO_DAYS(NOW())-TO_DAYS(n.UrlUpdate),0)  as UrlDay, n.Id,n.DocEntry,n.U_ZS,n.CardCode,n.CardName,n.ItemCode,n.ItemDesc,n.SlpName,n.ContractReviewCode,n.custom_req,n.ItemTypeName,n.ItemName,n.SubmitTime, n.VersionNo,n.FileUrl,
+                                         n.DemoUpdate, n.UrlUpdate, n.Quantity, n.IsDemo, m.Id SubmitNo, s.DocEntry ProductNo,row_number() OVER(PARTITION BY n.itemCode,n.CardCode,n.SlpName, n.itemTypeName, n.Quantity ,n.DocEntry) AS rn
+                                         from erp4_serve.manage_screening n
+                                         left
+                                         join erp4_serve.manage_screening_history m on n.DocEntry = m.DocEntry and n.U_ZS = m.U_ZS and n.ItemCode = m.ItemCode and n.Quantity = m.Quantity
+                                         left join nsap_bone.product_owor s on n.DocEntry = s.OriginNum and n.ItemCode = s.ItemCode )  as n  where rn = 1 ");
+            #region filter query
+            if (!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()))
+            {
+                sql += " and n.DocEntry =" + req.SalesOrderId;
+            }
+            if (!string.IsNullOrWhiteSpace(req.MaterialCode))
+            {
+                sql += " and n.ItemCode like '%" + req.MaterialCode + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.CustomerCode))
+            {
+                sql += " and n.CardCode like '%" + req.CustomerCode + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.custom_req))
+            {
+                sql += " and n.custom_req like '%" + req.custom_req + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.ItemName))
+            {
+                sql += " and n.ItemName like '%" + req.ItemName + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.VersionNo))
+            {
+                sql += " and n.VersionNo like '%" + req.VersionNo + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.SalesMan))
+            {
+                sql += " and n.SlpName like '%" + req.SalesMan + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.SubmitNo))
+            {
+                sql += " and n.SubmitNo = " + req.SubmitNo;
+            }
+            #endregion
+            var modeldata = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null).AsEnumerable();
+            var manageData = GetProgressAll().AsEnumerable(); // new DataTable().AsEnumerable();
+
+
+            var querydata = from n in modeldata
+                            join m in manageData
+                            on new { DocEntry = "SE-" + n.Field<string>("DocEntry"), itemCode = n.Field<string>("ItemCode") }
+                            equals new { DocEntry = m.Field<string>("DocEntry"), itemCode = m.Field<string>("itemCode") != null ? m.Field<string>("itemCode").Trim() : m.Field<string>("itemCode") } into temp
+                            from t in temp.DefaultIfEmpty()
+                            select new EchoView
+                            {
+                                //id = n.Field<int>("Id"),
+                                docEntry =  n.Field<string>("DocEntry"),
+                                U_ZS = n.Field<string>("U_ZS"),
+                                CardCode = n.Field<string>("CardCode"),
+                                CardName = n.Field<string>("CardName"),
+                                itemCode = n.Field<string>("ItemCode"),
+                                itemDesc = n.Field<string>("ItemDesc"),
+                                slpName = n.Field<string>("SlpName"),
+                                contractReviewCode = n.Field<int>("ContractReviewCode").ToString(),
+                                custom_req = n.Field<string>("custom_req"),
+                                itemTypeName = n.Field<string>("ItemTypeName"),
+                                itemName = n.Field<string>("ItemName"),
+                                submitTime = n.Field<DateTime>("SubmitTime"),
+                                versionNo = n.Field<string>("VersionNo"),
+                                fileUrl = n.Field<string>("FileUrl"),
+                                demoUpdate = n.Field<DateTime?>("DemoUpdate").ToString(),
+                                urlUpdate = n.Field<DateTime?>("UrlUpdate").ToString(),
+                                quantity = n.Field<decimal?>("Quantity"),
+                                isDemo = n.Field<string>("IsDemo"),
+                                type = (n.Field<Int32?>("SubmitDay") < 2) ? "-1"
+                                : ((n.Field<Int32?>("SubmitDay") >= 2 && t == null) ? "0"
+                                : ((n.Field<Int32?>("SubmitDay") >= 9 && string.IsNullOrEmpty(n.Field<string>("FileUrl"))) ? "1"
+                                : ((n.Field<Int32?>("UrlDay") >= 10 && n.Field<string>("IsDemo") != "批量") ? "2"
+                                : "3"))),
+                                submitNo = n.Field<Int64?>("SubmitNo").ToString(),
+                                projectNo = t == null ? "" : t.Field<string>("_System_objNBS"),
+                                //ProCreatedDate = t == null ? "" : t.Field<string>("CreatedDate"),
+                                produceNo = n.Field<int?>("ProductNo").ToInt(),
+                                process = t == null ? 0 : t.Field<double?>("progress").ToDouble(),
+                                rn = 1,
+                                origin = 0
+                            };
+            //先把数据加载到内存
+            if (!string.IsNullOrWhiteSpace(req.ProjectNo))
+            {
+                querydata = querydata.Where(t => t.projectNo == req.ProjectNo);
+            }
+            if (!string.IsNullOrWhiteSpace(req.ProduceNo))
+            {
+                querydata = querydata.Where(t => t.produceNo == Convert.ToInt32(req.ProduceNo));
+            }
+            if (!string.IsNullOrWhiteSpace(req.IsDemo))
+            {
+                if (req.IsDemo == "未设置")
+                {
+                    querydata = querydata.Where(t => t.isDemo == null || t.isDemo == "");
+                }
+                else
+                {
+                    querydata = querydata.Where(t => t.isDemo == req.IsDemo);
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(req.IsPro))
+            {
+                if (req.IsPro == "Y")
+                {
+                    querydata = querydata.Where(t => t.projectNo != null && t.projectNo != "");
+                }
+                else
+                {
+                    querydata = querydata.Where(t => t.projectNo == null || t.projectNo == "");
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(req.IsDraw))
+            {
+                if (req.IsDraw == "Y")
+                {
+                    querydata = querydata.Where(t => t.fileUrl != null && t.fileUrl != "");
+                }
+                else
+                {
+                    querydata = querydata.Where(t => t.fileUrl == null || t.fileUrl == "");
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(req.ItemTypeName))
+            {
+                querydata = querydata.Where(t => t.itemTypeName == req.ItemTypeName);
+            }
+            if (!string.IsNullOrWhiteSpace(req.IsVersionNo))
+            {
+                if (req.IsVersionNo == "Y")
+                {
+                    querydata = querydata.Where(t => t.versionNo != null && t.versionNo != "");
+                }
+                else
+                {
+                    querydata = querydata.Where(t => t.versionNo == null || t.versionNo == "");
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(req.TimeRemind))
+            {
+                querydata = querydata.Where(t => t.type == req.TimeRemind);
+            }
+            if (req.sortorder == "ASC")
+            {
+                querydata = querydata.OrderBy(q => q.submitTime);
+            }
+            else
+            {
+                querydata = querydata.OrderByDescending(q => q.submitTime);
+            }
+
+            productionDetail.echoes.AddRange(querydata.ToList());
+            var data = productionDetail.echoes.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+      
+
+
+            //var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            //20221226 replace the itemCode according to the request
+            var MDetailList = new List<MCDetail>();
+            foreach (var item in data)
+            {
+                if (loginContext.Orgs.Exists(a => a.Name == "PMC"))
+                {
+                    item.CardName = "*";
+                }
+                if (item.itemCode.StartsWith("M") && !MDetailList.Exists(a => a.ItemCode == item.itemCode))
+                {
+                    string sql2 = string.Format(@" SELECT  ItemCode, ItemTypeID , Contract_id    from sale_contract_review_detail  where contract_id =  {0} ", item.contractReviewCode);
+                    var itemMList = UnitWork.ExcuteSql<MCDetail>(ContextType.NsapBoneDbContextType, sql2, CommandType.Text, null);
+                    MDetailList.AddRange(itemMList);
+                }
+            }
+
+            //79 套线     80 钣金     81 机加
+            foreach (var mitem in data)
+            {
+                if (mitem.itemCode.Contains("M") && MDetailList.Exists(a => a.Contract_id.ToString() == mitem.contractReviewCode))
+                {
+                    //var mtypeid = MDetailList.Where(a => a.Contract_id == mitem.ContractReviewCode).FirstOrDefault().ItemTypeID;
+                    //var mdetail = MDetailList.Where(a => a.Contract_id == mitem.ContractReviewCode).FirstOrDefault();
+                    if (mitem.itemTypeName == "套线")
+                    {
+                        // 79
+                        mitem.itemName = MDetailList.Where(a => a.Contract_id.ToString() == mitem.contractReviewCode && a.ItemTypeID == 79).FirstOrDefault().ItemCode;
+                        //mitem.ItemTypeName = "套线";
+                    }
+                    if (mitem.itemTypeName == "钣金")
+                    {
+                        //80
+                        mitem.itemName = MDetailList.Where(a => a.Contract_id.ToString() == mitem.contractReviewCode && a.ItemTypeID == 80).FirstOrDefault().ItemCode;
+                    }
+                    if (mitem.itemTypeName != "钣金" && mitem.itemTypeName != "套线")
+                    {
+                        //81
+                        mitem.itemName = MDetailList.Where(a => a.Contract_id.ToString() == mitem.contractReviewCode && a.ItemTypeID == 81).FirstOrDefault().ItemCode;
+                        mitem.itemTypeName = "机加";
+                    }
+
+                }
+            }
+
+
+            result.Data = data;
+            result.Count = querydata.Count() + productionDetail.count;
+
+            //result.Data = data;
+            //result.Count = querydata.Count();
+
+            return result;
+            #endregion
+
+        }
+
+
+        public CoupleEcho GetDataF(SalesOrderMaterialReq req)//, int? SalesOrderId, string ItemCode, string CardCode)
+        {
+            #region 注释
+            DateTime nowTime = DateTime.Now;
+            var result = new CoupleEcho();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+
+            string sql = string.Format(@" select  *   from   (
+select '' as submitNo , CONVERT(p.OriginNum,char) as docEntry, p.CardCode ,p.U_ZS,c.CardName,p.itemCode,p.txtitemName as itemDesc ,p.PlannedQty as quantity,p.U_XT_CZ as slpName , p.CreateDate as submitTime,'' as contractReviewCode ,'' as  custom_req, '' as itemTypeName,s.ItemCode as itemName,'' as versionNo,'' as  projectNo, 0 as process, '' as fileUrl, '' as urlUpdate, '' as isDemo, '' as demoUpdate, p.DocEntry as produceNo, '' as type, 1 as origin ,row_number() OVER(PARTITION BY p.DocEntry,s.ItemCode) AS rn   from nsap_bone.product_owor AS p
+left join nsap_bone.crm_ocrd as c on c.CardCode = p.CardCode
+left join  nsap_bone.product_wor1 as  s on s.DocEntry = p.DocEntry
+ where p.CmpltQty = 0   AND  p.ItemCode REGEXP 'CT-4|CT-5|CT-8|CE-4|CTH-8|CT-9|CE-4|CE-5|CE-6|CE-8|CE-7|CTE-4|CTE-8|CE-6|CE-5|CJE|CJ|CGE|CGE|CA|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|MB|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MOCV|MRGV|MRP|MXC|MS|MB' and s.ItemCode REGEXP 'A302|A303|A310|A312|A313|A314|A315|A316|A317|A318|A319|A320|A321|A322|A326|A604|A606|A608|A609|A612|A613|M203|M202|A414|A416|A417|A418|A406|A405|A407|A408|A420' ) as n where rn = 1  and n.submitTime >'2022-11-01'  ");
+            if (!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()))
+            {
+                sql += " and n.DocEntry =" + req.SalesOrderId;
+            }
+            if (!string.IsNullOrWhiteSpace(req.MaterialCode))
+            {
+                sql += " and n.ItemCode like '%" + req.MaterialCode + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.CustomerCode))
+            {
+                sql += " and n.CardCode like '%" + req.CustomerCode + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.custom_req))
+            {
+                sql += " and n.custom_req like '%" + req.custom_req + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.ItemName))
+            {
+                sql += " and n.ItemName like '%" + req.ItemName + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.VersionNo))
+            {
+                sql += " and n.VersionNo like '%" + req.VersionNo + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.SalesMan))
+            {
+                sql += " and n.SlpName like '%" + req.SalesMan + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.SubmitNo))
+            {
+                sql += " and n.SubmitNo = " + req.SubmitNo;
+            }
+            if (!string.IsNullOrWhiteSpace(req.ProduceNo))
+            {
+                sql += " and n.produceNo = " + req.ProduceNo;
+            }
+            if (req.sortorder == "ASC")
+            {
+                sql += " ORDER BY submitTime ASC ";
+            }
+            else
+            {
+                sql += " ORDER BY submitTime DESC ";
+            }
+            var countsql = sql;
+            //sql += " limit " + (req.page - 1) * req.limit + ", " + req.limit;
+            var echodata = UnitWork.ExcuteSql<EchoView>(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null).ToList();
+            result.echoes.AddRange(echodata);
+
+            //result.Count = modeldata.Count();
+            //result.Data = modeldata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            var countquery = "select count(1) count  from ( " + countsql + " ) s";
+            var countCardList = UnitWork.ExcuteSql<CardCountDto>(ContextType.NsapBoneDbContextType, countquery.ToString(), CommandType.Text, null);
+            result.count = countCardList.FirstOrDefault().count;
+            return result;
+            #endregion
+
+        }
+
+
+
         public async Task<Infrastructure.Response> AddDrawingFiles(UpdateManageScreen manageScreen)
         {
             var response = new Infrastructure.Response();
