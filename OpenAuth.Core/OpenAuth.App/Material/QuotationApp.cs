@@ -3751,6 +3751,7 @@ namespace OpenAuth.App.Material
                                        CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? a.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + a.CreateUser,
                                        OpenBal = contract.FirstOrDefault(s => s.DocEntry == a.SalesOrderId)?.OpenBal,
                                        DocTotal = contract.FirstOrDefault(s => s.DocEntry == a.SalesOrderId)?.DocTotal,
+                                       a.UpdateTime,
                                    }).ToList();
             result.Data = commissionOrder;
             return result;
