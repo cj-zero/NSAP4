@@ -84,8 +84,8 @@ namespace OpenAuth.App.DDVoice
         {
             var loginContext = _auth.GetCurrentUser();
             string agent_Id = _ddSettingHelp.GetDDKey("Agent_Id");
-            string userName = "";
-            string userId = "";
+            string userName;
+            string userId;
             if (loginContext == null)
             {
                 userName = "超级管理员";

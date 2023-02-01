@@ -117,6 +117,29 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 获取合同申请单详情信息
+        /// </summary>
+        /// <param name="contractNum">合同申请单Id</param>
+        /// <returns>成功返回合同申请单详情信息，失败返回异常信息</returns>
+        [HttpGet]
+        public async Task<TableData> GetPendDetails(int contractNum)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _contractapplyapp.GetPendDetails(contractNum);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{contractNum.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 客户详情/销售报价单/销售订单的合同申请
         /// </summary>
         /// <param name="ModuleType">模块类型(客户-KHXQ,销售报价单-XSBJD,销售订单-XSDD)</param>
