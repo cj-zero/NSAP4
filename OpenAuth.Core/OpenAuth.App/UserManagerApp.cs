@@ -46,33 +46,27 @@ namespace OpenAuth.App
                            join org in UnitWork.Find<Repository.Domain.Org>(null)
                                on r.SecondId equals org.Id into orgtmp
                            from o in orgtmp.DefaultIfEmpty()
-                           join a in UnitWork.Find<DDBindUser>(null) on user.Id equals a.UserId
-                           into usera 
-                           from a  in usera.DefaultIfEmpty()
-                           join b in UnitWork.Find<DDUserMsg>(null) on a.DDUserId equals b.UserId
-                           into ab 
-                           from b in ab.DefaultIfEmpty()
-                           select new
+                           select new UserOrgHelp
                            {
-                               user.Account,
-                               user.Name,
-                               user.Id,
-                               user.Sex,
-                               user.Status,
-                               user.BizCode,
-                               user.CreateId,
-                               user.CreateTime,
-                               user.TypeId,
-                               user.TypeName,
-                               user.ServiceRelations,
-                               user.CardNo,
-                               r.Key,
-                               r.SecondId,
+                               Account = user.Account,
+                               Name = user.Name,
+                               Id = user.Id,
+                               Sex = user.Sex,
+                               Status = user.Status,
+                               BizCode = user.BizCode,
+                               CreateId = user.CreateId,
+                               CreateTime = user.CreateTime,
+                               TypeId = user.TypeId,
+                               TypeName = user.TypeName,
+                               ServiceRelations = user.ServiceRelations,
+                               CardNo = user.CardNo,
+                               Key = r.Key,
+                               SecondId = r.SecondId,
                                OrgId = o.Id,
                                OrgName = o.Name,
-                               user.EntryTime,
-                               DDUserId = a == null ? "" : a.DDUserId,
-                               DDUserName = b == null ? "" : b.UserName
+                               EntryTime = user.EntryTime,
+                               DDUserId = "",
+                               DDUserName = ""
                            };
 
             //如果请求的orgId不为空
@@ -101,10 +95,55 @@ namespace OpenAuth.App
                 var orgIds = loginUser.Orgs.Select(u => u.Id).ToArray();
 
                 //获取用户可以访问的机构的用户和没有任何机构关联的用户（机构被删除后，没有删除这里面的关联关系）
-                userOrgs = userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null));
+                userOrgs = (userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null))).OrderBy(u => u.Status)
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit);
             }
 
-            var userViews = userOrgs.ToList().GroupBy(b => b.Account).Select(u => new UserView
+            //查询钉钉用户
+            List<UserOrgHelp> userOrgHelps = userOrgs.ToList();
+            List<string> userIds = userOrgHelps.Select(r => r.Id).ToList();
+            List<DDBindUser> ddBindUsers = UnitWork.Find<DDBindUser>(r => userIds.Contains(r.UserId)).ToList();
+            List<string> ddUserIds = ddBindUsers.Select(r => r.DDUserId).ToList();
+            List<DDUserMsg> ddUserMsgs = UnitWork.Find<DDUserMsg>(r => ddUserIds.Contains(r.UserId)).ToList();
+            var ddUsers = (from a in ddBindUsers
+                           join b in ddUserMsgs on a.DDUserId equals b.UserId
+                           select new
+                           {
+                               a.UserId,
+                               a.DDUserId,
+                               b.UserName
+                           }).ToList();
+
+            //查询钉钉用户与4.0用户关联
+            userOrgHelps = (from a in userOrgHelps
+                           join b in ddUsers on a.Id equals b.UserId into ab
+                           from b in ab.DefaultIfEmpty()
+                           select new UserOrgHelp
+                           {
+                               Account = a.Account,
+                               Name = a.Name,
+                               Id = a.Id,
+                               Sex = a.Sex,
+                               Status = a.Status,
+                               BizCode = a.BizCode,
+                               CreateId = a.CreateId,
+                               CreateTime = a.CreateTime,
+                               TypeId = a.TypeId,
+                               TypeName = a.TypeName,
+                               ServiceRelations = a.ServiceRelations,
+                               CardNo = a.CardNo,
+                               Key = a.Key,
+                               SecondId = a.SecondId,
+                               OrgId = a.OrgId,
+                               OrgName = a.OrgName,
+                               EntryTime = a.EntryTime,
+                               DDUserId = b == null ? "" : b.DDUserId,
+                               DDUserName = b == null ? "" : b.UserName
+                           }).ToList();
+
+            //最终查询结果
+            var userViews = userOrgHelps.GroupBy(b => b.Account).Select(u => new UserView
             {
                 Id = u.First().Id,
                 Account = u.Key,
@@ -126,9 +165,7 @@ namespace OpenAuth.App
             return new TableData
             {
                 Count = userViews.Count(),
-                Data = userViews.OrderBy(u => u.Status)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit),
+                Data = userViews,
             };
         }
 
@@ -977,5 +1014,28 @@ namespace OpenAuth.App
             result.Data = data;
             return result;
         }
+    }
+
+    public class UserOrgHelp
+    {
+        public string Account { get; set; }
+        public string Name { get; set; }
+        public string Id { get; set; }
+        public int Sex { get; set; }
+        public int Status { get; set; }
+        public string BizCode { get; set; }
+        public string CreateId { get; set; }
+        public DateTime CreateTime { get; set; }
+        public string TypeId { get; set; }
+        public string TypeName { get; set; }
+        public string ServiceRelations { get; set; }
+        public string CardNo { get; set; }
+        public string Key { get; set; }
+        public string SecondId { get; set; }
+        public string OrgId { get; set; }
+        public string OrgName { get; set; }
+        public DateTime? EntryTime { get; set; }
+        public string DDUserId { get; set; }
+        public string DDUserName { get; set; }
     }
 }
