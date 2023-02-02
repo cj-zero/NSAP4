@@ -211,6 +211,27 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
         /// <summary>
+        /// 管理图纸文件路径(生产订单)
+        /// </summary>
+        /// <param name="manageScreen"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AddPDrawingFiles")]
+        public async Task<Infrastructure.Response> AddPDrawingFiles(UpdatePManageScreen manageScreen)
+        {
+            var response = new Infrastructure.Response();
+            try
+            {
+                response = await _app.AddPDrawingFiles(manageScreen);
+            }
+            catch (Exception ex)
+            {
+                response.Message = ex.Message;
+            }
+            return response;
+        }
+
+        /// <summary>
         /// 图纸编码同步
         /// </summary>
         /// <param name="AddDrawingFiles"></param>

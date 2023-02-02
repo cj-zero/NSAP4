@@ -608,6 +608,52 @@ left join  nsap_bone.product_wor1 as  s on s.DocEntry = p.DocEntry
         }
 
 
+        public async Task<Infrastructure.Response> AddPDrawingFiles(UpdatePManageScreen manageScreen)
+        {
+            var response = new Infrastructure.Response();
+            response.Message = "";
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            MPrOrDetail info = UnitWork.Find<MPrOrDetail>(q => q.DocEntry == manageScreen.DocEntry && q.CardCode == manageScreen.CardCode && q.ItemCode == manageScreen.ItemCode  && q.SlpName == manageScreen.SlpName && q.ItemName == manageScreen.ItemName && q.ProduceNo == manageScreen.ProduceNo).FirstOrDefault();
+            if (info != null)
+            {
+                info.FileUrl = manageScreen.FileUrl;
+                info.VersionNo = manageScreen.VersionNo;
+                info.UrlUpdate = DateTime.Now;
+                info.IsDemo = manageScreen.IsDemo;
+                await UnitWork.UpdateAsync<MPrOrDetail>(info);
+            }
+            else
+            {
+                await UnitWork.AddAsync<MPrOrDetail, int>(new MPrOrDetail
+                {
+                    DocEntry = manageScreen.DocEntry,
+                    CardCode = manageScreen.CardCode,
+                    CardName = manageScreen.CardName,
+                    ItemCode = manageScreen.ItemCode,
+                    SlpName = manageScreen.SlpName,
+                    ItemName = manageScreen.ItemName,
+                    Quantity = manageScreen.Quantity,
+                    VersionNo = manageScreen.VersionNo,
+                    FileUrl = manageScreen.FileUrl,
+                    IsDemo = manageScreen.IsDemo,
+                    UrlUpdate = DateTime.Now,
+                    CreateDate = DateTime.Now,
+                    IsDelete = 0
+
+                }) ;
+            }
+            
+            await UnitWork.SaveAsync();
+            response.Message = "操作成功";
+            return response;
+        }
+
+
         public async Task<Infrastructure.Response> ItemCodeSync(List<int> ids)
         {
             var response = new Infrastructure.Response();
