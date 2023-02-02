@@ -77,9 +77,7 @@ namespace OpenAuth.App
                 {
                     var cascade = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.Id == request.orgId).FirstOrDefault()?.CascadeId;
                     var ids = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.CascadeId.Contains(cascade)).Select(x => x.Id);
-                    userOrgs = (userOrgs.Where(x => ids.Contains(x.OrgId))).OrderBy(u => u.Status)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit);
+                    userOrgs = (userOrgs.Where(x => ids.Contains(x.OrgId)));
                 }
                 else
                 {
@@ -89,9 +87,7 @@ namespace OpenAuth.App
                     var orgIds = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray();
 
                     //只获取机构里面的用户
-                    userOrgs = (userOrgs.Where(u => u.Key == Define.USERORG && orgIds.Contains(u.OrgId))).OrderBy(u => u.Status)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit);
+                    userOrgs = (userOrgs.Where(u => u.Key == Define.USERORG && orgIds.Contains(u.OrgId)));
                 }
             }
             else  //todo:如果请求的orgId为空，即为跟节点，这时可以额外获取到机构已经被删除的用户，从而进行机构分配。可以根据自己需求进行调整
@@ -99,13 +95,13 @@ namespace OpenAuth.App
                 var orgIds = loginUser.Orgs.Select(u => u.Id).ToArray();
 
                 //获取用户可以访问的机构的用户和没有任何机构关联的用户（机构被删除后，没有删除这里面的关联关系）
-                userOrgs = (userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null))).OrderBy(u => u.Status)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit);
+                userOrgs = (userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null)));
             }
 
-            //查询钉钉用户
-            List<UserOrgHelp> userOrgHelps = userOrgs.ToList();
+            //查询钉钉用户      
+            List<UserOrgHelp> userOrgHelps = (userOrgs.OrderBy(u => u.Status)
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit)).ToList();
             List<string> userIds = userOrgHelps.Select(r => r.Id).ToList();
             List<DDBindUser> ddBindUsers = UnitWork.Find<DDBindUser>(r => userIds.Contains(r.UserId)).ToList();
             List<string> ddUserIds = ddBindUsers.Select(r => r.DDUserId).ToList();
@@ -168,7 +164,7 @@ namespace OpenAuth.App
 
             return new TableData
             {
-                Count = userViews.Count(),
+                Count = userOrgs.Count(),
                 Data = userViews,
             };
         }
