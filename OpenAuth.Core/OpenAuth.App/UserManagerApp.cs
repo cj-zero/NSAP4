@@ -77,7 +77,9 @@ namespace OpenAuth.App
                 {
                     var cascade = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.Id == request.orgId).FirstOrDefault()?.CascadeId;
                     var ids = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.CascadeId.Contains(cascade)).Select(x => x.Id);
-                    userOrgs = userOrgs.Where(x => ids.Contains(x.OrgId));
+                    userOrgs = (userOrgs.Where(x => ids.Contains(x.OrgId))).OrderBy(u => u.Status)
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit);
                 }
                 else
                 {
@@ -87,7 +89,9 @@ namespace OpenAuth.App
                     var orgIds = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray();
 
                     //只获取机构里面的用户
-                    userOrgs = userOrgs.Where(u => u.Key == Define.USERORG && orgIds.Contains(u.OrgId));
+                    userOrgs = (userOrgs.Where(u => u.Key == Define.USERORG && orgIds.Contains(u.OrgId))).OrderBy(u => u.Status)
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit);
                 }
             }
             else  //todo:如果请求的orgId为空，即为跟节点，这时可以额外获取到机构已经被删除的用户，从而进行机构分配。可以根据自己需求进行调整
