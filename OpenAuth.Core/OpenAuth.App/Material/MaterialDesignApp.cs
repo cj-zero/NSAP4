@@ -641,6 +641,7 @@ left join  nsap_bone.product_wor1 as  s on s.DocEntry = p.DocEntry
                     VersionNo = manageScreen.VersionNo,
                     FileUrl = manageScreen.FileUrl,
                     IsDemo = manageScreen.IsDemo,
+                    ProduceNo = manageScreen.ProduceNo,
                     UrlUpdate = DateTime.Now,
                     CreateDate = DateTime.Now,
                     IsDelete = 0

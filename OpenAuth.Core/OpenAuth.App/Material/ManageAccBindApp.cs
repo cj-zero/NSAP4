@@ -818,6 +818,7 @@ left join  nsap_bone.product_wor1 as  s on s.DocEntry = p.DocEntry
                     item.fileUrl = specificDataEcho.FileUrl;
                     item.versionNo = specificDataEcho.VersionNo;
                     item.urlUpdate = specificDataEcho.UrlUpdate.ToString();
+                    item.isDemo = specificDataEcho.IsDemo;
                 }
             }
             result.Data = echoList;
