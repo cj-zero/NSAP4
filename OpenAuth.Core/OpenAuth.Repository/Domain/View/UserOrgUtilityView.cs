@@ -62,6 +62,23 @@ namespace OpenAuth.Repository.Domain.View
 
     }
 
+    public class EchoManage
+    {
+        public string _System_objNBS { get; set; }
+
+        public DateTime CreatedDate { get; set; }
+
+        public string RecordGuid { get; set; }
+
+        public string DocEntry { get; set; }
+
+        public double? progress { get; set; }
+
+        public string itemCode { get; set; }
+
+
+    }
+
     public class EchoView
     {
 
