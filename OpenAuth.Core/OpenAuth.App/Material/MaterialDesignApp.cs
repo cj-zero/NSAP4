@@ -37,6 +37,7 @@ using OpenAuth.App.Order.Request;
 using OpenAuth.Repository.Extensions;
 using Z.BulkOperations;
 using OpenAuth.App.Material.Response;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace OpenAuth.App.Material
 {
@@ -109,12 +110,13 @@ namespace OpenAuth.App.Material
             {
                 sql += " and n.SubmitNo = " + req.SubmitNo;
             }
+
             var modeldata = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null).AsEnumerable();
             var manageData = GetProgressAll().AsEnumerable(); // new DataTable().AsEnumerable();
 
 
             var querydata = from n in modeldata
-                            join m in manageData
+                             join m in manageData
                             on new { DocEntry = "SE-" + n.Field<string>("DocEntry"), itemCode = n.Field<string>("ItemCode") }
                             equals new { DocEntry = m.Field<string>("DocEntry"), itemCode = m.Field<string>("itemCode") !=null ? m.Field<string>("itemCode").Trim() : m.Field<string>("itemCode") } into temp
                             from t in temp.DefaultIfEmpty()
@@ -219,7 +221,9 @@ namespace OpenAuth.App.Material
             {
                 querydata = querydata.OrderByDescending(q => q.SubmitTime);
             }
-            var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+
+            var datar = querydata.GroupBy(o => o.id).Select(o => o.FirstOrDefault());
+            var data = datar.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
             //20221226 replace the itemCode according to the request
             var MDetailList = new List<MCDetail>();
             foreach (var item in data)
@@ -265,7 +269,7 @@ namespace OpenAuth.App.Material
             }
 
             result.Data = data;
-            result.Count = querydata.Count();
+            result.Count = datar.Count();
 
             return result;
             #endregion
@@ -1308,24 +1312,24 @@ left join  nsap_bone.product_wor1 as  s on s.DocEntry = p.DocEntry
         #region 获取进度
         public DataTable GetProgressAll()
         {
-            string strSql = string.Format(@" select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+            string strSql = string.Format(@" select  _System_objNBS, b.DocEntry, progress,itemCode from
                                             (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
                                             (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005508 DocEntry, max(_System_Progress) progress, fld005506 itemCode
                                             from OBJ162 group by RecordGuid, fld005508, _System_objNBS, fld005506,CreatedDate) a) t
                                             ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
-            strSql += string.Format(@"  union all     select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+            strSql += string.Format(@"  union all     select  _System_objNBS, b.DocEntry, progress,itemCode from
                                             (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
                                             (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld017268 DocEntry, max(_System_Progress) progress, fld005787 itemCode
                                             from OBJ170 group by RecordGuid, fld005787, _System_objNBS, fld017268,CreatedDate) a) t
                                             ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
 
-            strSql += string.Format(@"  union all     select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+            strSql += string.Format(@"  union all     select  _System_objNBS, b.DocEntry, progress,itemCode from
                                             (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
                                             (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005878 DocEntry, max(_System_Progress) progress, fld005879 itemCode
                                             from OBJ163 group by RecordGuid, fld005878, _System_objNBS, fld005879,CreatedDate) a) t
                                             ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
 
-            strSql += string.Format(@"  union all     select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+            strSql += string.Format(@"  union all     select  _System_objNBS, b.DocEntry, progress,itemCode from
                                             (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
                                             (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005717 DocEntry, max(_System_Progress) progress, fld005719 itemCode
                                             from OBJ169 group by RecordGuid, fld005717, _System_objNBS, fld005719,CreatedDate) a) t
