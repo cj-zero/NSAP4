@@ -33,17 +33,16 @@ namespace OpenAuth.App
         public TableData Load(QueryUserListReq request)
         {
             var loginUser = _auth.GetCurrentUser();
-            IQueryable<User> query = UnitWork.Find<User>(null);
+            List<User> query = UnitWork.Find<User>(null).ToList();
             if (!string.IsNullOrEmpty(request.key))
             {
-                query = UnitWork.Find<User>(u => u.Name.Contains(request.key) || u.Account.Contains(request.key));
+                query = UnitWork.Find<User>(u => u.Name.Contains(request.key) || u.Account.Contains(request.key)).ToList();
             }
 
-            var userOrgs = from user in query
-                           join relevance in UnitWork.Find<Relevance>(u => u.Key == Define.USERORG)
-                               on user.Id equals relevance.FirstId into temp
-                           from r in temp.DefaultIfEmpty()
-                           join org in UnitWork.Find<Repository.Domain.Org>(null)
+            var userOrgs = (from user in query
+                           join r in UnitWork.Find<Relevance>(u => u.Key == Define.USERORG).ToList()
+                               on user.Id equals r.FirstId 
+                           join org in UnitWork.Find<Repository.Domain.Org>(null).ToList()
                                on r.SecondId equals org.Id into orgtmp
                            from o in orgtmp.DefaultIfEmpty()
                            select new UserOrgHelp
@@ -60,14 +59,14 @@ namespace OpenAuth.App
                                TypeName = user.TypeName,
                                ServiceRelations = user.ServiceRelations,
                                CardNo = user.CardNo,
-                               Key = r.Key,
-                               SecondId = r.SecondId,
-                               OrgId = o.Id,
-                               OrgName = o.Name,
+                               Key = r == null ? "" : r.Key,
+                               SecondId = r == null ? "" : r.SecondId,
+                               OrgId = o == null ? "" : o.Id,
+                               OrgName = o == null ? "" : o.Name,
                                EntryTime = user.EntryTime,
                                DDUserId = "",
                                DDUserName = ""
-                           };
+                           }).ToList();
 
             //如果请求的orgId不为空
             if (!string.IsNullOrEmpty(request.orgId))
@@ -75,27 +74,27 @@ namespace OpenAuth.App
                 //如果用户的角色标识是管理员,则查看该组织及子部门下的所有成员
                 if (loginUser.Roles.Select(x => x.Identity).Where(x => x != null).Any(x => x.Equals("5")))
                 {
-                    var cascade = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.Id == request.orgId).FirstOrDefault()?.CascadeId;
-                    var ids = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.CascadeId.Contains(cascade)).Select(x => x.Id);
-                    userOrgs = (userOrgs.Where(x => ids.Contains(x.OrgId)));
+                    var cascade = (UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.Id == request.orgId).FirstOrDefault()?.CascadeId);
+                    var ids = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.CascadeId.Contains(cascade)).Select(x => x.Id).ToList();
+                    userOrgs = (userOrgs.Where(x => ids.Contains(x.OrgId))).ToList();
                 }
                 else
                 {
                     var org = loginUser.Orgs.SingleOrDefault(u => u.Id == request.orgId);
                     var cascadeId = org.CascadeId;
 
-                    var orgIds = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray();
+                    var orgIds = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToList();
 
                     //只获取机构里面的用户
-                    userOrgs = (userOrgs.Where(u => u.Key == Define.USERORG && orgIds.Contains(u.OrgId)));
+                    userOrgs = (userOrgs.Where(u => u.Key == Define.USERORG && orgIds.Contains(u.OrgId))).ToList();
                 }
             }
             else  //todo:如果请求的orgId为空，即为跟节点，这时可以额外获取到机构已经被删除的用户，从而进行机构分配。可以根据自己需求进行调整
             {
-                var orgIds = loginUser.Orgs.Select(u => u.Id).ToArray();
+                var orgIds = loginUser.Orgs.Select(u => u.Id).ToList();
 
                 //获取用户可以访问的机构的用户和没有任何机构关联的用户（机构被删除后，没有删除这里面的关联关系）
-                userOrgs = (userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null)));
+                userOrgs = (userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null))).ToList();
             }
 
             //查询钉钉用户      
