@@ -3262,7 +3262,7 @@ namespace OpenAuth.App.Material
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
 
-            var historyInfo = UnitWork.Find<QuotationOperationHistory>(a => a.QuotationId == quotationId && Action == "出库完成").FirstOrDefault();
+            var historyInfo = UnitWork.Find<QuotationOperationHistory>(a => a.QuotationId == quotationId && a.Action == "出库完成").FirstOrDefault();
 
 
             var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListHeader.html");
