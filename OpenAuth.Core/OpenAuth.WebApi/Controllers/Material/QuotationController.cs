@@ -711,11 +711,11 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <returns></returns>
         [HttpGet]
         [ServiceFilter(typeof(CertAuthFilter))]
-        public async Task<IActionResult> PrintPickingList(string serialNumber,bool? IsTrue, string sign, string timespan)
+        public async Task<IActionResult> PrintPickingList(string serialNumber,bool? IsTrue, string sign, string timespan,bool isCommission = false)
         {
             try
             {
-                return File(await _app.PrintPickingList(serialNumber, IsTrue), "application/pdf");
+                return File(await _app.PrintPickingList(serialNumber, IsTrue, isCommission), "application/pdf");
             }
             catch (Exception e)
             {

@@ -3241,7 +3241,7 @@ namespace OpenAuth.App.Material
         /// <param name="QuotationId"></param>
         /// <param name="IsTrue"></param>
         /// <returns></returns>
-        public async Task<byte[]> PrintPickingList(string QuotationId, bool? IsTrue)
+        public async Task<byte[]> PrintPickingList(string QuotationId, bool? IsTrue,bool isCommission)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -3262,11 +3262,17 @@ namespace OpenAuth.App.Material
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
 
+            var historyInfo = UnitWork.Find<QuotationOperationHistory>(a => a.QuotationId == quotationId && Action == "出库完成").FirstOrDefault();
+
+
             var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListHeader.html");
             var text = System.IO.File.ReadAllText(url);
             text = text.Replace("@Model.QuotationId", model.Id.ToString());
             text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
-            text = text.Replace("@Model.CreateTime", DateTime.Now.ToString("yyyy.MM.dd HH:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
+            if (isCommission)
+                text = text.Replace("@Model.CreateTime", historyInfo?.CreateTime.ToString("yyyy.MM.dd HH:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
+            else
+                text = text.Replace("@Model.CreateTime", DateTime.Now.ToString("yyyy.MM.dd HH:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
             text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
             text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
             text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
@@ -3284,7 +3290,26 @@ namespace OpenAuth.App.Material
             System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
             var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListFooter.html");
             text = System.IO.File.ReadAllText(footerUrl);
-            text = text.Replace("@Model.UserName", loginContext.User.Name);
+            if (isCommission)
+                text = text.Replace("@Model.UserName", historyInfo?.CreateUser);//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
+            else
+                text = text.Replace("@Model.UserName", loginContext.User.Name);
+            if (model.InvoiceCompany =="5")
+            {
+                text = text.Replace("@Model.FootCompany", "东莞新威检测技术有限公司");
+                text = text.Replace("@Model.FootFlag", "东莞新威");
+                text = text.Replace("@Model.FootPhone", "");
+                text = text.Replace("@Model.FootAddress", "广东省东莞市塘厦镇龙安路 5 号 5 栋 101 室");
+
+            }
+            else
+            {
+                text = text.Replace("@Model.FootCompany", "深圳市新威尔电子有限公司");
+                text = text.Replace("@Model.FootFlag", "");
+                text = text.Replace("@Model.FootPhone", "电话：0755-83108866");
+                text = text.Replace("@Model.FootAddress", "深圳市福田区梅林街道上梅林中康路卓越梅林中心广场 3 号楼 1504");
+            }
+
             footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListFooter{model.Id}.html");
             System.IO.File.WriteAllText(footerUrl, text, Encoding.Unicode);
             if (logisticsRecords.Count > 0)
