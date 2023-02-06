@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Customer;
+using OpenAuth.Repository.Domain.Material;
 using OpenAuth.Repository.Domain.ProductModel;
 using OpenAuth.Repository.Domain.Serve;
 using System;
@@ -162,8 +163,8 @@ namespace OpenAuth.Repository
         public virtual DbSet<ManageScreening> ManageScreening { get; set; }
         public virtual DbSet<ManageScreeningHistory> ManageScreeningHistory { get; set; }
         public virtual DbSet<TaskView> TaskView { get; set; }
+        public virtual DbSet<MPrOrDetail> MPrOrDetail { get; set; }
 
-        
         #endregion
         #region 线索
         public virtual DbSet<Clue> Clue { get; set; }

@@ -19,7 +19,18 @@ namespace OpenAuth.WebApi.Controllers.Workbench
         [HttpGet]
         public async Task<TableData> Load([FromQuery]PendingReq req) 
         {
-            return await _app.Load(req);
+            var result = new TableData();
+            try
+            {
+                result = await _app.Load(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+
+            return result;
         }
         /// <summary>
         /// 获取待处理订单详情

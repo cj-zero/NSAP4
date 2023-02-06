@@ -25,8 +25,10 @@ using OpenAuth.App.ContractManager.Common;
 using OpenAuth.App.Files;
 using OpenAuth.App.SignalR;
 using OpenAuth.App.DDVoice;
+using OpenAuth.App.Workbench;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Workbench;
 using OpenAuth.Repository.Interface;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.ContractManager.Request;
@@ -43,6 +45,7 @@ namespace OpenAuth.App.ContractManager
         private readonly ServiceSaleOrderApp _servcieSaleOrderApp;
         private readonly FlowSchemeApp _flowSchemeApp;
         private readonly DDVoiceApp _dDVoice;
+        public readonly WorkbenchApp _workbenchApp;
         static Dictionary<int, DataTable> gRoles = new Dictionary<int, DataTable>();
         private readonly MinioClient _minioClient;
         private readonly FileApp _fileApp;
@@ -59,7 +62,7 @@ namespace OpenAuth.App.ContractManager
         /// <param name="flowInstanceApp"></param>
         /// <param name="servcieSaleOrderApp"></param>
         /// <param name="auth"></param>
-        public ContractApplyApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, DDVoiceApp dDVoice,
+        public ContractApplyApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, WorkbenchApp workbench, FlowInstanceApp flowInstanceApp, DDVoiceApp dDVoice,
             IRepository<UploadFile> repository, ServiceSaleOrderApp servcieSaleOrderApp, UserDepartMsgHelp userDepartMsgHelp, MinioClient minioClient, FileApp fileApp, FlowSchemeApp flowSchemeApp, IAuth auth, IFileStore fileStore, ILogger<FileApp> logger, IHubContext<MessageHub> hubContext) : base(unitWork, repository, auth)
         {
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
@@ -73,6 +76,7 @@ namespace OpenAuth.App.ContractManager
             _hubContext = hubContext;
             _dDVoice = dDVoice;
             _userDepartMsgHelp = userDepartMsgHelp;
+            _workbenchApp = workbench;
         }
 
         /// <summary>
@@ -300,6 +304,190 @@ namespace OpenAuth.App.ContractManager
             try
             {
                 var contractApply = await UnitWork.Find<ContractApply>(r => r.Id == contractApplyId).ToListAsync();
+                var contractFileTypeList = await UnitWork.Find<ContractFileType>(r => r.ContractApplyId == contractApplyId).Include(r => r.contractFileList).ToListAsync();
+                var contractOperationHistoryList = await UnitWork.Find<ContractOperationHistory>(r => r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).ToListAsync();
+                List<ContractHistory> contractHistories = contractOperationHistoryList.Select(r => new ContractHistory
+                {
+                    Id = r.Id,
+                    ContractApplyId = r.ContractApplyId,
+                    Action = r.Action,
+                    DeptName = (_userDepartMsgHelp.GetUserOrgName(r.CreateUserId)),
+                    CreateUser = r.CreateUser,
+                    CreateUserId = r.CreateUserId,
+                    CreateTime = r.CreateTime,
+                    IntervalTime = r.IntervalTime,
+                    ApprovalResult = r.ApprovalResult,
+                    Remark = r.Remark,
+                    ApprovalStage = r.ApprovalStage
+                }).ToList();
+
+                if (contractApply != null && contractApply.Count() > 0)
+                {
+                    var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                    var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                    var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                    var categoryFileTypeList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+
+                    #region 申请单主表信息
+                    var contractApplyReq = from a in contractApply
+                                           join b in categoryCompanyList on a.CompanyType equals b.DtValue
+                                           join c in categoryContractList on a.ContractType equals c.DtValue
+                                           join d in categoryStatusList on a.ContractStatus equals d.DtValue
+                                           select new
+                                           {
+                                               a.Id,
+                                               a.ContractNum,
+                                               a.ContractNo,
+                                               a.CustomerCode,
+                                               a.CustomerName,
+                                               a.CompanyType,
+                                               a.ContractType,
+                                               a.QuotationNo,
+                                               a.SaleNo,
+                                               a.IsDraft,
+                                               a.IsUseCompanyTemplate,
+                                               a.FlowInstanceId,
+                                               a.DownloadNumber,
+                                               a.U_SAP_ID,
+                                               a.ItemNo,
+                                               a.ItemName,
+                                               a.ContractStatus,
+                                               a.IsUploadOriginal,
+                                               a.Remark,
+                                               a.CreateId,
+                                               DeptName = _userDepartMsgHelp.GetUserOrgName(a.CreateId),
+                                               CreateName = a.CreateName,
+                                               a.CreateTime,
+                                               a.UpdateTime,
+                                               CompanyDtValue = b.DtValue,
+                                               CompanyName = b.Name,
+                                               ContractDtValue = c.DtValue,
+                                               ContractName = c.Name,
+                                               StatusDtValue = d.DtValue,
+                                               StatusName = d.Name
+                                           };
+                    #endregion
+
+                    #region 审批步骤
+                    var contract = contractApply.FirstOrDefault();
+                    List<ApprovalNodeReq> nodeList = await GetNodeMsg(contract, contractApplyId);
+                    #endregion
+
+                    if (contractFileTypeList.Count() > 0)
+                    {
+                        var contractOriginalFileList = await UnitWork.Find<UploadFile>(r => (contractFileTypeList.Select(r => r.ContractOriginalId)).Contains(r.Id)).Select(u => new { u.FileName, u.Id, u.FilePath, u.FileType, u.FileSize, u.Extension }).ToListAsync();
+                        List<string> fileIdList = new List<string>();
+                        foreach (ContractFileType item in contractFileTypeList)
+                        {
+                            var fileList = await UnitWork.Find<ContractFile>(r => r.ContractFileTypeId == item.Id).ToListAsync();
+                            foreach (ContractFile file in fileList)
+                            {
+                                fileIdList.Add(file.FileId);
+                            }
+                        }
+
+                        var contractFileList = await UnitWork.Find<UploadFile>(r => fileIdList.Contains(r.Id)).Select(u => new { u.FileName, u.Id, u.FilePath, u.FileType, u.FileSize, u.Extension }).ToListAsync();
+
+                        #region 申请单文件表信息
+                        var contractTypeFileReq = from a in contractFileTypeList
+                                                  join c in contractOriginalFileList on a.ContractOriginalId equals c.Id into ac
+                                                  from c in ac.DefaultIfEmpty()
+                                                  join d in categoryFileTypeList on a.FileType equals d.DtValue
+                                                  select new
+                                                  {
+                                                      a.Id,
+                                                      a.ContractApplyId,
+                                                      a.ContractSealId,
+                                                      a.FileType,
+                                                      a.ContractOriginalId,
+                                                      a.FileNum,
+                                                      a.Remark,
+                                                      ContractFileList = from b in a.contractFileList
+                                                                         join e in contractFileList on b.FileId equals e.Id into be
+                                                                         from e in be.DefaultIfEmpty()
+                                                                         orderby b.CreateUploadTime descending
+                                                                         select new
+                                                                         {
+                                                                             b.Id,
+                                                                             b.ContractFileTypeId,
+                                                                             b.FileId,
+                                                                             b.IsSeal,
+                                                                             b.IsFinalContract,
+                                                                             b.CreateUploadId,
+                                                                             CreateUploadName = b.CreateUploadName,
+                                                                             CreateDeptName = _userDepartMsgHelp.GetUserOrgName(b.CreateUploadId),
+                                                                             b.CreateUploadTime,
+                                                                             b.UpdateUserId,
+                                                                             UpdateUserName = b.UpdateUserName,
+                                                                             UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(b.UpdateUserId),
+                                                                             b.UpdateUserTime,
+                                                                             FileName = e == null ? "" : e.FileName,
+                                                                             FilePath = e == null ? "" : e.FilePath,
+                                                                             FileType = e == null ? "" : e.FileType,
+                                                                             FileSize = e == null ? 0 : e.FileSize,
+                                                                             Extension = e == null ? "" : e.Extension
+                                                                         },
+                                                      OriginalFileName = c == null ? "" : c.FileName,
+                                                      OriginalFilePath = c == null ? "" : c.FilePath,
+                                                      OriginalFileType = c == null ? "" : c.FileType,
+                                                      OriginalFileSize = c == null ? 0 : c.FileSize,
+                                                      OriginalExtension = c == null ? "" : c.Extension,
+                                                      CategoryFileType = d.DtValue,
+                                                      CategoryFileName = d.Name
+                                                  };
+                        #endregion
+
+                        result.Data = new
+                        {
+                            ContractApplyReq = contractApplyReq,
+                            ContractOperationHistoryList = contractHistories,
+                            ContractFileTypeReq = contractTypeFileReq,
+                            ContractStatusReq = nodeList
+                        };
+                    }
+                    else
+                    {
+                        result.Data = new
+                        {
+                            ContractApplyReq = contractApplyReq,
+                            ContractOperationHistoryList = contractHistories,
+                            ContractFileTypeReq = new List<ContractFileType>(),
+                            ContractStatusReq = nodeList
+                        };
+                    }
+                }
+                else
+                {
+                    result.Message = "该申请单不存在";
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("合同申请单详情查询失败,请重试");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 加载合同申请单详情
+        /// </summary>
+        /// <param name="contractNum">合同申请单Id</param>
+        /// <returns>成功返回详情数据，失败抛出异常</returns>
+        public async Task<TableData> GetPendDetails(int contractNum)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var loginUser = loginContext.User;
+            var result = new TableData();
+            try
+            {
+                var contractApply = await UnitWork.Find<ContractApply>(r => r.ContractNum == contractNum).ToListAsync();
+                string contractApplyId = contractApply.Select(r => r.Id).FirstOrDefault();
                 var contractFileTypeList = await UnitWork.Find<ContractFileType>(r => r.ContractApplyId == contractApplyId).Include(r => r.contractFileList).ToListAsync();
                 var contractOperationHistoryList = await UnitWork.Find<ContractOperationHistory>(r => r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).ToListAsync();
                 List<ContractHistory> contractHistories = contractOperationHistoryList.Select(r => new ContractHistory
@@ -1511,6 +1699,30 @@ namespace OpenAuth.App.ContractManager
                 }
             }
 
+            //获取生成后的合同申请单号
+            int? contractNum = await UnitWork.Find<ContractApply>(r => r.ContractNo == obj.ContractNo).Select(r => r.ContractNum).FirstOrDefaultAsync();
+            if (!string.IsNullOrEmpty(obj.FlowInstanceId))
+            {
+                //添加全局待处理
+                await _workbenchApp.AddOrUpdate(new WorkbenchPending
+                {
+                    OrderType = 6,
+                    TerminalCustomer = obj.CustomerName,
+                    TerminalCustomerId = obj.CustomerCode,
+                    ServiceOrderId = 0,
+                    ServiceOrderSapId = obj.U_SAP_ID ?? 0,
+                    UpdateTime = DateTime.Now,
+                    Remark = obj.Remark,
+                    FlowInstanceId = obj.FlowInstanceId,
+                    TotalMoney = 0,
+                    Petitioner = loginUser.Name,
+                    SourceNumbers = contractNum ?? 0,
+                    PetitionerId = loginUser.Id,
+                });
+
+                await UnitWork.SaveAsync();
+            }
+           
             return "操作成功";
         }
 
@@ -1749,6 +1961,23 @@ namespace OpenAuth.App.ContractManager
                                 ContractApplyId = obj.Id
                             });
                         }
+
+                        //添加全局待处理
+                        await _workbenchApp.AddOrUpdate(new WorkbenchPending
+                        {
+                            OrderType = 6,
+                            TerminalCustomer = obj.CustomerName,
+                            TerminalCustomerId = obj.CustomerCode,
+                            ServiceOrderId = 0,
+                            ServiceOrderSapId = obj.U_SAP_ID ?? 0,
+                            UpdateTime = DateTime.Now,
+                            Remark = obj.Remark,
+                            FlowInstanceId = obj.FlowInstanceId,
+                            TotalMoney = 0,
+                            Petitioner = loginUser.Name,
+                            SourceNumbers = obj.ContractNum ?? 0,
+                            PetitionerId = loginUser.Id,
+                        });
 
                         await UnitWork.SaveAsync();
                     }
@@ -2221,10 +2450,17 @@ namespace OpenAuth.App.ContractManager
                 contractHis.Remark = req.Remark;
                 contractHis.ApprovalStage = obj.ContractStatus;
                 contractHis.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
-
                 await UnitWork.AddAsync<ContractOperationHistory>(contractHis);
-                await UnitWork.SaveAsync();
 
+                //修改全局待处理
+                await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == obj.ContractNum && w.OrderType == 6, w => new WorkbenchPending
+                {
+                    UpdateTime = obj.UpdateTime,
+                    FlowInstanceId = obj.FlowInstanceId
+
+                });
+
+                await UnitWork.SaveAsync();
                 result.Message = "审核通过";
                 result.Code = 200;
             }

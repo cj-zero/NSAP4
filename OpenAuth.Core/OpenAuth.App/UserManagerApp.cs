@@ -33,47 +33,40 @@ namespace OpenAuth.App
         public TableData Load(QueryUserListReq request)
         {
             var loginUser = _auth.GetCurrentUser();
-            IQueryable<User> query = UnitWork.Find<User>(null);
+            List<User> query = UnitWork.Find<User>(null).ToList();
             if (!string.IsNullOrEmpty(request.key))
             {
-                query = UnitWork.Find<User>(u => u.Name.Contains(request.key) || u.Account.Contains(request.key));
+                query = UnitWork.Find<User>(u => u.Name.Contains(request.key) || u.Account.Contains(request.key)).ToList();
             }
 
-            var userOrgs = from user in query
-                           join relevance in UnitWork.Find<Relevance>(u => u.Key == Define.USERORG)
-                               on user.Id equals relevance.FirstId into temp
-                           from r in temp.DefaultIfEmpty()
-                           join org in UnitWork.Find<Repository.Domain.Org>(null)
+            var userOrgs = (from user in query
+                           join r in UnitWork.Find<Relevance>(u => u.Key == Define.USERORG).ToList()
+                               on user.Id equals r.FirstId 
+                           join org in UnitWork.Find<Repository.Domain.Org>(null).ToList()
                                on r.SecondId equals org.Id into orgtmp
                            from o in orgtmp.DefaultIfEmpty()
-                           join a in UnitWork.Find<DDBindUser>(null) on user.Id equals a.UserId
-                           into usera 
-                           from a  in usera.DefaultIfEmpty()
-                           join b in UnitWork.Find<DDUserMsg>(null) on a.DDUserId equals b.UserId
-                           into ab 
-                           from b in ab.DefaultIfEmpty()
-                           select new
+                           select new UserOrgHelp
                            {
-                               user.Account,
-                               user.Name,
-                               user.Id,
-                               user.Sex,
-                               user.Status,
-                               user.BizCode,
-                               user.CreateId,
-                               user.CreateTime,
-                               user.TypeId,
-                               user.TypeName,
-                               user.ServiceRelations,
-                               user.CardNo,
-                               r.Key,
-                               r.SecondId,
-                               OrgId = o.Id,
-                               OrgName = o.Name,
-                               user.EntryTime,
-                               DDUserId = a == null ? "" : a.DDUserId,
-                               DDUserName = b == null ? "" : b.UserName
-                           };
+                               Account = user.Account,
+                               Name = user.Name,
+                               Id = user.Id,
+                               Sex = user.Sex,
+                               Status = user.Status,
+                               BizCode = user.BizCode,
+                               CreateId = user.CreateId,
+                               CreateTime = user.CreateTime,
+                               TypeId = user.TypeId,
+                               TypeName = user.TypeName,
+                               ServiceRelations = user.ServiceRelations,
+                               CardNo = user.CardNo,
+                               Key = r == null ? "" : r.Key,
+                               SecondId = r == null ? "" : r.SecondId,
+                               OrgId = o == null ? "" : o.Id,
+                               OrgName = o == null ? "" : o.Name,
+                               EntryTime = user.EntryTime,
+                               DDUserId = "",
+                               DDUserName = ""
+                           }).ToList();
 
             //如果请求的orgId不为空
             if (!string.IsNullOrEmpty(request.orgId))
@@ -81,30 +74,75 @@ namespace OpenAuth.App
                 //如果用户的角色标识是管理员,则查看该组织及子部门下的所有成员
                 if (loginUser.Roles.Select(x => x.Identity).Where(x => x != null).Any(x => x.Equals("5")))
                 {
-                    var cascade = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.Id == request.orgId).FirstOrDefault()?.CascadeId;
-                    var ids = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.CascadeId.Contains(cascade)).Select(x => x.Id);
-                    userOrgs = userOrgs.Where(x => ids.Contains(x.OrgId));
+                    var cascade = (UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.Id == request.orgId).FirstOrDefault()?.CascadeId);
+                    var ids = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.CascadeId.Contains(cascade)).Select(x => x.Id).ToList();
+                    userOrgs = (userOrgs.Where(x => ids.Contains(x.OrgId))).ToList();
                 }
                 else
                 {
                     var org = loginUser.Orgs.SingleOrDefault(u => u.Id == request.orgId);
                     var cascadeId = org.CascadeId;
 
-                    var orgIds = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray();
+                    var orgIds = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToList();
 
                     //只获取机构里面的用户
-                    userOrgs = userOrgs.Where(u => u.Key == Define.USERORG && orgIds.Contains(u.OrgId));
+                    userOrgs = (userOrgs.Where(u => u.Key == Define.USERORG && orgIds.Contains(u.OrgId))).ToList();
                 }
             }
             else  //todo:如果请求的orgId为空，即为跟节点，这时可以额外获取到机构已经被删除的用户，从而进行机构分配。可以根据自己需求进行调整
             {
-                var orgIds = loginUser.Orgs.Select(u => u.Id).ToArray();
+                var orgIds = loginUser.Orgs.Select(u => u.Id).ToList();
 
                 //获取用户可以访问的机构的用户和没有任何机构关联的用户（机构被删除后，没有删除这里面的关联关系）
-                userOrgs = userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null));
+                userOrgs = (userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null))).ToList();
             }
 
-            var userViews = userOrgs.ToList().GroupBy(b => b.Account).Select(u => new UserView
+            //查询钉钉用户      
+            List<UserOrgHelp> userOrgHelps = (userOrgs.OrderBy(u => u.Status)
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit)).ToList();
+            List<string> userIds = userOrgHelps.Select(r => r.Id).ToList();
+            List<DDBindUser> ddBindUsers = UnitWork.Find<DDBindUser>(r => userIds.Contains(r.UserId)).ToList();
+            List<string> ddUserIds = ddBindUsers.Select(r => r.DDUserId).ToList();
+            List<DDUserMsg> ddUserMsgs = UnitWork.Find<DDUserMsg>(r => ddUserIds.Contains(r.UserId)).ToList();
+            var ddUsers = (from a in ddBindUsers
+                           join b in ddUserMsgs on a.DDUserId equals b.UserId
+                           select new
+                           {
+                               a.UserId,
+                               a.DDUserId,
+                               b.UserName
+                           }).ToList();
+
+            //查询钉钉用户与4.0用户关联
+            userOrgHelps = (from a in userOrgHelps
+                           join b in ddUsers on a.Id equals b.UserId into ab
+                           from b in ab.DefaultIfEmpty()
+                           select new UserOrgHelp
+                           {
+                               Account = a.Account,
+                               Name = a.Name,
+                               Id = a.Id,
+                               Sex = a.Sex,
+                               Status = a.Status,
+                               BizCode = a.BizCode,
+                               CreateId = a.CreateId,
+                               CreateTime = a.CreateTime,
+                               TypeId = a.TypeId,
+                               TypeName = a.TypeName,
+                               ServiceRelations = a.ServiceRelations,
+                               CardNo = a.CardNo,
+                               Key = a.Key,
+                               SecondId = a.SecondId,
+                               OrgId = a.OrgId,
+                               OrgName = a.OrgName,
+                               EntryTime = a.EntryTime,
+                               DDUserId = b == null ? "" : b.DDUserId,
+                               DDUserName = b == null ? "" : b.UserName
+                           }).ToList();
+
+            //最终查询结果
+            var userViews = userOrgHelps.GroupBy(b => b.Account).Select(u => new UserView
             {
                 Id = u.First().Id,
                 Account = u.Key,
@@ -125,10 +163,8 @@ namespace OpenAuth.App
 
             return new TableData
             {
-                Count = userViews.Count(),
-                Data = userViews.OrderBy(u => u.Status)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit),
+                Count = userOrgs.Count(),
+                Data = userViews,
             };
         }
 
@@ -977,5 +1013,28 @@ namespace OpenAuth.App
             result.Data = data;
             return result;
         }
+    }
+
+    public class UserOrgHelp
+    {
+        public string Account { get; set; }
+        public string Name { get; set; }
+        public string Id { get; set; }
+        public int Sex { get; set; }
+        public int Status { get; set; }
+        public string BizCode { get; set; }
+        public string CreateId { get; set; }
+        public DateTime CreateTime { get; set; }
+        public string TypeId { get; set; }
+        public string TypeName { get; set; }
+        public string ServiceRelations { get; set; }
+        public string CardNo { get; set; }
+        public string Key { get; set; }
+        public string SecondId { get; set; }
+        public string OrgId { get; set; }
+        public string OrgName { get; set; }
+        public DateTime? EntryTime { get; set; }
+        public string DDUserId { get; set; }
+        public string DDUserName { get; set; }
     }
 }

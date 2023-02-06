@@ -37,6 +37,7 @@ using OpenAuth.App.Order.Request;
 using OpenAuth.Repository.Extensions;
 using Z.BulkOperations;
 using OpenAuth.App.Material.Response;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace OpenAuth.App.Material
 {
@@ -109,12 +110,13 @@ namespace OpenAuth.App.Material
             {
                 sql += " and n.SubmitNo = " + req.SubmitNo;
             }
+
             var modeldata = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null).AsEnumerable();
             var manageData = GetProgressAll().AsEnumerable(); // new DataTable().AsEnumerable();
 
 
             var querydata = from n in modeldata
-                            join m in manageData
+                             join m in manageData
                             on new { DocEntry = "SE-" + n.Field<string>("DocEntry"), itemCode = n.Field<string>("ItemCode") }
                             equals new { DocEntry = m.Field<string>("DocEntry"), itemCode = m.Field<string>("itemCode") !=null ? m.Field<string>("itemCode").Trim() : m.Field<string>("itemCode") } into temp
                             from t in temp.DefaultIfEmpty()
@@ -219,7 +221,9 @@ namespace OpenAuth.App.Material
             {
                 querydata = querydata.OrderByDescending(q => q.SubmitTime);
             }
-            var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+
+            var datar = querydata.GroupBy(o => o.id).Select(o => o.FirstOrDefault());
+            var data = datar.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
             //20221226 replace the itemCode according to the request
             var MDetailList = new List<MCDetail>();
             foreach (var item in data)
@@ -265,7 +269,7 @@ namespace OpenAuth.App.Material
             }
 
             result.Data = data;
-            result.Count = querydata.Count();
+            result.Count = datar.Count();
 
             return result;
             #endregion
@@ -448,8 +452,22 @@ namespace OpenAuth.App.Material
             //var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
             //20221226 replace the itemCode according to the request
             var MDetailList = new List<MCDetail>();
+            var produceNoList = data.Select(a => a.produceNo).ToList();
             foreach (var item in data)
             {
+                if (item.origin ==1)
+                {
+                   
+                    var info = UnitWork.Find<MPrOrDetail>(q => produceNoList.Contains(Convert.ToInt32(q.ProduceNo))).ToList();
+                        var specificDataEcho = info.Where(q => q.CardCode == item.CardCode && q.ItemCode == item.itemCode && q.SlpName == item.slpName && q.ItemName == item.itemName && q.ProduceNo == item.produceNo.ToString()).FirstOrDefault();
+                        if (specificDataEcho != null)
+                        {
+                            item.fileUrl = specificDataEcho.FileUrl;
+                            item.versionNo = specificDataEcho.VersionNo;
+                            item.urlUpdate = specificDataEcho.UrlUpdate.ToString();
+                        }
+
+                }
                 if (loginContext.Orgs.Exists(a => a.Name == "PMC"))
                 {
                     item.CardName = "*";
@@ -519,7 +537,7 @@ namespace OpenAuth.App.Material
 select '' as submitNo , CONVERT(p.OriginNum,char) as docEntry, p.CardCode ,p.U_ZS,c.CardName,p.itemCode,p.txtitemName as itemDesc ,p.PlannedQty as quantity,p.U_XT_CZ as slpName , p.CreateDate as submitTime,'' as contractReviewCode ,'' as  custom_req, '' as itemTypeName,s.ItemCode as itemName,'' as versionNo,'' as  projectNo, 0 as process, '' as fileUrl, '' as urlUpdate, '' as isDemo, '' as demoUpdate, p.DocEntry as produceNo, '' as type, 1 as origin ,row_number() OVER(PARTITION BY p.DocEntry,s.ItemCode) AS rn   from nsap_bone.product_owor AS p
 left join nsap_bone.crm_ocrd as c on c.CardCode = p.CardCode
 left join  nsap_bone.product_wor1 as  s on s.DocEntry = p.DocEntry
- where p.CmpltQty = 0   AND  p.ItemCode REGEXP 'CT-4|CT-5|CT-8|CE-4|CTH-8|CT-9|CE-4|CE-5|CE-6|CE-8|CE-7|CTE-4|CTE-8|CE-6|CE-5|CJE|CJ|CGE|CGE|CA|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|MB|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MOCV|MRGV|MRP|MXC|MS|MB' and s.ItemCode REGEXP 'A302|A303|A310|A312|A313|A314|A315|A316|A317|A318|A319|A320|A321|A322|A326|A604|A606|A608|A609|A612|A613|M203|M202|A414|A416|A417|A418|A406|A405|A407|A408|A420' ) as n where rn = 1  and n.submitTime >'2022-11-01'  ");
+ where p.CmpltQty = 0   AND  p.ItemCode REGEXP 'CT-4|CT-5|CT-8|CE-4|CTH-8|CT-9|CE-4|CE-5|CE-6|CE-8|CE-7|CTE-4|CTE-8|CE-6|CE-5|CJE|CJ|CGE|CGE|CA|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|MB|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MOCV|MRGV|MRP|MXC|MS|MB' and s.ItemCode REGEXP 'A302|A303|A310|A312|A313|A314|A315|A316|A317|A318|A319|A320|A321|A322|A326|A604|A606|A608|A609|A612|A613|M203|M202|A603|A402|A414|A416|A417|A418|A406|A405|A407|A408|A420' ) as n where rn = 1  and n.submitTime >'2022-11-01'  ");
             if (!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()))
             {
                 sql += " and n.DocEntry =" + req.SalesOrderId;
@@ -602,6 +620,53 @@ left join  nsap_bone.product_wor1 as  s on s.DocEntry = p.DocEntry
                 info.DemoUpdate = manageScreen.DemoUpdate;
             }
             await UnitWork.UpdateAsync<ManageScreening>(info);
+            await UnitWork.SaveAsync();
+            response.Message = "操作成功";
+            return response;
+        }
+
+
+        public async Task<Infrastructure.Response> AddPDrawingFiles(UpdatePManageScreen manageScreen)
+        {
+            var response = new Infrastructure.Response();
+            response.Message = "";
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            MPrOrDetail info = UnitWork.Find<MPrOrDetail>(q => q.DocEntry == manageScreen.DocEntry && q.CardCode == manageScreen.CardCode && q.ItemCode == manageScreen.ItemCode  && q.SlpName == manageScreen.SlpName && q.ItemName == manageScreen.ItemName && q.ProduceNo == manageScreen.ProduceNo).FirstOrDefault();
+            if (info != null)
+            {
+                info.FileUrl = manageScreen.FileUrl;
+                info.VersionNo = manageScreen.VersionNo;
+                info.UrlUpdate = DateTime.Now;
+                info.IsDemo = manageScreen.IsDemo;
+                await UnitWork.UpdateAsync<MPrOrDetail>(info);
+            }
+            else
+            {
+                await UnitWork.AddAsync<MPrOrDetail, int>(new MPrOrDetail
+                {
+                    DocEntry = manageScreen.DocEntry,
+                    CardCode = manageScreen.CardCode,
+                    CardName = manageScreen.CardName,
+                    ItemCode = manageScreen.ItemCode,
+                    SlpName = manageScreen.SlpName,
+                    ItemName = manageScreen.ItemName,
+                    Quantity = manageScreen.Quantity,
+                    VersionNo = manageScreen.VersionNo,
+                    FileUrl = manageScreen.FileUrl,
+                    IsDemo = manageScreen.IsDemo,
+                    ProduceNo = manageScreen.ProduceNo,
+                    UrlUpdate = DateTime.Now,
+                    CreateDate = DateTime.Now,
+                    IsDelete = 0
+
+                }) ;
+            }
+            
             await UnitWork.SaveAsync();
             response.Message = "操作成功";
             return response;
@@ -1247,24 +1312,24 @@ left join  nsap_bone.product_wor1 as  s on s.DocEntry = p.DocEntry
         #region 获取进度
         public DataTable GetProgressAll()
         {
-            string strSql = string.Format(@" select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+            string strSql = string.Format(@" select  _System_objNBS, b.DocEntry, progress,itemCode from
                                             (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
                                             (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005508 DocEntry, max(_System_Progress) progress, fld005506 itemCode
                                             from OBJ162 group by RecordGuid, fld005508, _System_objNBS, fld005506,CreatedDate) a) t
                                             ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
-            strSql += string.Format(@"  union all     select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+            strSql += string.Format(@"  union all     select  _System_objNBS, b.DocEntry, progress,itemCode from
                                             (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
                                             (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld017268 DocEntry, max(_System_Progress) progress, fld005787 itemCode
                                             from OBJ170 group by RecordGuid, fld005787, _System_objNBS, fld017268,CreatedDate) a) t
                                             ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
 
-            strSql += string.Format(@"  union all     select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+            strSql += string.Format(@"  union all     select  _System_objNBS, b.DocEntry, progress,itemCode from
                                             (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
                                             (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005878 DocEntry, max(_System_Progress) progress, fld005879 itemCode
                                             from OBJ163 group by RecordGuid, fld005878, _System_objNBS, fld005879,CreatedDate) a) t
                                             ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
 
-            strSql += string.Format(@"  union all     select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+            strSql += string.Format(@"  union all     select  _System_objNBS, b.DocEntry, progress,itemCode from
                                             (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
                                             (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005717 DocEntry, max(_System_Progress) progress, fld005719 itemCode
                                             from OBJ169 group by RecordGuid, fld005717, _System_objNBS, fld005719,CreatedDate) a) t
